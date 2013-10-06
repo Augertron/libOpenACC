@@ -1,15 +1,17 @@
 /*!
- * \file lib-openacc.h
+ * \file openacc.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013
  * 
- * Standard OpenACC C API
+ * Standardized OpenACC C API
  *
  */
 
 #ifndef __OPENACC_H__
 #define __OPENACC_H__
+
+typedef unsigned size_t;
 
 /// Represent an Accelerator Device for OpenACC
 typedef struct acc_device_t_ * acc_device_t;
@@ -24,7 +26,7 @@ typedef void d_void;
  *  \param[dev]  an OpenACC device
  *  \return number of present devices of the same type
  */
-int  acc_get_num_devices(acc_device_t dev);
+int acc_get_num_devices(acc_device_t dev);
 
 /*!
  *  Set the device to be used in the following parallel regions
@@ -44,7 +46,7 @@ acc_device_t acc_get_device_type();
  *  \param[id]   an positive integer to become the ID of 'dev'
  *  \param[dev]  an OpenACC device
  */
-void acc_set_device_num(int id, acc_device_t dev)
+void acc_set_device_num(int id, acc_device_t dev);
 
 /*!
  *  \param[dev] an OpenACC device
@@ -94,7 +96,7 @@ d_void * acc_malloc(size_t);
 
 /*!
  */
-void acc_free(d_void *)
+void acc_free(d_void *);
 
 /*!
  */

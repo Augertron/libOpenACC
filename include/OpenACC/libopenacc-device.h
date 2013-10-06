@@ -1,5 +1,5 @@
 /*!
- * \file lib-openacc.cl
+ * \file libopenacc-device.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013
@@ -8,8 +8,12 @@
  *
  */
 
-#include "OpenACC/lib-openacc-device.h"
-#include "OpenACC/lib-openacc-host-to-device.h"
+#ifndef __LIB_OPENACC_DEVICE_H__
+#define __LIB_OPENACC_DEVICE_H__
+
+//#include "OpenACC/libopenacc-host-to-device.h"
+typedef struct acc_context_t_ * acc_context_t;
+typedef struct acc_bounds_t_ * acc_bounds_t;
 
 /*!
  *  \param[ctx] an OpenACC Context stored in constant memory. It is provided by the host when calling the kernel.
@@ -58,5 +62,5 @@ unsigned long acc_loop_iteration(__constant acc_context_t ctx, unsigned loop_id,
  */
 int acc_loop_no_tile(__constant acc_context_t ctx, unsigned loop_id, unsigned tile_level);
 
-#endif /* __LIB_OPENACC_CL__ */
+#endif /* __LIB_OPENACC_DEVICE_H__ */
 

@@ -1,5 +1,5 @@
 /*!
- * \file lib-openacc-host-to-device-runtime.h
+ * \file libopenacc-host-to-device.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013

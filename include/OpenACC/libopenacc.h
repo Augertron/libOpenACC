@@ -1,10 +1,10 @@
 /*!
- * \file lib-openacc.h
+ * \file libopenacc.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013
  * 
- * C API of the implementation specific part of the OpenACC Runtime for "OpenACC to OpenCL Compiler"
+ * Private part of OpenACC API. This part of the API is used in the transformed code.
  *
  */
 
@@ -20,10 +20,9 @@ void acc_fail_if_error(acc_error_t);
 
 // Pointer to Data-Structure types
 
-typedef struct acc_device_t_        * acc_device_t;
-typedef struct acc_runtime_t_       * acc_runtime_t;
-typedef struct acc_parallel_t_      * acc_parallel_t;
-typedef struct acc_opencl_kernel_t_ * acc_opencl_kernel_t;
+typedef struct acc_runtime_t_  * acc_runtime_t;
+typedef struct acc_parallel_t_ * acc_parallel_t;
+typedef struct acc_kernel_t_   * acc_kernel_t;
 typedef acc_kernel_t (* acc_kernel_builder_t) (unsigned);
 
 /// Store global information needed by the runtime for the current application (singleton)
@@ -56,8 +55,9 @@ enum acc_device_e {
 struct acc_device_t_ {
   /// \todo
 };
-typedef acc_device_t_ * acc_device_t;
-acc_device_t acc_build_device(e_opencl_default);
+
+unsigned acc_num_device(enum acc_device_e);
+acc_device_t acc_build_device(enum acc_device_e, unsigned);
 
 /// A parallel region descriptor
 struct acc_parallel_region_t_ {
@@ -71,7 +71,6 @@ struct acc_parallel_region_t_ {
   /// Vector size used for this parallel region (needed to determine workers chunk size)
   unsigned vector_length;
 };
-typedef acc_parallel_region_t_ * acc_parallel_region_t;
 
 acc_parallel_t acc_build_parallel(unsigned, unsigned long *, unsigned long *, unsigned);
 
@@ -126,17 +125,7 @@ acc_kernel_t acc_build_kernel(unsigned kernel_id);
  *  \param[kernel] pointer to a kernel descriptor
  *  \return a non-zero value if an error occured
  */
-acc_error_t acc_enqueue_kernel(acc_parallel_region_t region, acc_kernel_t kernel);
-
-/*! \func acc_create_context
- *
- *  Create the context associated to 'region' and 'kernel'
- *
- *  \param[region] pointer to a parallel region descriptor
- *  \param[kernel] pointer to a kernel descriptor
- *  \return a non-zero value if an error occured
- */
-acc_context_t acc_create_context(acc_parallel_region_t region, acc_kernel_t kernel);
+acc_error_t acc_enqueue_kernel(acc_parallel_t region, acc_kernel_t kernel);
 
 #endif /* __LIB_OPENACC_H__ */
 

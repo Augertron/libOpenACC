@@ -16,10 +16,12 @@
  */
 
 #include "OpenACC/openacc.h"
-#include "OpenACC/lib-openacc.h"
-#include "OpenACC/lib-openacc-internal.h"
+#include "OpenACC/libopenacc.h"
+#include "OpenACC/libopenacc-internal.h"
 
-#include <cassert>
+#include <assert.h>
+
+#define NULL 0
 
 // OpenACC public API
 
@@ -46,7 +48,7 @@ int acc_get_device_num(acc_device_t dev) {
   return -1;
 }
 
-int acc_async_test(int async) {
+int acc_async_test(int id) {
   assert("NIY"); /// \todo
   return -1;
 }
@@ -56,11 +58,11 @@ int acc_async_test_all() {
   return -1;
 }
 
-void acc_async_wait(int) {
+void acc_async_wait(int id) {
   assert("NIY"); /// \todo
 }
 
-void acc_async_wait_async(int , int) {
+void acc_async_wait_async(int id_wait, int id_async) {
   assert("NIY"); /// \todo
 }
 
@@ -68,7 +70,7 @@ void acc_async_wait_all() {
   assert("NIY"); /// \todo
 }
 
-void acc_async_wait_all_async(int) {
+void acc_async_wait_all_async(int id) {
   assert("NIY"); /// \todo
 }
 
@@ -85,7 +87,7 @@ int acc_on_device(acc_device_t dev) {
   return -1;
 }
 
-d_void * acc_malloc (size_t) {
+d_void * acc_malloc (size_t n) {
   assert("NIY"); /// \todo
   return NULL;
 }
@@ -169,7 +171,7 @@ void fail_if_error(acc_error_t err) {
 
 // OpenACC internal API
 
-acc_context_t acc_create_context(acc_parallel_region_t region, acc_kernel_t kernel) {
+acc_context_t acc_create_context(acc_parallel_t region, acc_kernel_t kernel) {
   return NULL; /// \todo 
 }
 
