@@ -1,8 +1,8 @@
-/*! \page libopenacc "libOpenACC"
+/*! \page libopenacc libOpenACC
  *
  * \tableofcontents
  *
- * \section intro "OpenCL implementation of OpenACC API"
+ * \section intro OpenCL implementation of OpenACC API
  *
  * An OpenACC Compiler needs an implementation of OpenACC API. This page documents our implementation of this API.
  * Our implementation is not limited to the standardized API, with added three parts: a private interface, an internal one and finally the device API.
