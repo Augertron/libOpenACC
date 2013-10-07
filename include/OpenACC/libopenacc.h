@@ -11,6 +11,10 @@
 #ifndef __LIB_OPENACC_H__
 #define __LIB_OPENACC_H__
 
+#define _OPENACC_LIB         1
+#define _OPENACC_LIB_NAME    "OpenACC for Rose Compiler"
+#define _OPENACC_LIB_VERSION 201310
+
 #include "OpenACC/openacc.h"
 
 // Errors
@@ -23,41 +27,29 @@ void acc_fail_if_error(acc_error_t);
 typedef struct acc_runtime_t_  * acc_runtime_t;
 typedef struct acc_parallel_t_ * acc_parallel_t;
 typedef struct acc_kernel_t_   * acc_kernel_t;
-typedef acc_kernel_t (* acc_kernel_builder_t) (unsigned);
+typedef acc_kernel_t (* acc_kernel_builder_t) ();
 
 /// Store global information needed by the runtime for the current application (singleton)
 struct acc_runtime_t {
   /// Current device
-  acc_device_t curr_device;
+  acc_device_t curr_device_type;
+  unsigned     curr_device_id;
 
-  /// Number of available devices
-  unsigned num_devices;
-
-  /// List of available devices
-  acc_device_t devices;
+  /// Number of available devices for each type of device
+  unsigned num_devices[acc_device_last];
 
   /// Number of OpenCL kernels
   unsigned num_kernel;
 
-  /// Pointers to kernel builder
-  acc_kernel_builder_t * kernels;
+  /*!
+   *  Pointers to kernel builders. Kernel builders are function pointer.
+   *  Kernel builder are generated at compile time and use the internal API.
+   */
+  acc_kernel_builder_t * kernel_builders;
 };
 
 /// global runtime object for OpenACC.
 extern acc_runtime_t acc_runtime;
-
-/// Enumeration of the different device recognized by this OpenACC implementation 
-enum acc_device_e {
-  e_acc_device_opencl_default,
-  e_acc_device_unknown
-};
-
-struct acc_device_t_ {
-  /// \todo
-};
-
-unsigned acc_num_device(enum acc_device_e);
-acc_device_t acc_build_device(enum acc_device_e, unsigned);
 
 /// A parallel region descriptor
 struct acc_parallel_region_t_ {

@@ -12,6 +12,10 @@
 #ifndef __LIB_OPENACC_INTERNAL_H__
 #define __LIB_OPENACC_INTERNAL_H__
 
+#define _OPENACC_LIB_INTERNAL         1
+#define _OPENACC_LIB_INTERNAL_NAME    "OpenACC LIB for OpenCL in ROSE Compiler"
+#define _OPENACC_LIB_INTERNAL_VERSION 201310
+
 #include "OpenACC/libopenacc.h"
 
 //#include "OpenACC/lib-openacc-host-to-device.h"

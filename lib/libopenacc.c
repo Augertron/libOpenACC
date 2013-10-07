@@ -15,8 +15,6 @@
  *
  */
 
-#include "OpenACC/openacc.h"
-#include "OpenACC/libopenacc.h"
 #include "OpenACC/libopenacc-internal.h"
 
 #include <assert.h>
@@ -165,8 +163,33 @@ void acc_memcpy_from_device(h_void * dest, d_void * src, size_t bytes) {
 
 // OpenACC private API
 
-void fail_if_error(acc_error_t err) {
-  /// \todo
+void acc_fail_if_error(acc_error_t err) {
+  assert("NIY"); /// \todo
+}
+
+acc_parallel_t acc_build_parallel(unsigned num_dims, unsigned long * num_gang, unsigned long * num_worker, unsigned num_vector) {
+  assert("NIY"); /// \todo
+  return NULL;
+}
+
+acc_error_t acc_parallel_start(acc_parallel_t region) {
+  assert("NIY"); /// \todo
+  return -1;
+}
+
+acc_error_t acc_parallel_stop (acc_parallel_t region) {
+  assert("NIY"); /// \todo
+  return -1;
+}
+
+acc_kernel_t acc_build_kernel(unsigned kernel_id) {
+  assert("NIY"); /// \todo
+  return NULL;
+}
+
+acc_error_t acc_enqueue_kernel(acc_parallel_t region, acc_kernel_t kernel) {
+  assert("NIY"); /// \todo
+  return -1;
 }
 
 // OpenACC internal API

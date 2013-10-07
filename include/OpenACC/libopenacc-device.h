@@ -11,6 +11,10 @@
 #ifndef __LIB_OPENACC_DEVICE_H__
 #define __LIB_OPENACC_DEVICE_H__
 
+#define _OPENACC_LIB_DEVICE         1
+#define _OPENACC_LIB_DEVICE_NAME    "OpenACC Device Runtime in OpenCL C for ROSE Compiler"
+#define _OPENACC_LIB_DEVICE_VERSION 201310
+
 //#include "OpenACC/libopenacc-host-to-device.h"
 typedef struct acc_context_t_ * acc_context_t;
 typedef struct acc_bounds_t_ * acc_bounds_t;

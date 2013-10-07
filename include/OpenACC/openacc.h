@@ -11,10 +11,15 @@
 #ifndef __OPENACC_H__
 #define __OPENACC_H__
 
-typedef unsigned size_t;
+#define _OPENACC 201306
 
-/// Represent an Accelerator Device for OpenACC
-typedef struct acc_device_t_ * acc_device_t;
+#if !defined(_OPENACC_C) && !defined(_OPENACC_LIB)
+# warning "OpenACC API loaded by non OpenACC Compiler"
+#endif
+
+#include "OpenACC/openacc-arch.h"
+
+typedef unsigned size_t;
 
 /// For Host data pointer type (h_void *)
 typedef void h_void;
@@ -23,6 +28,9 @@ typedef void h_void;
 typedef void d_void;
 
 /*!
+ *
+ *  OpenACC API 2.0 at 3.2.1
+ *
  *  \param[dev]  an OpenACC device
  *  \return number of present devices of the same type
  */
@@ -31,17 +39,24 @@ int acc_get_num_devices(acc_device_t dev);
 /*!
  *  Set the device to be used in the following parallel regions
  *
+ *  OpenACC API 2.0 at 3.2.2
+ *
  *  \param[dev]  an OpenACC device
  */
 void acc_set_device_type(acc_device_t dev);
 
 /*!
+ *
+ *  OpenACC API 2.0 at 3.2.3
+ *
  *  \return the device to be used in the following parallel regions
  */
 acc_device_t acc_get_device_type();
 
 /*!
  *  Associate an ID (integer) to a device
+ *
+ *  OpenACC API 2.0 at 3.2.4
  *
  *  \param[id]   an positive integer to become the ID of 'dev'
  *  \param[dev]  an OpenACC device
