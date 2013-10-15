@@ -1,45 +1,108 @@
-/*! \page libopenacc OpenACC Library
+/*!
+ * \defgroup grp_libopenacc OpenACC Library
+ * @{
+ *   \defgroup grp_libopenacc_api API 
+ *   @{
+ *     \defgroup grp_libopenacc_api_public Public
+ *     @{
+ *       \addtogroup grp_libopenacc_api_public_arch Supported Platforms 
+ *       @{
+ *       @}
+ *     @}
+ *     \defgroup grp_libopenacc_api_private Private 
+ *     @{
+ *     @}
+ *     \defgroup grp_libopenacc_api_internal Internal
+ *     @{
+ *     @}
+ *     \defgroup grp_libopenacc_api_device Device
+ *     @{
+ *     @}
+ *     \defgroup grp_libopenacc_api_h2d Host to Device Communication
+ *     @{
+ *     @}
+ *   @}
+ *   \defgroup grp_libopenacc_impl Implementation 
+ *   @{
+ *     \defgroup grp_libopenacc_impl_host Host Side
+ *     @{
+ *     @}
+ *     \defgroup grp_libopenacc_impl_device Device Side
+ *     @{
+ *     @}
+ *   @}
+ * @}
+ */
+
+/*!
+ * \addtogroup grp_libopenacc
+ * @{
  *
- * \tableofcontents
- *
- * \section intro OpenCL implementation of OpenACC API
+ * \section sec_libopenacc_intro OpenCL implementation of OpenACC API
  *
  * An OpenACC Compiler needs an implementation of OpenACC API. This page documents our implementation of this API.
  * Our implementation is not limited to the standardized API, with added three parts: a private interface, an internal one and finally the device API.
  * This implementation intended to follow the standard closely and provides an open-source reference implementation for OpenACC API.
  *
- * \section related Related Work
+ * \section sec_libopenacc_relwork Related Work
  *
  * \todo In this section, we need to list related work and relevance
  *
- * \section design_implementation Design & Implementation
+ * \section sec_libopenacc_api API
  *
  * \subsection four_part_api OpenACC API as 4 sub-APIs
  *
  * We subdivided OpenACC API in 4 categories: public, private, internal and device(s). It is not excludes that multiple device APIs co-exists.
  *
- * \subsection public_api OpenACC Public API
+ * \subsection sec_libopenacc_api_public OpenACC Public API
  *
- * This is the standardized OpenACC 2.0 API. It is accessible to the user. It is defined in include/OpenACC/openacc.h .
- * It includes a small implementation dependent part, defined in include/OpenACC/openacc.h (it is filled with recommended values from OpenACC 2.0).
+ * \note libopenacc/include/OpenACC/openacc.h and libopenacc/include/OpenACC/openacc-arch.h
  *
- * \subsection private_api OpenACC Private API
+ * This is the standardized OpenACC 2.0 API. It is accessible to the user.
  *
- * This part of the API is used by the compiler when transforming the original code. Specifically, directives (and associated statements) are replaced by call to both public and private API.
+ * \subsection sec_libopenacc_api_private OpenACC Private API
  *
- * \subsection internal_api OpenACC Internal API
+ * \note libopenacc/include/OpenACC/libopenacc.h
+ *
+ * This part of the API is used by the compiler when transforming the original code.
+ *
+ * \subsection sec_libopenacc_api_internal OpenACC Internal API
+ *
+ * \note libopenacc/include/OpenACC/libopenacc-internal.h
  *
  * This part of the API is used by the compiler when generating code. When transforming the input code, the OpenACC Compiler extracts parts of the original code (i.e. loops inside parallel construct).
  * This code is used to produce kernels. The compiler uses the internal API to provide information about these kernels to the runtime.
  * The compiler initializes the runtime's global data-structure. It contains pointers to generated functions.
  *
- * \subsection device_api OpenACC Device(s) API
+ * \subsection sec_libopenacc_api_device OpenACC Device(s) API
  *
- * This part of the API is used by the compiler when generating kernels. It is used to "enforce" OpenACC execution model. It is also used to communicate with the host runtime. 
+ * \note libopenacc/include/OpenACC/libopenacc-device.h
  *
- * \section other Other 
+ * This part of the API is used by the compiler when generating kernels. It is used to "enforce" OpenACC execution model. It is also used to communicate with the host runtime.
  *
- * 
+ * \subsection sec_libopenacc_api_h2d Host to Device Communication
+ *
+ * \note libopenacc/include/OpenACC/libopenacc-host-to-device.h
+ *
+ * This part of the API is common to the host and device runtime. It defines data structures the host runtime uses to transfert information to the device runtime (i.e. topology of loop nests).
+ *
+ * \section sec_libopenacc_impl Implementation
+ *
+ * OpenACC API is implemented for OpenCL 2.0.
+ *
+ * \subsection sec_libopenacc_impl_host Host Side
+ *
+ * \note libopenacc/lib/libopenacc.c
+ *
+ * Association of Public, Private, Internal, and Host-to-Device Communication (host side).
+ *
+ * \subsection sec_libopenacc_impl_device Device Side
+ *
+ * \note libopenacc/lib/libopenacc.cl
+ *
+ * Implemented for OpenCL C 2.0.
+ *
+ * @}
  *
  */
 

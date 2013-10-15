@@ -1,10 +1,11 @@
 /*!
+ * \addtogroup grp_libopenacc_api_public Public
+ * @{
+ * 
  * \file openacc.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013
- * 
- * Standardized OpenACC C API
  *
  */
 
@@ -28,24 +29,26 @@ typedef void h_void;
 typedef void d_void;
 
 /*!
+ * \brief Get the number of present devices of a given type.
  *
  *  OpenACC API 2.0 at 3.2.1
  *
- *  \param[dev]  an OpenACC device
+ *  \param dev  an OpenACC device
  *  \return number of present devices of the same type
  */
 int acc_get_num_devices(acc_device_t dev);
 
 /*!
- *  Set the device to be used in the following parallel regions
+ *  \brief Set the device to be used in the following parallel regions
  *
  *  OpenACC API 2.0 at 3.2.2
  *
- *  \param[dev]  an OpenACC device
+ *  \param dev  an OpenACC device
  */
 void acc_set_device_type(acc_device_t dev);
 
 /*!
+ *  \brief Get the current type of device
  *
  *  OpenACC API 2.0 at 3.2.3
  *
@@ -54,20 +57,22 @@ void acc_set_device_type(acc_device_t dev);
 acc_device_t acc_get_device_type();
 
 /*!
- *  Associate an ID (integer) to a device
+ *  \brief Associate an ID (integer) to a device
  *
  *  OpenACC API 2.0 at 3.2.4
  *
- *  \param[id]   an positive integer to become the ID of 'dev'
- *  \param[dev]  an OpenACC device
+ *  \param id   an positive integer to become the ID of 'dev'
+ *  \param dev  an OpenACC device
  */
 void acc_set_device_num(int id, acc_device_t dev);
 
 /*!
- *  \param[dev] an OpenACC device
+ *  \brief Get  ID (integer) to a device
+ *
+ *  \param dev an OpenACC device
  *  \return the ID associated to 'dev' (or -1)
  */
-int acc_get_device_num (acc_device_t);
+int acc_get_device_num (acc_device_t dev);
 
 /*!
  */
@@ -173,5 +178,5 @@ void acc_memcpy_to_device(d_void * dest, h_void * src, size_t bytes);
  */
 void acc_memcpy_from_device(h_void * dest, d_void * src, size_t bytes);
 
-#endif /* __OPENACC_H__ */
+#endif /* __OPENACC_H__ */ /** @} */
 

@@ -1,10 +1,11 @@
 /*!
+ * \addtogroup grp_libopenacc_api_h2d Host to Device Communication
+ * @{
+ * 
  * \file libopenacc-host-to-device.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013
- * 
- * The object defined in this file are used to communicate informations between host and device runtimes.
  *
  */
 
@@ -52,5 +53,5 @@ struct acc_context_t_ {
 };
 typedef acc_context_t_ * acc_context_t;
 
-#endif /* __LIB_OPENACC_HOST_TO_DEVICE_RUNTIME_H__ */
+#endif /* __LIB_OPENACC_HOST_TO_DEVICE_RUNTIME_H__ */ /** @} */
 

@@ -1,10 +1,11 @@
 /*!
+ * \addtogroup grp_libopenacc_api_device Device (OpenCL C)
+ * @{
+ * 
  * \file libopenacc-device.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013
- * 
- * Device Runtime for OpenCL C.
  *
  */
 
@@ -66,5 +67,5 @@ unsigned long acc_loop_iteration(__constant acc_context_t ctx, unsigned loop_id,
  */
 int acc_loop_no_tile(__constant acc_context_t ctx, unsigned loop_id, unsigned tile_level);
 
-#endif /* __LIB_OPENACC_DEVICE_H__ */
+#endif /* __LIB_OPENACC_DEVICE_H__ */ /** }@ */
 

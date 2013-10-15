@@ -1,10 +1,11 @@
 /*!
+ * \addtogroup grp_libopenacc_api_private Private
+ * @{
+ * 
  * \file libopenacc.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013
- * 
- * Private part of OpenACC API. This part of the API is used in the transformed code.
  *
  */
 
@@ -67,13 +68,13 @@ struct acc_parallel_region_t_ {
 acc_parallel_t acc_build_parallel(unsigned, unsigned long *, unsigned long *, unsigned);
 
 /*! \func acc_parallel_start
- *  \param[region] pointer to a parallel region descriptor
+ *  \param region pointer to a parallel region descriptor
  *  \return a non-zero value if an error occured
  */
 acc_error_t acc_parallel_start(acc_parallel_t region);
 
 /*! \func acc_parallel_stop
- *  \param[region] pointer to a parallel region descriptor
+ *  \param region pointer to a parallel region descriptor
  *  \return a non-zero value if an error occured
  */
 acc_error_t acc_parallel_stop (acc_parallel_t region);
@@ -104,7 +105,7 @@ struct acc_kernel_t_ {
  *
  *  Call a function pointer indexed on kernel id. 
  *
- *  \param[kernel_id] ID of the kernel to be launch
+ *  \param kernel_id ID of the kernel to be launch
  *  \return an OpenACC kernel descriptor, argument arrays are allocated but not initialized (need to be done before enqueuing the kernel)
  */
 acc_kernel_t acc_build_kernel(unsigned kernel_id);
@@ -113,11 +114,11 @@ acc_kernel_t acc_build_kernel(unsigned kernel_id);
  *
  *  It enqueue 'kernel' in the queue associated with 'region'
  *
- *  \param[region] pointer to a parallel region descriptor
- *  \param[kernel] pointer to a kernel descriptor
+ *  \param region pointer to a parallel region descriptor
+ *  \param kernel pointer to a kernel descriptor
  *  \return a non-zero value if an error occured
  */
 acc_error_t acc_enqueue_kernel(acc_parallel_t region, acc_kernel_t kernel);
 
-#endif /* __LIB_OPENACC_H__ */
+#endif /* __LIB_OPENACC_H__ */  /** @} */
 

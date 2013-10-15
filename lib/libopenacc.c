@@ -1,17 +1,10 @@
 /*!
+ * \addtogroup grp_libopenacc_impl_host Host Side
+ * @{
+ * 
  * \file lib-openacc.c
  *
  * \author Tristan Vanderbruggen
- * \date 09/2013
- * 
- * This file contains the code generated for "OpenACC to OpenCL Compiler" by "MDCG OpenCL Wrapper" for the file openacc.c
- * 
- * The naming convention used for this file should be followed by the compiler. It will help debugging and change tracking
- *
- * There is 3 part in this OpenACC API: 
- *     - public   : Can be used by OpenACC users, completely defined by OpenACC 2.0 standard
- *     - private  : To be used by the generated code ONLY. Not accessible to user.
- *     - internal : Used by functions of the public or private API
  *
  */
 
@@ -197,4 +190,6 @@ acc_error_t acc_enqueue_kernel(acc_parallel_t region, acc_kernel_t kernel) {
 acc_context_t acc_create_context(acc_parallel_t region, acc_kernel_t kernel) {
   return NULL; /// \todo 
 }
+
+/** @} */
 

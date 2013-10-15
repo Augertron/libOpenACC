@@ -1,11 +1,11 @@
 /*!
+ * \addtogroup grp_libopenacc_api_internal Internal
+ * @{
+ * 
  * \file libopenacc-internal.h
  *
  * \author Tristan Vanderbruggen
  * \date 09/2013
- * 
- * This file exposes the internal OpenACC API. This API is specific to our implementation.
- * The implementation of some functions of this API are generated when compiling a specific OpenACC application.
  *
  */
 
@@ -27,8 +27,8 @@ typedef struct acc_context_t_ * acc_context_t;
  *
  *  Create the context associated to 'region' and 'kernel'
  *
- *  \param[region] pointer to a parallel region descriptor
- *  \param[kernel] pointer to a kernel descriptor
+ *  \param region pointer to a parallel region descriptor
+ *  \param kernel pointer to a kernel descriptor
  *  \return a non-zero value if an error occured
  */
 acc_context_t acc_create_context(acc_parallel_t region, acc_kernel_t kernel);
@@ -38,5 +38,5 @@ acc_context_t acc_create_context(acc_parallel_t region, acc_kernel_t kernel);
  */
 void acc_application_specific_init();
 
-#endif /* __LIB_OPENACC_INTERNAL_H__ */
+#endif /* __LIB_OPENACC_INTERNAL_H__ */ /** @} */
 
