@@ -41,7 +41,7 @@ int acc_get_num_devices(acc_device_t dev);
 /*!
  *  \brief Set the device to be used in the following parallel regions
  *
- *  OpenACC API 2.0 at 3.2.2
+ *  \note OpenACC API 2.0 at 3.2.2
  *
  *  \param dev  an OpenACC device
  */
@@ -50,27 +50,33 @@ void acc_set_device_type(acc_device_t dev);
 /*!
  *  \brief Get the current type of device
  *
- *  OpenACC API 2.0 at 3.2.3
+ *  \note OpenACC API 2.0 at 3.2.3
  *
  *  \return the device to be used in the following parallel regions
  */
 acc_device_t acc_get_device_type();
 
 /*!
- *  \brief Associate an ID (integer) to a device
+ *  \brief Tell the runtime which device of a certain type should be used in the next accelerator section. 
  *
- *  OpenACC API 2.0 at 3.2.4
+ *  \note OpenACC API 2.0 at 3.2.4
  *
- *  \param id   an positive integer to become the ID of 'dev'
- *  \param dev  an OpenACC device
+ *  \note Implies a call to acc_set_device_type()
+ *
+ *  \param id   device number of the device to use
+ *  \param dev  an OpenACC device type
  */
 void acc_set_device_num(int id, acc_device_t dev);
 
 /*!
- *  \brief Get  ID (integer) to a device
+ *  \brief Get the device number that will be used in the next section
  *
- *  \param dev an OpenACC device
- *  \return the ID associated to 'dev' (or -1)
+ *  \note OpenACC API 2.0 at 3.2.5
+ *
+ *  \note What is the behavior if dev is different from acc_get_device_type() ?
+ *
+ *  \param dev an OpenACC device type
+ *  \return which device will be used in the next accelerator section
  */
 int acc_get_device_num (acc_device_t dev);
 

@@ -14,6 +14,8 @@
 
 #define NULL 0
 
+acc_runtime_t acc_runtime = {acc_device_any, 0}; // by default, we use the first of any device
+
 // OpenACC public API
 
 int acc_get_num_devices(acc_device_t dev) {

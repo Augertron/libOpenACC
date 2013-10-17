@@ -31,6 +31,9 @@
  *     @{
  *     @}
  *   @}
+ *   \defgroup grp_libopenacc_tests Tests 
+ *   @{
+ *   @}
  * @}
  */
 

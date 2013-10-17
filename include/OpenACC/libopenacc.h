@@ -25,32 +25,16 @@ void acc_fail_if_error(acc_error_t);
 
 // Pointer to Data-Structure types
 
-typedef struct acc_runtime_t_  * acc_runtime_t;
 typedef struct acc_parallel_t_ * acc_parallel_t;
 typedef struct acc_kernel_t_   * acc_kernel_t;
-typedef acc_kernel_t (* acc_kernel_builder_t) ();
 
-/// Store global information needed by the runtime for the current application (singleton)
-struct acc_runtime_t {
-  /// Current device
+/// Store global information needed by the runtime
+typedef struct acc_runtime_t_ {
+  /// Current device type
   acc_device_t curr_device_type;
-  unsigned     curr_device_id;
-
-  /// Number of available devices for each type of device
-  unsigned num_devices[acc_device_last];
-
-  /// Number of OpenCL kernels
-  unsigned num_kernel;
-
-  /*!
-   *  Pointers to kernel builders. Kernel builders are function pointer.
-   *  Kernel builder are generated at compile time and use the internal API.
-   */
-  acc_kernel_builder_t * kernel_builders;
-};
-
-/// global runtime object for OpenACC.
-extern acc_runtime_t acc_runtime;
+  /// Current device number
+  int curr_device_num;
+} acc_runtime_t;
 
 /// A parallel region descriptor
 struct acc_parallel_region_t_ {
