@@ -1,17 +1,42 @@
 
-all: acc_device acc_data acc_kernel
+OPENACC_DIR?=..
+OPENACC_INC_DIR?=$(OPENACC_DIR)/include
+OPENACC_LIB_DIR?=$(OPENACC_DIR)/lib
+OPENACC_LIB?=$(OPENACC_LIB_DIR)/libopenacc.o
 
-acc_device: acc_device.c acc_compiler_data.c
-	gcc -I../include ../lib/libopenacc.o acc_device.c acc_compiler_data.c -o acc_device
+OPENCL_LIB?=-lOpenCL
 
-acc_data: acc_data.c acc_compiler_data.c
-	gcc -I../include ../lib/libopenacc.o acc_data.c acc_compiler_data.c -o acc_data
+INCLUDES+=-I$(OPENACC_INC_DIR)
 
-acc_kernel: acc_kernel.c acc_compiler_data.c
-	gcc -I../include ../lib/libopenacc.o acc_kernel.c acc_compiler_data.c -o acc_kernel
+LIBS+=$(OPENACC_LIB) $(OPENCL_LIB) -lstdc++
+DEPS+=$(OPENACC_LIB_DIR)/libopenacc.o
 
-check:
-	./acc_device
+CC=gcc
+CFLAGS=-g
+LD=gcc
+LDFLAGS=
+MAKE=make
+
+all: acc_init
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $? -o $@ 
+
+$(OPENACC_DIR)/lib/libopenacc.o:
+	$(MAKE) -C $(OPENACC_DIR)/lib/ libopenacc.o
+
+acc_init: acc_init.o acc_compiler_data.o $(DEPS)
+	$(LD) $(LDFLAGS) $(INCLUDES) $(LIBS) acc_init.o acc_compiler_data.o -o acc_init
+
+acc_data: acc_data.o acc_compiler_data.o $(DEPS)
+	$(LD) $(LDFLAGS) $(INCLUDES) $(LIBS) acc_data.o acc_compiler_data.o -o acc_data
+
+acc_kernel: acc_kernel.o acc_compiler_data.o $(DEPS)
+	$(LD) $(LDFLAGS) $(INCLUDES) $(LIBS) acc_kernel.o acc_compiler_data.o -o acc_kernel
+
+check: acc_init
+	./acc_init
 
 clean:
-	rm -f acc_device acc_data acc_kernel
+	rm -f *.o acc_init acc_data acc_kernel
+

@@ -20,13 +20,17 @@
 
 #include "OpenACC/openacc-arch.h"
 
-typedef unsigned size_t;
+#include <stddef.h>
 
 /// For Host data pointer type (h_void *)
 typedef void h_void;
 
 /// For Device data pointer type (d_void *)
 typedef void d_void;
+
+// ******************
+// * Device sub-API *
+// ******************
 
 /*!
  * \brief Get the number of present devices of a given type.
@@ -82,6 +86,14 @@ int acc_get_device_num (acc_device_t dev);
 
 /*!
  */
+int acc_on_device(acc_device_t);
+
+// *****************
+// * Async sub-API *
+// *****************
+
+/*!
+ */
 int acc_async_test(int);
 
 /*!
@@ -104,17 +116,43 @@ void acc_async_wait_all();
  */
 void acc_async_wait_all_async(int);
 
-/*!
- */
-void acc_init(acc_device_t);
+// **********************
+// * Start/Stop sub-API *
+// **********************
 
 /*!
+ *  \brief Initializes all devices of a given type
+ *
+ *  \param dev type of devices to initialize
  */
-void acc_shutdown(acc_device_t);
+void acc_init(acc_device_t dev);
 
 /*!
+ *  \brief Initializes one device
+ *
+ *  \param dev type of the device
+ *  \param num the device number
  */
-int acc_on_device(acc_device_t);
+void acc_init_(acc_device_t dev, int num);
+
+/*!
+ *  \brief Shutdown all devices of a given type
+ *
+ *  \param dev type of devices to initialize
+ */
+void acc_shutdown(acc_device_t dev);
+
+/*!
+ *  \brief Shutdown one device
+ *
+ *  \param dev type of the device
+ *  \param num the device number
+ */
+void acc_shutdown_(acc_device_t dev, int num);
+
+// ******************
+// * Memory sub-API *
+// ******************
 
 /*!
  */

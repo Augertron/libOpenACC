@@ -7,5 +7,5 @@
 
 #include "OpenACC/libopenacc-internal.h"
 
-acc_compiler_data_t compiler_data = {0, 0};
+acc_compiler_data_t compiler_data = {0, 0, 1, {"acc_default.cl"} };
 
