@@ -29,8 +29,8 @@ const char * acc_device_env_name [acc_device_last] = {
 };
 
 const char * acc_device_name [acc_device_last] = {
-  "",
-  "NVIDIA",
+  "All",
+  "Nvidia",
   "AMD",
   "AMD radeon",
   "Intel(R)",
@@ -67,7 +67,7 @@ device_type_desc_t altera_devices_type_desc [3] = {
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL }
 };
 
-platform_desc_t platforms_desc[NUM_SUPPORTED_OPENCL_PLATFORMS] = {
+platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS] = {
   { "Nvidia",          acc_device_nvidia, 3, nvidia_devices_type_desc }, /// \todo find actual platform name for Nvidia
   { "AMD",             acc_device_amd,    3, amd_devices_type_desc    }, /// \todo find actual platform name for AMD
   { "Intel(R) OpenCL", acc_device_intel,  3, intel_devices_type_desc  },
@@ -172,15 +172,27 @@ void acc_init_(acc_device_t dev, int num) {
   if (acc_runtime.opencl_data->devices_data[device_idx] == NULL) {
     cl_int status;
 
-    cl_device_id device = acc_runtime.opencl_data->devices[device_idx];
+    cl_device_id * device = acc_runtime.opencl_data->devices[device_idx];
 
     acc_device_data_t device_data = (acc_device_data_t)malloc(sizeof(struct acc_device_data_t_));
+    if (device_data == NULL) {
+      printf("[fatal]   malloc : device_data %s, %u\n", acc_device_name[dev], num);
+      exit(-1);
+    }
     acc_runtime.opencl_data->devices_data[device_idx] = device_data;
 
-    device_data->context = clCreateContext(NULL, 1, &device, NULL, NULL, &status);
-    /// \todo check status
+    device_data->context = clCreateContext(NULL, 1, device, NULL, NULL, &status);
+    if (status != CL_SUCCESS || device_data->context == NULL) {
+       printf("[error]   clCreateContext : %s, %u failed\n", acc_device_name[dev], num);
+
+       free(device_data);
+       device_data = NULL;
+
+       return;
+    }
 
     /// \todo OpenCL program
+
   }
 }
 
@@ -207,7 +219,7 @@ void acc_shutdown_(acc_device_t dev, int num) {
   unsigned device_idx = first_device + num;
 
   if (acc_runtime.opencl_data->devices_data[device_idx] != NULL) {
-    /// \todo delete context and program
+    /// \todo delete OpenCL context and program
 
     free(acc_runtime.opencl_data->devices_data[device_idx]);
 
@@ -466,7 +478,36 @@ void acc_collect_ocl_devices() {
 }
 
 void acc_load_ocl_sources() {
-  
+  unsigned i;
+
+  acc_runtime.opencl_data->num_ocl_sources = 0;
+  acc_runtime.opencl_data->opencl_sources = NULL;
+
+  if (compiler_data.num_ocl_files <= 0) {
+    printf("[error]   No OpenCL source file found listed!\n");
+    return;
+  }
+
+  size_t num_ocl_sources = compiler_data.num_ocl_files + 1;
+
+  char ** opencl_sources = (char **)malloc(num_ocl_sources * sizeof(char *));
+  if (opencl_sources == NULL) {
+    perror("[fatal]   malloc: acc_runtime.opencl_data->opencl_sources");
+    exit(-1);
+  }
+
+  char ocl_rt_file[50];
+  strcpy(ocl_rt_file, compiler_data.acc_runtime_dir);
+  strcat(ocl_rt_file, "/");
+  strcat(ocl_rt_file, compiler_data.acc_runtime_ocl);
+  opencl_sources[0] = readSource(ocl_rt_file);
+
+  for (i = 1; i < num_ocl_sources; i++) {
+    opencl_sources[i] = readSource(compiler_data.opencl_files[i-1]);
+  }
+
+  acc_runtime.opencl_data->num_ocl_sources = num_ocl_sources;
+  acc_runtime.opencl_data->opencl_sources = opencl_sources;
 
   set_flag(f_ocl_sources);
 }
@@ -476,10 +517,10 @@ unsigned acc_get_platform_desc(cl_platform_id platform) {
   unsigned r;
 
   clGetPlatformInfo(platform, CL_PLATFORM_NAME, sizeof(name), name, NULL);
-  for (r = 0; r < NUM_SUPPORTED_OPENCL_PLATFORMS; r++)
+  for (r = 0; r < NUM_OPENCL_PLATFORMS; r++)
     if (strcmp(name, platforms_desc[r].ocl_name) == 0)
       break;
-  assert(r < NUM_SUPPORTED_OPENCL_PLATFORMS); /// \todo unrecognized CL_PLATFORM_NAME
+  assert(r < NUM_OPENCL_PLATFORMS); /// \todo unrecognized CL_PLATFORM_NAME
 
   return r;
 }
@@ -712,6 +753,55 @@ void acc_dbg_dump_runtime() {
 
 acc_context_t acc_create_context(acc_parallel_t region, acc_kernel_t kernel) {
   return NULL; /// \todo 
+}
+
+char* readSource(const char *sourceFilename) {
+
+   FILE *fp;
+   int err;
+   int size;
+
+   char *source;
+
+   fp = fopen(sourceFilename, "rb");
+   if(fp == NULL) {
+      printf("Could not open kernel file: %s\n", sourceFilename);
+      exit(-1);
+   }
+   
+   err = fseek(fp, 0, SEEK_END);
+   if(err != 0) {
+      printf("Error seeking to end of file\n");
+      exit(-1);
+   }
+
+   size = ftell(fp);
+   if(size < 0) {
+      printf("Error getting file position\n");
+      exit(-1);
+   }
+
+   err = fseek(fp, 0, SEEK_SET);
+   if(err != 0) {
+      printf("Error seeking to start of file\n");
+      exit(-1);
+   }
+
+   source = (char*)malloc(size+1);
+   if(source == NULL) {
+      printf("Error allocating %d bytes for the program source\n", size+1);
+      exit(-1);
+   }
+
+   err = fread(source, 1, size, fp);
+   if(err != size) {
+      printf("only read %d bytes\n", err);
+      exit(0);
+   }
+
+   source[size] = '\0';
+
+   return source;
 }
 
 /** @} */

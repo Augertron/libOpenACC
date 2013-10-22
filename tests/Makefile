@@ -1,5 +1,5 @@
 
-OPENACC_DIR?=..
+OPENACC_DIR?=../
 OPENACC_INC_DIR?=$(OPENACC_DIR)/include
 OPENACC_LIB_DIR?=$(OPENACC_DIR)/lib
 OPENACC_LIB?=$(OPENACC_LIB_DIR)/libopenacc.o
@@ -8,19 +8,22 @@ OPENCL_LIB?=-lOpenCL
 
 INCLUDES+=-I$(OPENACC_INC_DIR)
 
-LIBS+=$(OPENACC_LIB) $(OPENCL_LIB) -lstdc++
+LIBS+=$(OPENACC_LIB) $(OPENCL_LIB)
 DEPS+=$(OPENACC_LIB_DIR)/libopenacc.o
 
 CC=gcc
-CFLAGS=-g
-LD=gcc
+CFLAGS=
+LD=g++
 LDFLAGS=
 MAKE=make
 
 all: acc_init
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $? -o $@ 
+	$(CC) $(CFLAGS) $(INCLUDES) -c $? -o $@
+
+acc_compiler_data.o: acc_compiler_data.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DACC_RUNTIME_DIR=\"$(OPENACC_DIR)\" -c acc_compiler_data.c -o acc_compiler_data.o
 
 $(OPENACC_DIR)/lib/libopenacc.o:
 	$(MAKE) -C $(OPENACC_DIR)/lib/ libopenacc.o

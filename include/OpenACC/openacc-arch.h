@@ -61,9 +61,9 @@ struct platform_desc_t_ {
 };
 typedef const struct platform_desc_t_ platform_desc_t;
 
-#define NUM_SUPPORTED_OPENCL_PLATFORMS 4
+#define NUM_OPENCL_PLATFORMS 4
 
-extern platform_desc_t platforms_desc[NUM_SUPPORTED_OPENCL_PLATFORMS];
+extern platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS];
 
 extern device_type_desc_t nvidia_devices_type_desc[3];
 extern device_type_desc_t    amd_devices_type_desc[3];

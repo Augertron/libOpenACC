@@ -55,7 +55,8 @@ typedef struct acc_runtime_ocl_t_ {
 
   acc_device_data_t * devices_data;
 
-  char * opencl_source;
+  size_t num_ocl_sources;
+  char ** opencl_sources;
 
 } * acc_runtime_ocl_t;
 
