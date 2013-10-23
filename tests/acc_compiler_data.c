@@ -14,9 +14,45 @@
 # define ACC_RUNTIME_OPENCL "lib/libopenacc.cl"
 #endif
 
-const char * ocl_files[1] = {
-  "empty.cl"
+/// A "fake" generated variable used to remember the region ID (initialized by acc_init_kernel_first) ("0x00000000" would be a unique ID generated at compile time)
+size_t region_0x00000000_id;
+
+/// A "fake" generated variable used to remember the kernel ID (initialized by acc_init_kernel_first) ("0x00000000" would be a unique ID generated at compile time)
+size_t kernel_0x00000000_id;
+
+acc_compiler_data_t compiler_data = {
+  (const char * ) ACC_RUNTIME_DIR,    /* Absolute (or relative) directory for OpenACC runtime (needed to compile OpenCL C codes) */
+  (const char * ) ACC_RUNTIME_OPENCL, /* Name of the OpenCL C runtime file */
+  0, NULL, 0, NULL
 };
 
-acc_compiler_data_t compiler_data = {0, 0, 1, ocl_files , ACC_RUNTIME_DIR , ACC_RUNTIME_OPENCL };
+void acc_init_kernel_first() {
+  compiler_data.num_regions = 1;
+  compiler_data.num_kernels = 1;
+
+  compiler_data.regions = (acc_region_desc_t)malloc(compiler_data.num_regions * sizeof(struct acc_region_desc_t_));
+  if (compiler_data.regions == NULL) {
+    perror("[fatal]   malloc: region_base");
+    exit(-1);
+  }
+  compiler_data.kernels = (acc_kernel_desc_t)malloc(compiler_data.num_kernels * sizeof(struct acc_kernel_desc_t_));
+  if (compiler_data.kernels == NULL) {
+    perror("[fatal]   malloc: kernel_base");
+    exit(-1);
+  }
+
+  acc_kernel_desc_t kernel_base = compiler_data.kernels;
+  size_t kernel_cnt = 0;
+  size_t kernel_idx = 0;
+  size_t region_cnt = 0;
+
+  size_t * arg_sizes = (size_t[1]){ sizeof(unsigned long) };
+  kernel_0x00000000_id = acc_register_kernel(kernel_cnt++, kernel_idx++, "vect_add_kernel", 1, arg_sizes, 3);
+  // next kernel...
+  region_0x00000000_id = acc_register_region(region_cnt++, "vectadd.cl", 0, NULL, kernel_cnt, kernel_base);
+  kernel_base += kernel_cnt;
+  kernel_cnt = 0;
+
+  // next region...
+}
 

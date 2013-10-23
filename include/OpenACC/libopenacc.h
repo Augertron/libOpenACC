@@ -25,19 +25,25 @@
 typedef int acc_error_t;
 void acc_fail_if_error(acc_error_t);
 
-// Pointer to Data-Structure types
+typedef struct acc_region_desc_t_ * acc_region_desc_t;
+typedef struct acc_region_t_      * acc_region_t;
+typedef struct acc_kernel_desc_t_ * acc_kernel_desc_t;
+typedef struct acc_kernel_t_      * acc_kernel_t;
 
-typedef struct acc_parallel_t_ * acc_parallel_t;
-typedef struct acc_kernel_t_   * acc_kernel_t;
+struct acc_region_data_t_ {
+};
+typedef struct acc_region_data_t_ * acc_region_data_t;
 
 struct acc_device_data_t_ {
+  /// OpenCL Context for one device
   cl_context context;
-  cl_program program;
+  /// OpenCL Programs for one device for each parallel region
+  cl_program * programs;
 };
 typedef struct acc_device_data_t_ * acc_device_data_t;
 
 /// OpenACC Runtime OpenCL datas (singleton embedded into acc_runtime_t_)
-typedef struct acc_runtime_ocl_t_ {
+typedef struct acc_opencl_data_t_ {
   /// Status of the last OpenCL call. 
   cl_int status;
 
@@ -55,10 +61,10 @@ typedef struct acc_runtime_ocl_t_ {
 
   acc_device_data_t * devices_data;
 
-  size_t num_ocl_sources;
-  char ** opencl_sources;
+  char * runtime_sources;
+  char ** region_sources;
 
-} * acc_runtime_ocl_t;
+} * acc_opencl_data_t;
 
 /// OpenACC runtime global data (singleton)
 typedef struct acc_runtime_t_ {
@@ -69,11 +75,12 @@ typedef struct acc_runtime_t_ {
     f_acc_devices   = 0x0004,
 
     f_ocl_devices   = 0x0008,
-    f_ocl_sources   = 0x000F
+    f_ocl_sources   = 0x000F,
+    f_ocl_kernels   = 0x0010
   };
   uint32_t check_list;
 
-  acc_runtime_ocl_t opencl_data;
+  acc_opencl_data_t opencl_data;
 
   /// Each type of device is associated to a set of OpenCL devices
   struct {
@@ -100,75 +107,68 @@ void acc_init_once();
 // * Parallel regions *
 // ********************
 
-/// A parallel region descriptor
-struct acc_parallel_region_t_ {
+/// A parallel region
+struct acc_region_t_ {
+  size_t id;
+
   /// Number of dimension in the parallel region (currently only 1 supported by OpenACC directives)
-  unsigned num_dims;
+  size_t num_dims;
   /// Number of gang   for each dimension
-  unsigned long * num_gang;
+  size_t * num_gang;
   /// Number of worker for each dimension
-  unsigned long * num_worker;
+  size_t * num_worker;
 
   /// Vector size used for this parallel region (needed to determine workers chunk size)
-  unsigned vector_length;
+  size_t vector_length;
 };
 
-acc_parallel_t acc_build_parallel(unsigned, unsigned long *, unsigned long *, unsigned);
+acc_region_t acc_build_region(size_t id , size_t num_dims, size_t * num_gangs, size_t * num_workers, size_t vector_length);
 
-/*! \func acc_parallel_start
+/*! \func acc_region_start
  *  \param region pointer to a parallel region descriptor
  *  \return a non-zero value if an error occured
  */
-acc_error_t acc_parallel_start(acc_parallel_t region);
+acc_error_t acc_region_start(acc_region_t region);
 
-/*! \func acc_parallel_stop
+/*! \func acc_region_stop
  *  \param region pointer to a parallel region descriptor
  *  \return a non-zero value if an error occured
  */
-acc_error_t acc_parallel_stop (acc_parallel_t region);
+acc_error_t acc_region_stop (acc_region_t region);
 
 // **********************
 // * Kernel Abstraction *
 // **********************
 
 struct acc_kernel_t_ {
-  /// The kernel ID to retrieve the implementation from the runtime
-  unsigned kernel_id;
+  /// The kernel ID to retrieve the implementation (cl_kernel) from the runtime
+  size_t id;
 
-  /// scalar arguments
-  void ** scalar_arguments;
-
-  /// scalar arguments
-  unsigned * scalar_sizes;
-
-  /// number of scalar arguments
-  unsigned num_scalar_arguments;
+  /// scalar pointer
+  void ** scalar_ptrs;
 
   /// data arguments, pointers to device memory
-  d_void ** data_arguments;
-
-  /// number of data arguments
-  unsigned num_data_arguments;
+  d_void ** data_ptrs;
 };
 
 /*! \func acc_build_kernel
  *
  *  Call a function pointer indexed on kernel id. 
  *
- *  \param kernel_id ID of the kernel to be launch
+ *  \param id Unique ID of the kernel (global, not region specific)
  *  \return an OpenACC kernel descriptor, argument arrays are allocated but not initialized (need to be done before enqueuing the kernel)
  */
-acc_kernel_t acc_build_kernel(unsigned kernel_id);
+acc_kernel_t acc_build_kernel(size_t id);
 
 /*! \func acc_enqueue_kernel
  *
  *  It enqueue 'kernel' in the queue associated with 'region'
  *
- *  \param region pointer to a parallel region descriptor
- *  \param kernel pointer to a kernel descriptor
+ *  \param region the current region
+ *  \param kernel the kernel to launch
  *  \return a non-zero value if an error occured
  */
-acc_error_t acc_enqueue_kernel(acc_parallel_t region, acc_kernel_t kernel);
+acc_error_t acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel);
 
 // *********************************
 // * Debugging Interface (Printer) *

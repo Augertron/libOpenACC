@@ -17,7 +17,7 @@ LD=g++
 LDFLAGS=
 MAKE=make
 
-all: acc_init
+all: acc_init acc_kernel
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $? -o $@
@@ -37,8 +37,9 @@ acc_data: acc_data.o acc_compiler_data.o $(DEPS)
 acc_kernel: acc_kernel.o acc_compiler_data.o $(DEPS)
 	$(LD) $(LDFLAGS) $(INCLUDES) $(LIBS) acc_kernel.o acc_compiler_data.o -o acc_kernel
 
-check: acc_init
+check: acc_init acc_kernel
 	./acc_init
+	./acc_kernel
 
 clean:
 	rm -f *.o acc_init acc_data acc_kernel

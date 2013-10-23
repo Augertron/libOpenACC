@@ -13,7 +13,9 @@
  *
  */
 
-#include "OpenACC/openacc.h"
+#include "OpenACC/libopenacc.h"
+
+#include <stdio.h>
 
 #define NUM_DEVICES                    1
 #define    NUM_NVIDIA_DEVICES          0

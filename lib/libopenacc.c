@@ -12,8 +12,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <assert.h>
+
+#ifndef PRINT_BUILD_LOG
+# define PRINT_BUILD_LOG 1
+#endif
 
 acc_runtime_t acc_runtime = {0, NULL, acc_device_any, 0}; // by default, we use the first of any device
 
@@ -159,6 +164,25 @@ void acc_init(acc_device_t dev) {
     acc_init_(dev, i);
 }
 
+void print_build_log(unsigned device_idx, cl_program program, acc_device_t dev, int num) {
+  char * build_log;
+  size_t build_log_size;
+  clGetProgramBuildInfo(program, acc_runtime.opencl_data->devices[0][device_idx], CL_PROGRAM_BUILD_LOG, 0, NULL, &build_log_size);
+  if (build_log_size == 0)
+    printf("[warning] OpenCL return an empty log...\n");
+  else {
+    build_log = (char*)malloc(build_log_size);
+    if (build_log == NULL) {
+      perror("[fatal]   malloc : build_log");
+      exit(-1);
+    }
+    clGetProgramBuildInfo(program, acc_runtime.opencl_data->devices[0][device_idx], CL_PROGRAM_BUILD_LOG, build_log_size, build_log, NULL);
+    build_log[build_log_size-1] = '\0';
+    printf("Device %s %u Build Log:\n%s\n", acc_device_name[dev], num, build_log);   
+    free(build_log);
+  }
+}
+
 void acc_init_(acc_device_t dev, int num) {
   acc_init_once();
 
@@ -172,18 +196,18 @@ void acc_init_(acc_device_t dev, int num) {
   if (acc_runtime.opencl_data->devices_data[device_idx] == NULL) {
     cl_int status;
 
-    cl_device_id * device = acc_runtime.opencl_data->devices[device_idx];
+    cl_device_id * device = &(acc_runtime.opencl_data->devices[0][device_idx]);
 
     acc_device_data_t device_data = (acc_device_data_t)malloc(sizeof(struct acc_device_data_t_));
     if (device_data == NULL) {
-      printf("[fatal]   malloc : device_data %s, %u\n", acc_device_name[dev], num);
+      perror("[fatal]   malloc : device_data");
       exit(-1);
     }
     acc_runtime.opencl_data->devices_data[device_idx] = device_data;
 
     device_data->context = clCreateContext(NULL, 1, device, NULL, NULL, &status);
     if (status != CL_SUCCESS || device_data->context == NULL) {
-       printf("[error]   clCreateContext : %s, %u failed\n", acc_device_name[dev], num);
+       printf("[error]   clCreateContext : %s, %u return %u : failed\n", acc_device_name[dev], num, status);
 
        free(device_data);
        device_data = NULL;
@@ -191,8 +215,14 @@ void acc_init_(acc_device_t dev, int num) {
        return;
     }
 
-    /// \todo OpenCL program
-
+    device_data->programs = (cl_program *)malloc(compiler_data.num_regions * sizeof(cl_program));
+    if (device_data->programs == NULL) {
+      perror("[fatal]   malloc : device_data->programs");
+      exit(-1);
+    }
+    unsigned i;
+    for (i = 0; i < compiler_data.num_regions; i++)
+      device_data->programs[i] = NULL;
   }
 }
 
@@ -219,8 +249,22 @@ void acc_shutdown_(acc_device_t dev, int num) {
   unsigned device_idx = first_device + num;
 
   if (acc_runtime.opencl_data->devices_data[device_idx] != NULL) {
-    /// \todo delete OpenCL context and program
+    cl_int status;
 
+    status = clReleaseContext(acc_runtime.opencl_data->devices_data[device_idx]->context);
+    if (status != CL_SUCCESS)
+      printf("[warning] clReleaseContext : %s, %u return %u\n", acc_device_name[dev], num, status);
+    if (acc_runtime.opencl_data->devices_data[device_idx]->programs != NULL) {
+      unsigned i;
+      for (i = 0; i < compiler_data.num_regions; i++)
+        if (acc_runtime.opencl_data->devices_data[device_idx]->programs[i] != NULL) {
+          status = clReleaseProgram(acc_runtime.opencl_data->devices_data[device_idx]->programs[i]);
+          if (status != CL_SUCCESS)
+            printf("[warning] clReleaseProgram : %s, %u for region %u return %u\n", acc_device_name[dev], num, i, status);
+        }
+      free(acc_runtime.opencl_data->devices_data[device_idx]->programs);
+      acc_runtime.opencl_data->devices_data[device_idx]->programs = NULL;
+    }
     free(acc_runtime.opencl_data->devices_data[device_idx]);
 
     acc_runtime.opencl_data->devices_data[device_idx] = NULL;
@@ -360,8 +404,13 @@ void set_flag(uint32_t flag) {
 
 void acc_init_once() {
   if (!check_flag(f_alloc)) {
-    acc_runtime.opencl_data = (acc_runtime_ocl_t)malloc(sizeof(struct acc_runtime_ocl_t_));
+    acc_runtime.opencl_data = (acc_opencl_data_t)malloc(sizeof(struct acc_opencl_data_t_));
     set_flag(f_alloc);
+  }
+
+  if (!check_flag(f_ocl_kernels)) {
+    acc_init_kernel_first();
+    set_flag(f_ocl_kernels);
   }
 
   if (!check_flag(f_ocl_devices))
@@ -382,9 +431,9 @@ void acc_init_once() {
 }
 
 void acc_collect_ocl_devices() {
-  acc_runtime.opencl_data->status = clGetPlatformIDs(0, NULL, &(acc_runtime.opencl_data->num_platforms));
-  if (acc_runtime.opencl_data->status != CL_SUCCESS) {
-    printf("[error]   clGetPlatformIDs(0, NULL, &(acc_runtime.opencl_data->num_platforms)) failed\n");
+  cl_int status = clGetPlatformIDs(0, NULL, &(acc_runtime.opencl_data->num_platforms));
+  if (status != CL_SUCCESS) {
+    printf("[error]   clGetPlatformIDs return %u when looking for the number of platforms.\n", status);
     return;
   }
 
@@ -411,9 +460,9 @@ void acc_collect_ocl_devices() {
     exit(-1);
   }
 
-  acc_runtime.opencl_data->status = clGetPlatformIDs(acc_runtime.opencl_data->num_platforms, acc_runtime.opencl_data->platforms, NULL);
-  if (acc_runtime.opencl_data->status != CL_SUCCESS) {
-    printf("[error]   clGetPlatformIDs(acc_runtime.opencl_data->num_platforms, acc_runtime.opencl_data->platforms, NULL) failed\n");
+  status = clGetPlatformIDs(acc_runtime.opencl_data->num_platforms, acc_runtime.opencl_data->platforms, NULL);
+  if (status != CL_SUCCESS) {
+    printf("[error]   clGetPlatformIDs return %u when retrieving %u platforms.\n", status, acc_runtime.opencl_data->num_platforms);
     return;
   }
 
@@ -422,9 +471,9 @@ void acc_collect_ocl_devices() {
   for (i = 0; i < acc_runtime.opencl_data->num_platforms; i++) {
     const cl_platform_id platform = acc_runtime.opencl_data->platforms[i];
 
-    acc_runtime.opencl_data->status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &(acc_runtime.opencl_data->num_devices[i]));
-    if(acc_runtime.opencl_data->status != CL_SUCCESS) {
-     printf("[warning] clGetDeviceIDs(platform[%u], CL_DEVICE_TYPE_ALL, 0, NULL, acc_runtime.opencl_data->num_devices[%u]) failed [continue]\n", i, i);
+    status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, NULL, &(acc_runtime.opencl_data->num_devices[i]));
+    if(status != CL_SUCCESS) {
+     printf("[warning] clGetDeviceIDs return %u when looking for number of devices for platform %u\n", status, i);
 
      acc_runtime.opencl_data->num_devices[i] = 0;
 
@@ -445,9 +494,9 @@ void acc_collect_ocl_devices() {
     const cl_platform_id platform = acc_runtime.opencl_data->platforms[i];
 
     if (acc_runtime.opencl_data->num_devices[i] != 0) {
-      acc_runtime.opencl_data->status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, acc_runtime.opencl_data->num_devices[i], devices, NULL);
-      if (acc_runtime.opencl_data->status != CL_SUCCESS) {
-        printf("[warning] clGetDeviceIDs(platform[%u], CL_DEVICE_TYPE_ALL, acc_runtime.opencl_data->num_devices[%u], devices, NULL) failed\n", i, i);
+      status = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, acc_runtime.opencl_data->num_devices[i], devices, NULL);
+      if (status != CL_SUCCESS) {
+        printf("[warning] clGetDeviceIDs return %u when retrieving %u devices for platform %u\n", status, acc_runtime.opencl_data->num_devices[i], i);
 
         acc_runtime.opencl_data->num_devices[i] = 0;
         acc_runtime.opencl_data->devices[i] = NULL;
@@ -480,34 +529,25 @@ void acc_collect_ocl_devices() {
 void acc_load_ocl_sources() {
   unsigned i;
 
-  acc_runtime.opencl_data->num_ocl_sources = 0;
-  acc_runtime.opencl_data->opencl_sources = NULL;
-
-  if (compiler_data.num_ocl_files <= 0) {
-    printf("[error]   No OpenCL source file found listed!\n");
-    return;
-  }
-
-  size_t num_ocl_sources = compiler_data.num_ocl_files + 1;
-
-  char ** opencl_sources = (char **)malloc(num_ocl_sources * sizeof(char *));
-  if (opencl_sources == NULL) {
-    perror("[fatal]   malloc: acc_runtime.opencl_data->opencl_sources");
-    exit(-1);
-  }
-
   char ocl_rt_file[50];
   strcpy(ocl_rt_file, compiler_data.acc_runtime_dir);
   strcat(ocl_rt_file, "/");
   strcat(ocl_rt_file, compiler_data.acc_runtime_ocl);
-  opencl_sources[0] = readSource(ocl_rt_file);
+  acc_runtime.opencl_data->runtime_sources = readSource(ocl_rt_file);
 
-  for (i = 1; i < num_ocl_sources; i++) {
-    opencl_sources[i] = readSource(compiler_data.opencl_files[i-1]);
+  if (compiler_data.num_regions <= 0) {
+    printf("[error]   There is not any OpenCL region (parallel/kernel constructs) listed! Check that acc_init_kernel_first is called (and correct).\n");
+    return;
   }
 
-  acc_runtime.opencl_data->num_ocl_sources = num_ocl_sources;
-  acc_runtime.opencl_data->opencl_sources = opencl_sources;
+  acc_runtime.opencl_data->region_sources = (char **)malloc(compiler_data.num_regions * sizeof(char *));
+  if (acc_runtime.opencl_data->region_sources == NULL) {
+    perror("[fatal]   malloc: acc_runtime.opencl_data->region_sources");
+    exit(-1);
+  }
+
+  for (i = 0; i < compiler_data.num_regions; i++)
+    acc_runtime.opencl_data->region_sources[i] = readSource(compiler_data.regions[i].file);
 
   set_flag(f_ocl_sources);
 }
@@ -686,28 +726,55 @@ void acc_init_defaults() {
   acc_runtime.check_list |= f_acc_defaults;
 }
 
-acc_parallel_t acc_build_parallel(unsigned num_dims, unsigned long * num_gang, unsigned long * num_worker, unsigned num_vector) {
-  assert("NIY"); /// \todo
-  return NULL;
+acc_region_t acc_build_region(size_t id , size_t num_dims, size_t * num_gang, size_t * num_worker, size_t vector_length) {
+  acc_init_once();
+
+  acc_region_t result = (acc_region_t)malloc(sizeof(struct acc_region_t_));
+
+  result->id            = id;
+  result->num_dims      = num_dims;
+  result->num_gang      = num_gang;
+  result->num_worker    = num_worker;
+  result->vector_length = vector_length;
+
+  return result;
 }
 
-acc_error_t acc_parallel_start(acc_parallel_t region) {
-  assert("NIY"); /// \todo
+acc_error_t acc_region_start(acc_region_t region) {
+  acc_init_once();
+
+  acc_region_init(region->id, acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+
+  /// \todo acc_region_start : what else?
+
+  return 0;
+}
+
+acc_error_t acc_region_stop(acc_region_t region) {
+  acc_init_once();
+
+  /// \todo acc_region_stop : ???
+
   return -1;
 }
 
-acc_error_t acc_parallel_stop (acc_parallel_t region) {
-  assert("NIY"); /// \todo
-  return -1;
+acc_kernel_t acc_build_kernel(size_t id) {
+  acc_init_once();
+
+  acc_kernel_t result = (acc_kernel_t)malloc(sizeof(struct acc_kernel_t_));
+
+  result->id          = id;
+  result->scalar_ptrs = (  void **)malloc(compiler_data.kernels[id].num_scalars * sizeof(  void *));
+  result->data_ptrs   = (d_void **)malloc(compiler_data.kernels[id].num_datas   * sizeof(d_void *));
+
+  return result;
 }
 
-acc_kernel_t acc_build_kernel(unsigned kernel_id) {
-  assert("NIY"); /// \todo
-  return NULL;
-}
+acc_error_t acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
+  acc_init_once();
 
-acc_error_t acc_enqueue_kernel(acc_parallel_t region, acc_kernel_t kernel) {
   assert("NIY"); /// \todo
+
   return -1;
 }
 
@@ -751,11 +818,71 @@ void acc_dbg_dump_runtime() {
 
 // OpenACC internal API
 
-acc_context_t acc_create_context(acc_parallel_t region, acc_kernel_t kernel) {
+acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel) {
   return NULL; /// \todo 
 }
 
-char* readSource(const char *sourceFilename) {
+void acc_region_init(size_t region_id, acc_device_t dev, int num) {
+  unsigned first_device = acc_runtime.devices[dev].first;
+  size_t num_devices = acc_get_num_devices(dev);
+
+  assert(num >= 0 && num < num_devices);
+
+  unsigned device_idx = first_device + num;
+
+  assert(acc_runtime.opencl_data->devices_data[device_idx] != NULL);
+
+  if (acc_runtime.opencl_data->devices_data[device_idx]->programs[region_id] == NULL) {
+    cl_context * context = &(acc_runtime.opencl_data->devices_data[device_idx]->context);
+    cl_program * program = &(acc_runtime.opencl_data->devices_data[device_idx]->programs[region_id]);
+
+    cl_int status;
+
+    char * ocl_sources[2] = {
+      acc_runtime.opencl_data->runtime_sources,
+      acc_runtime.opencl_data->region_sources[region_id]
+    };
+
+    *program = clCreateProgramWithSource(
+                             *context,
+                             2,
+                             ocl_sources,
+                             NULL,
+                             &status
+                           );
+    if (status != CL_SUCCESS) {
+      printf("[fatal]   clCreateProgramWithSource : %s, %u for region %u return %u : failed\n", acc_device_name[dev], num, region_id, status);
+      exit(-1);
+    }
+
+    char build_options[1024];
+    build_options[0] = '\0';
+    strcpy(build_options, "-I");
+    strcat(build_options, compiler_data.acc_runtime_dir);
+    strcat(build_options, "/include/ ");
+    strcat(build_options, "-DOPENACC_HOST_RUNTIME_NAME=\"OpenACC for Rose Compiler\" ");
+    strcat(build_options, "-DOPENACC_HOST_RUNTIME_VERSION=201310 ");
+
+    assert(compiler_data.regions[region_id].num_options == 0 || compiler_data.regions[region_id].options != NULL);
+
+    unsigned i;
+    for (i = 0; i < compiler_data.regions[region_id].num_options; i++) {
+      strcat(build_options, compiler_data.regions[region_id].options[i]);
+      strcat(build_options, " ");
+    }
+
+    status = clBuildProgram(*program, 1, &(acc_runtime.opencl_data->devices[0][device_idx]), build_options, NULL, NULL);
+#if PRINT_BUILD_LOG
+    print_build_log(device_idx, *program, dev, num);
+#endif
+    if (status != CL_SUCCESS) {
+      printf("[fatal]   clBuildProgram : %s, %u for region %u return %u : failed\n", acc_device_name[dev], num, region_id, status);
+      exit(-1);
+    }
+  }
+}
+
+char * readSource(const char * sourceFilename) {
 
    FILE *fp;
    int err;
@@ -802,6 +929,43 @@ char* readSource(const char *sourceFilename) {
    source[size] = '\0';
 
    return source;
+}
+
+/// Called by acc_init_kernel_first for each parallel/kernel region.
+size_t acc_register_region(
+  size_t region_cnt,
+  const char * file,
+  const size_t num_options,
+  const char ** options,
+  const size_t num_kernels,
+  const acc_kernel_desc_t kernels
+) {
+  compiler_data.regions[region_cnt].id           = region_cnt;
+  compiler_data.regions[region_cnt].file         = file;
+  compiler_data.regions[region_cnt].num_options  = num_options;
+  compiler_data.regions[region_cnt].options      = options;
+  compiler_data.regions[region_cnt].num_kernels  = num_kernels;
+  compiler_data.regions[region_cnt].kernels      = kernels;
+
+  return region_cnt;
+}
+
+/// Called by acc_init_kernel_first for each kernel.
+size_t acc_register_kernel(
+  size_t kernel_cnt,
+  size_t kernel_idx,
+  const char * name,
+  const size_t num_scalars,
+  const size_t * size_scalars,
+  const size_t num_datas
+) {
+  compiler_data.kernels[kernel_idx].id           = kernel_idx;
+  compiler_data.kernels[kernel_idx].name         = name;
+  compiler_data.kernels[kernel_idx].num_scalars  = num_scalars;
+  compiler_data.kernels[kernel_idx].size_scalars = size_scalars;
+  compiler_data.kernels[kernel_idx].num_datas    = num_datas;
+
+  return kernel_idx;
 }
 
 /** @} */
