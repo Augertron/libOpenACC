@@ -10,11 +10,31 @@
 
 #include "OpenACC/libopenacc.h"
 
+#include <assert.h>
+
+#ifndef N
+# define N 16*64*1*18
+#endif
+
 // When loading libraries coded with OpenACC, we want the kernel ID to be defined dynamically (to avoid collision) ("0x00000000" is a pointer fro compilation used to create a unique name)
 extern size_t region_0x00000000_id;
 extern size_t kernel_0x00000000_id;
 
 int main() {
+  const unsigned long n = N;
+
+  float a[n];
+  float b[n];
+  float c[n];
+
+  unsigned i;
+
+  for (i = 0; i < n; i++) {
+    a[i] = rand();
+    b[i] = rand();
+    c[i] = 0.;
+  }
+
   acc_init_(acc_device_i7_3610QM, 0);
 
   unsigned long region_0_num_gang = 16;     // clause num_gang(16)
@@ -26,7 +46,19 @@ int main() {
 
   acc_region_start(region_0);
 
-  /// \todo
+    // Create a kernel descriptor
+    acc_kernel_t kernel_0 = acc_build_kernel(kernel_0x00000000_id);
+
+      // Set the scalar arg (pointer + size)
+      kernel_0->scalar_ptrs[0] = &n;
+
+      // Set data args using device pointers
+      kernel_0->data_ptrs[0] = acc_deviceptr(a);
+      kernel_0->data_ptrs[1] = acc_deviceptr(b);
+      kernel_0->data_ptrs[2] = acc_deviceptr(c);
+
+    // Enqueue the kernel for the current region
+    acc_enqueue_kernel(region_0, kernel_0);
 
   acc_region_stop(region_0);
 

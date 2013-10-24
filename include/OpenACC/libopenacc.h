@@ -20,11 +20,6 @@
 
 #include <CL/cl.h>
 
-// Errors
-
-typedef int acc_error_t;
-void acc_fail_if_error(acc_error_t);
-
 typedef struct acc_region_desc_t_ * acc_region_desc_t;
 typedef struct acc_region_t_      * acc_region_t;
 typedef struct acc_kernel_desc_t_ * acc_kernel_desc_t;
@@ -128,13 +123,13 @@ acc_region_t acc_build_region(size_t id , size_t num_dims, size_t * num_gangs, s
  *  \param region pointer to a parallel region descriptor
  *  \return a non-zero value if an error occured
  */
-acc_error_t acc_region_start(acc_region_t region);
+void acc_region_start(acc_region_t region);
 
 /*! \func acc_region_stop
  *  \param region pointer to a parallel region descriptor
  *  \return a non-zero value if an error occured
  */
-acc_error_t acc_region_stop (acc_region_t region);
+void acc_region_stop (acc_region_t region);
 
 // **********************
 // * Kernel Abstraction *
@@ -168,7 +163,7 @@ acc_kernel_t acc_build_kernel(size_t id);
  *  \param kernel the kernel to launch
  *  \return a non-zero value if an error occured
  */
-acc_error_t acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel);
+void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel);
 
 // *********************************
 // * Debugging Interface (Printer) *
