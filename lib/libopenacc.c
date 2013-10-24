@@ -44,39 +44,30 @@ const char * acc_device_name [acc_device_last] = {
   "Intel(R) XeonPhi(TM)"
 };
 
-device_type_desc_t nvidia_devices_type_desc [3] = {
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL },
-  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL }, ///< \todo NVidia GPU
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL }
-};
-
-device_type_desc_t amd_devices_type_desc [3] = {
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL },
-  { CL_DEVICE_TYPE_GPU         , acc_device_radeon  , 0, NULL }, ///< Radeon
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL }
-};
-
-device_desc_t intel_cpu_devices_desc [1] = {
+device_desc_t devices_desc [1] = {
   { "Intel(R) Core(TM) i7-3610QM CPU" , acc_device_i7_3610QM } ///< My laptop
 };
 
-device_type_desc_t intel_devices_type_desc [3] = {
-  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 1, intel_cpu_devices_desc }, ///< Core
+device_type_desc_t altera_devices_type_desc [12] = {
+  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
+  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL                   }, ///< \todo NVidia GPU
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL                   },
+  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
+  { CL_DEVICE_TYPE_GPU         , acc_device_radeon  , 0, NULL                   }, ///< Radeon
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL                   },
+  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 1, &(devices_desc[0])     }, ///< Core
   { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi , 0, NULL                   }  ///< XeonPhi
-};
-
-device_type_desc_t altera_devices_type_desc [3] = {
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL },
-  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL },
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL }
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi , 0, NULL                   }, ///< XeonPhi
+  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
+  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL                   },
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL                   }
 };
 
 platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS] = {
-  { "Nvidia",          acc_device_nvidia, 3, nvidia_devices_type_desc }, /// \todo find actual platform name for Nvidia
-  { "AMD",             acc_device_amd,    3, amd_devices_type_desc    }, /// \todo find actual platform name for AMD
-  { "Intel(R) OpenCL", acc_device_intel,  3, intel_devices_type_desc  },
-  { "Altera",          acc_device_altera, 3, altera_devices_type_desc }  /// \todo find actual platform name for Altera
+  { "Nvidia",          acc_device_nvidia, 3, &(devices_type_desc[0]) }, /// \todo find actual platform name for Nvidia
+  { "AMD",             acc_device_amd,    3, &(devices_type_desc[3]) }, /// \todo find actual platform name for AMD
+  { "Intel(R) OpenCL", acc_device_intel,  3, &(devices_type_desc[6]) },
+  { "Altera",          acc_device_altera, 3, &(devices_type_desc[9]) }  /// \todo find actual platform name for Altera
 };
 
 // OpenACC public API
@@ -117,39 +108,39 @@ int acc_get_device_num(acc_device_t dev) {
 int acc_async_test(int id) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return -1;
 }
 
 int acc_async_test_all() {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return -1;
 }
 
 void acc_async_wait(int id) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_async_wait_async(int id_wait, int id_async) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_async_wait_all() {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_async_wait_all_async(int id) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_init(acc_device_t dev) {
@@ -274,125 +265,121 @@ void acc_shutdown_(acc_device_t dev, int num) {
 int acc_on_device(acc_device_t dev) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return -1;
 }
 
 d_void * acc_malloc (size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return NULL;
 }
 
 void acc_free(d_void * dev_ptr) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void * acc_copyin(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return NULL;
 }
 
 void * acc_create(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return NULL;
 }
 
 void * acc_present_or_create(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return NULL;
 }
 
 void * acc_pcreate(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return NULL;
 }
 
 void acc_copyout(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_delete(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_update_device(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_update_self(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_map_data(h_void * host_ptr, d_void * dev_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_unmap_data(h_void * host_ptr) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 d_void * acc_deviceptr(h_void * host_ptr) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return NULL;
 }
 
 h_void * acc_hostptr(d_void * dev_ptr) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return NULL;
 }
 
 int acc_is_present(h_void * host_ptr, size_t n) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
   return -1;
 }
 
 void acc_memcpy_to_device(d_void * dest, h_void * src, size_t bytes) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 void acc_memcpy_from_device(h_void * dest, d_void * src, size_t bytes) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 }
 
 // OpenACC private API
-
-void acc_fail_if_error(acc_error_t err) {
-  assert("NIY"); /// \todo
-}
 
 int check_flag(uint32_t flag) {
   return (acc_runtime.check_list & flag) == flag;
@@ -740,7 +727,7 @@ acc_region_t acc_build_region(size_t id , size_t num_dims, size_t * num_gang, si
   return result;
 }
 
-acc_error_t acc_region_start(acc_region_t region) {
+void acc_region_start(acc_region_t region) {
   acc_init_once();
 
   acc_region_init(region->id, acc_runtime.curr_device_type, acc_runtime.curr_device_num);
@@ -750,7 +737,7 @@ acc_error_t acc_region_start(acc_region_t region) {
   return 0;
 }
 
-acc_error_t acc_region_stop(acc_region_t region) {
+void acc_region_stop(acc_region_t region) {
   acc_init_once();
 
   /// \todo acc_region_stop : ???
@@ -770,10 +757,10 @@ acc_kernel_t acc_build_kernel(size_t id) {
   return result;
 }
 
-acc_error_t acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
+void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
   acc_init_once();
 
-  assert("NIY"); /// \todo
+  assert(!"NIY"); /// \todo
 
   return -1;
 }
