@@ -49,14 +49,6 @@ int main() {
     // Create a kernel descriptor
     acc_kernel_t kernel_0 = acc_build_kernel(kernel_0x00000000_id);
 
-      // Set the scalar arg (pointer + size)
-      kernel_0->scalar_ptrs[0] = &n;
-
-      // Set data args using device pointers
-      kernel_0->data_ptrs[0] = acc_deviceptr(a);
-      kernel_0->data_ptrs[1] = acc_deviceptr(b);
-      kernel_0->data_ptrs[2] = acc_deviceptr(c);
-
     // Enqueue the kernel for the current region
     acc_enqueue_kernel(region_0, kernel_0);
 
