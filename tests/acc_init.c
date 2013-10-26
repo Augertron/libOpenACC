@@ -17,16 +17,6 @@
 
 #include <stdio.h>
 
-#define NUM_DEVICES                    1
-#define    NUM_NVIDIA_DEVICES          0
-#define    NUM_AMD_DEVICES             0
-#define       NUM_RADEON_DEVICES       0
-#define    NUM_INTEL_DEVICES           1
-#define       NUM_CORE_DEVICES         1
-#define          NUM_I7_3610QM_DEVICES 1
-#define       NUM_XEONPHI_DEVICES      0
-#define    NUM_ALTERA_DEVICES          0
-
 int main() {
   acc_init_once();
 
@@ -40,44 +30,36 @@ int main() {
   printf("\n*********************\n\nCheck present devices:\n\n");
 
   num = acc_get_num_devices(acc_device_any);
-  printf("  acc_get_num_devices(acc_device_any)       = %u (exp. %u).\n", num, NUM_DEVICES);
-  success += (num == NUM_DEVICES);
+  printf("  acc_get_num_devices(acc_device_any)       = %u\n", num);
 
   num = acc_get_num_devices(acc_device_nvidia);
-  printf("  acc_get_num_devices(acc_device_nvidia)    = %u (exp. %u).\n", num, NUM_NVIDIA_DEVICES);
-  success += (num == NUM_NVIDIA_DEVICES);
+  printf("  acc_get_num_devices(acc_device_nvidia)    = %u\n", num);
 
   num = acc_get_num_devices(acc_device_amd);
-  printf("  acc_get_num_devices(acc_device_amd)       = %u (exp. %u).\n", num, NUM_AMD_DEVICES);
-  success += (num == NUM_AMD_DEVICES);
+  printf("  acc_get_num_devices(acc_device_amd)       = %u\n", num);
 
   num = acc_get_num_devices(acc_device_radeon);
-  printf("  acc_get_num_devices(acc_device_radeon)    = %u (exp. %u).\n", num, NUM_RADEON_DEVICES);
-  success += (num == NUM_RADEON_DEVICES);
+  printf("  acc_get_num_devices(acc_device_radeon)    = %u\n", num);
 
   num = acc_get_num_devices(acc_device_intel);
-  printf("  acc_get_num_devices(acc_device_intel)     = %u (exp. %u).\n", num, NUM_INTEL_DEVICES);
-  success += (num == NUM_INTEL_DEVICES);
+  printf("  acc_get_num_devices(acc_device_intel)     = %u\n", num);
 
   num = acc_get_num_devices(acc_device_core);
-  printf("  acc_get_num_devices(acc_device_core)      = %u (exp. %u).\n", num, NUM_CORE_DEVICES);
-  success += (num == NUM_CORE_DEVICES);
+  printf("  acc_get_num_devices(acc_device_core)      = %u\n", num);
 
   num = acc_get_num_devices(acc_device_i7_3610QM);
-  printf("  acc_get_num_devices(acc_device_i7_3610QM) = %u (exp. %u).\n", num, NUM_I7_3610QM_DEVICES);
-  success += (num == NUM_CORE_DEVICES);
+  printf("  acc_get_num_devices(acc_device_i7_3610QM) = %u\n", num);
+
+  num = acc_get_num_devices(acc_device_i7_950);
+  printf("  acc_get_num_devices(acc_device_i7_950)    = %u\n", num);
 
   num = acc_get_num_devices(acc_device_xeonphi);
-  printf("  acc_get_num_devices(acc_device_xeonphi)   = %u (exp. %u).\n", num, NUM_XEONPHI_DEVICES);
-  success += (num == NUM_XEONPHI_DEVICES);
+  printf("  acc_get_num_devices(acc_device_xeonphi)   = %u\n", num);
 
   num = acc_get_num_devices(acc_device_altera);
-  printf("  acc_get_num_devices(acc_device_altera)    = %u (exp. %u).\n", num, NUM_ALTERA_DEVICES);
-  success += (num == NUM_ALTERA_DEVICES);
+  printf("  acc_get_num_devices(acc_device_altera)    = %u\n", num);
 
   printf("\n%u successful API call out of 9\n\n*********************\n", success);
-
-  if (success != 9) return 1;
 
   acc_init(acc_device_any); // Initializes every devices
 

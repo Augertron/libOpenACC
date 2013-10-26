@@ -24,7 +24,8 @@ typedef enum acc_device_e {
     acc_device_radeon,          ///<   Radeon \todo list model
   acc_device_intel,             ///< Intel devices
     acc_device_core,            ///<   Intel Core Processor \todo list models
-      acc_device_i7_3610QM,     ///<     Intel(R) Core(TM) i7-3610QM CPU (My laptop)
+      acc_device_i7_3610QM,     ///<     Intel(R) Core(TM) i7-3610QM CPU
+      acc_device_i7_950,        ///<     Intel(R) Core(TM) i7 950 CPU
     acc_device_xeonphi,         ///<   Intel Xeon Processor \todo list models
   acc_device_altera,            ///< Altera devices \todo list type/model
   acc_device_last
@@ -65,12 +66,9 @@ typedef const struct platform_desc_t_ platform_desc_t;
 
 extern platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS];
 
-extern device_type_desc_t nvidia_devices_type_desc[3];
-extern device_type_desc_t    amd_devices_type_desc[3];
-extern device_type_desc_t  intel_devices_type_desc[3];
-extern device_type_desc_t altera_devices_type_desc[3];
+extern device_type_desc_t devices_type_desc[12];
 
-extern device_desc_t intel_cpu_devices_desc[1];
+extern device_desc_t devices_desc[2];
 
 #endif /* __OPENACC_ARCH_H__ */ /** @} */
 

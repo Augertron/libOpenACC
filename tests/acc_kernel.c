@@ -35,7 +35,7 @@ int main() {
     c[i] = 0.;
   }
 
-  acc_init_(acc_device_i7_3610QM, 0);
+  acc_init_(acc_device_any, 0);
 
   unsigned long region_0_num_gang = 16;     // clause num_gang(16)
   unsigned long region_0_num_worker = 64;   // clause num_worker(64)

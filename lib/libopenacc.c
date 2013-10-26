@@ -30,6 +30,7 @@ const char * acc_device_env_name [acc_device_last] = {
   "INTEL",
   "CORE",
   "I7-3610QM",
+  "I7-950",
   "XEONPHI"
 };
 
@@ -41,21 +42,23 @@ const char * acc_device_name [acc_device_last] = {
   "Intel(R)",
   "Intel(R) Core(TM)",
   "Intel(R) Core(TM) i7-3610QM CPU",
+  "Intel(R) Core(TM) i7 CPU         950",
   "Intel(R) XeonPhi(TM)"
 };
 
-device_desc_t devices_desc [1] = {
-  { "Intel(R) Core(TM) i7-3610QM CPU" , acc_device_i7_3610QM } ///< My laptop
+device_desc_t devices_desc [2] = {
+  { "Intel(R) Core(TM) i7-3610QM CPU"      , acc_device_i7_3610QM },
+  { "Intel(R) Core(TM) i7 CPU         950" , acc_device_i7_950    }
 };
 
-device_type_desc_t altera_devices_type_desc [12] = {
+device_type_desc_t devices_type_desc [12] = {
   { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
   { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL                   }, ///< \todo NVidia GPU
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL                   },
   { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
   { CL_DEVICE_TYPE_GPU         , acc_device_radeon  , 0, NULL                   }, ///< Radeon
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 1, &(devices_desc[0])     }, ///< Core
+  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 2, &(devices_desc[0])     }, ///< Core
   { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL                   },
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi , 0, NULL                   }, ///< XeonPhi
   { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
@@ -573,7 +576,10 @@ unsigned acc_get_device_desc(cl_device_id device, unsigned r, unsigned s) {
   for (t = 0; t < platforms_desc[r].devices_type_desc[s].num_devices; t++)
     if (strstr(name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name) != NULL)
       break;
-  assert(t < platforms_desc[r].devices_type_desc[s].num_devices); /// \todo unrecognized CL_DEVICE_NAME
+  if (t == platforms_desc[r].devices_type_desc[s].num_devices) {
+    printf("[fatal]   Unrecognized OpenCL Device : %s.\n", name);
+    exit(-1);
+  }
 
   return t;
 }
