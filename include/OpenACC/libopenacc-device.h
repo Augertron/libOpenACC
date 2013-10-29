@@ -18,52 +18,17 @@
 
 #include "OpenACC/libopenacc-host-to-device.h"
 
-/*!
- *  \param[ctx] an OpenACC Context stored in constant memory. It is provided by the host when calling the kernel.
- *  \return true if the current thread should run in Gang Partitionned mode 
- */
-int acc_GP_mode(__constant struct acc_context_t_ * ctx);
+size_t acc_gang_id(__constant struct acc_context_t_ * ctx);
+size_t acc_worker_id(__constant struct acc_context_t_ * ctx);
+
+size_t acc_gang_size(__constant struct acc_context_t_ * ctx);
+size_t acc_worker_size(__constant struct acc_context_t_ * ctx);
 
 /*!
  *  \param[ctx] an OpenACC Context stored in constant memory. It is provided by the host when calling the kernel.
- *  \return true if the current thread should run in Worker Partitionned mode 
+ *  \return true if the calling Worker is active
  */
-int acc_WP_mode(__constant struct acc_context_t_ * ctx);
-
-/*!
- *  \param[ctx] an OpenACC Context stored in constant memory. It is provided by the host when calling the kernel.
- *  \return true if the current thread should run in Vector Partitionned mode 
- */
-int acc_VP_mode(__constant struct acc_context_t_ * ctx);
-
-
-/*!
- *  \param[ctx] an OpenACC Context stored in constant memory. It is provided by the host when calling the kernel. 
- *  \param[loop_id] a unique loop_id identiying the loop in 'ctx'
- *  \param[tile_level] each loop in a parallel region is (virtually) tiled in 7 levels. 3 are used for Gang, Worker, and Vector. \
-                       The remaining 4 can be left with iterations to execute.
- *  \return true if the current thread should run in Vector Partitionned mode 
- */
-acc_loop_bounds_t acc_loop_bounds(__constant struct acc_context_t_ * ctx, unsigned loop_id, unsigned tile_level);
-
-/*!
- *  \param[ctx] an OpenACC Context stored in constant memory. It is provided by the host when calling the kernel.
- *  \param[loop_id] a unique loop_id identiying the loop in 'ctx'
- *  \param[tile_level] each loop in a parallel region is (virtually) tiled in 7 levels. 3 are used for Gang, Worker, and Vector. \
-                       The remaining 4 can be left with iterations to execute.
- *  \param[i] current iteration of the tile 
- *  \return true if the current thread should run in Vector Partitionned mode 
- */
-unsigned long acc_loop_iteration(__constant struct acc_context_t_ * ctx, unsigned loop_id, unsigned long tile_0, unsigned long tile_1, unsigned long tile_2, unsigned long tile_3);
-
-/*!
- *  \param[ctx] an OpenACC Context stored in constant memory. It is provided by the host when calling the kernel.
- *  \param[loop_id] a unique loop_id identiying the loop in 'ctx'
- *  \param[tile_level] each loop in a parallel region is (virtually) tiled in 7 levels. 3 are used for Gang, Worker, and Vector. \
-                       The remaining 4 can be left with iterations to execute.
- *  \return true if the loop 'loop_id' have is not tiled at level 'tile_level'
- */
-int acc_loop_no_tile(__constant struct acc_context_t_ * ctx, unsigned loop_id, unsigned tile_level);
+int acc_WS_mode(__constant struct acc_context_t_ * ctx);
 
 #endif /* __LIB_OPENACC_DEVICE_H__ */ /** }@ */
 

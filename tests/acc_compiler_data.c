@@ -14,45 +14,43 @@
 # define ACC_RUNTIME_OPENCL "lib/libopenacc.cl"
 #endif
 
-/// A "fake" generated variable used to remember the region ID (initialized by acc_init_kernel_first) ("0x00000000" would be a unique ID generated at compile time)
-size_t region_0x00000000_id;
+struct acc_kernel_version_t_ kernel_0x00000000_default = {
+  0, 0, 0, NULL, ""
+};
 
-/// A "fake" generated variable used to remember the kernel ID (initialized by acc_init_kernel_first) ("0x00000000" would be a unique ID generated at compile time)
-size_t kernel_0x00000000_id;
+struct { unsigned long strides[4]; } kernel_0x00000000_v1_tiling[1] = {
+  (unsigned long [4]){1,1,0,1}
+};
+
+struct acc_kernel_version_t_ kernel_0x00000000_v1 = {
+  0, 0, 1, kernel_0x00000000_v1_tiling, "_gang_worker_tile_2"
+};
+
+acc_kernel_version_t kernel_0x00000000_versions[2] = { &kernel_0x00000000_default , &kernel_0x00000000_v1 };
+
+struct acc_kernel_desc_t_ kernel_0x00000000_desc = {
+  0,
+  "vect_add_kernel",
+  0, NULL,
+  3,
+  1,
+  2, kernel_0x00000000_versions
+};
+
+acc_kernel_desc_t region_0x00000000_kernels[1] = { &kernel_0x00000000_desc };
+
+struct acc_region_desc_t_ region_0x00000000_desc = {
+  0,
+  "vectadd.cl",
+  0, NULL,
+  1, region_0x00000000_kernels
+};
+
+acc_region_desc_t regions[1] = { &region_0x00000000_desc };
 
 acc_compiler_data_t compiler_data = {
   (const char * ) ACC_RUNTIME_DIR,    /* Absolute (or relative) directory for OpenACC runtime (needed to compile OpenCL C codes) */
   (const char * ) ACC_RUNTIME_OPENCL, /* Name of the OpenCL C runtime file */
-  0, NULL, 0, NULL
+  1, regions
 };
-
-void acc_init_kernel_first() {
-  compiler_data.num_regions = 1;
-  compiler_data.num_kernels = 1;
-
-  compiler_data.regions = (acc_region_desc_t)malloc(compiler_data.num_regions * sizeof(struct acc_region_desc_t_));
-  if (compiler_data.regions == NULL) {
-    perror("[fatal]   malloc: region_base");
-    exit(-1);
-  }
-  compiler_data.kernels = (acc_kernel_desc_t)malloc(compiler_data.num_kernels * sizeof(struct acc_kernel_desc_t_));
-  if (compiler_data.kernels == NULL) {
-    perror("[fatal]   malloc: kernel_base");
-    exit(-1);
-  }
-
-  acc_kernel_desc_t kernel_base = compiler_data.kernels;
-  size_t kernel_cnt = 0;
-  size_t kernel_idx = 0;
-  size_t region_cnt = 0;
-
-  size_t * arg_sizes = (size_t[1]){ sizeof(unsigned long) };
-  kernel_0x00000000_id = acc_register_kernel(kernel_cnt++, kernel_idx++, "vect_add_kernel", 1, arg_sizes, 3);
-  // next kernel...
-  region_0x00000000_id = acc_register_region(region_cnt++, "vectadd.cl", 0, NULL, kernel_cnt, kernel_base);
-  kernel_base += kernel_cnt;
-  kernel_cnt = 0;
-
-  // next region...
-}
 

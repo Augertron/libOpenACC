@@ -25,10 +25,6 @@ typedef struct acc_region_t_      * acc_region_t;
 typedef struct acc_kernel_desc_t_ * acc_kernel_desc_t;
 typedef struct acc_kernel_t_      * acc_kernel_t;
 
-struct acc_region_data_t_ {
-};
-typedef struct acc_region_data_t_ * acc_region_data_t;
-
 struct acc_device_data_t_ {
   /// OpenCL Context for one device
   cl_context context;
@@ -104,7 +100,8 @@ void acc_init_once();
 
 /// A parallel region
 struct acc_region_t_ {
-  size_t id;
+  /// Pointer to region descriptor
+  acc_region_desc_t desc;
 
   /// Number of dimension in the parallel region (currently only 1 supported by OpenACC directives)
   size_t num_dims;
@@ -117,7 +114,7 @@ struct acc_region_t_ {
   size_t vector_length;
 };
 
-acc_region_t acc_build_region(size_t id , size_t num_dims, size_t * num_gangs, size_t * num_workers, size_t vector_length);
+acc_region_t acc_build_region(acc_region_desc_t region, size_t num_dims, size_t * num_gangs, size_t * num_workers, size_t vector_length);
 
 /*! \func acc_region_start
  *  \param region pointer to a parallel region descriptor
@@ -135,15 +132,25 @@ void acc_region_stop (acc_region_t region);
 // * Kernel Abstraction *
 // **********************
 
+struct acc_kernel_loop_t_ {
+  long lower;
+  long upper;
+  int stride;
+};
+typedef struct acc_kernel_loop_t_ * acc_kernel_loop_t;
+
 struct acc_kernel_t_ {
-  /// The kernel ID to retrieve the implementation (cl_kernel) from the runtime
-  size_t id;
+  /// Pointer to kernel descriptor
+  acc_kernel_desc_t desc;
 
   /// scalar pointer
   void ** scalar_ptrs;
 
   /// data arguments, pointers to device memory
   d_void ** data_ptrs;
+
+  /// Loops descriptor for dynamically defined bounds and strides
+  acc_kernel_loop_t * loops;
 };
 
 /*! \func acc_build_kernel
@@ -153,7 +160,7 @@ struct acc_kernel_t_ {
  *  \param id Unique ID of the kernel (global, not region specific)
  *  \return an OpenACC kernel descriptor, argument arrays are allocated but not initialized (need to be done before enqueuing the kernel)
  */
-acc_kernel_t acc_build_kernel(size_t id);
+acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel);
 
 /*! \func acc_enqueue_kernel
  *

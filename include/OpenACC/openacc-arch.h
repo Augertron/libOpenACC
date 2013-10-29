@@ -35,6 +35,15 @@ extern const char * acc_device_env_name [acc_device_last];
 
 extern const char * acc_device_name [acc_device_last];
 
+struct acc_device_defaults_t_ { 
+  unsigned long num_gang;
+  unsigned long num_worker;
+  unsigned long vector_length;
+};
+typedef const struct acc_device_defaults_t_ acc_device_defaults_t;
+
+extern acc_device_defaults_t acc_device_defaults [acc_device_last];
+
 struct device_desc_t_ {
   const char * ocl_name; ///< Name of a specific model of CPU/GPU/Accelerator (can be partial)
 

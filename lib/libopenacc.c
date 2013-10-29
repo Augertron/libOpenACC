@@ -42,8 +42,20 @@ const char * acc_device_name [acc_device_last] = {
   "Intel(R)",
   "Intel(R) Core(TM)",
   "Intel(R) Core(TM) i7-3610QM CPU",
-  "Intel(R) Core(TM) i7 CPU         950",
+  "Intel(R) Core(TM) i7 CPU 950",
   "Intel(R) XeonPhi(TM)"
+};
+
+acc_device_defaults_t acc_device_defaults [acc_device_last] = {
+  { 0, 0, 0 },
+  { 0, 0, 0 },
+  { 0, 0, 0 },
+  { 0, 0, 0 },
+  { 0, 0, 0 },
+  { 0, 0, 0 },
+  { 0, 0, 0 },
+  { 0, 0, 0 },
+  { 0, 0, 0 }
 };
 
 device_desc_t devices_desc [2] = {
@@ -52,18 +64,18 @@ device_desc_t devices_desc [2] = {
 };
 
 device_type_desc_t devices_type_desc [12] = {
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL                   }, ///< \todo NVidia GPU
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_GPU         , acc_device_radeon  , 0, NULL                   }, ///< Radeon
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 2, &(devices_desc[0])     }, ///< Core
-  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi , 0, NULL                   }, ///< XeonPhi
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL                   },
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL                   }
+  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
+  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL               }, ///< \todo NVidia GPU
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               },
+  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
+  { CL_DEVICE_TYPE_GPU         , acc_device_radeon  , 0, NULL               }, ///< Radeon
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               },
+  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 2, &(devices_desc[0]) }, ///< Core
+  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL               },
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi , 0, NULL               }, ///< XeonPhi
+  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
+  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL               },
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               }
 };
 
 platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS] = {
@@ -397,12 +409,12 @@ void acc_init_once() {
     acc_runtime.opencl_data = (acc_opencl_data_t)malloc(sizeof(struct acc_opencl_data_t_));
     set_flag(f_alloc);
   }
-
+/*
   if (!check_flag(f_ocl_kernels)) {
     acc_init_kernel_first();
     set_flag(f_ocl_kernels);
   }
-
+*/
   if (!check_flag(f_ocl_devices))
     acc_collect_ocl_devices();
   assert(check_flag(f_ocl_devices));
@@ -537,7 +549,7 @@ void acc_load_ocl_sources() {
   }
 
   for (i = 0; i < compiler_data.num_regions; i++)
-    acc_runtime.opencl_data->region_sources[i] = readSource(compiler_data.regions[i].file);
+    acc_runtime.opencl_data->region_sources[i] = readSource(compiler_data.regions[i]->file);
 
   set_flag(f_ocl_sources);
 }
@@ -719,12 +731,12 @@ void acc_init_defaults() {
   acc_runtime.check_list |= f_acc_defaults;
 }
 
-acc_region_t acc_build_region(size_t id , size_t num_dims, size_t * num_gang, size_t * num_worker, size_t vector_length) {
+acc_region_t acc_build_region(acc_region_desc_t region, size_t num_dims, size_t * num_gang, size_t * num_worker, size_t vector_length) {
   acc_init_once();
 
   acc_region_t result = (acc_region_t)malloc(sizeof(struct acc_region_t_));
 
-  result->id            = id;
+  result->desc          = region;
   result->num_dims      = num_dims;
   result->num_gang      = num_gang;
   result->num_worker    = num_worker;
@@ -736,29 +748,30 @@ acc_region_t acc_build_region(size_t id , size_t num_dims, size_t * num_gang, si
 void acc_region_start(acc_region_t region) {
   acc_init_once();
 
-  acc_region_init(region->id, acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+  acc_region_init(region->desc->id, acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+
+  acc_get_region_defaults(region, acc_runtime.curr_device_type);
 
   /// \todo acc_region_start : what else?
-
-  return 0;
 }
 
 void acc_region_stop(acc_region_t region) {
   acc_init_once();
 
   /// \todo acc_region_stop : ???
-
-  return -1;
 }
 
-acc_kernel_t acc_build_kernel(size_t id) {
+acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
   acc_init_once();
 
   acc_kernel_t result = (acc_kernel_t)malloc(sizeof(struct acc_kernel_t_));
 
-  result->id          = id;
-  result->scalar_ptrs = (  void **)malloc(compiler_data.kernels[id].num_scalars * sizeof(  void *));
-  result->data_ptrs   = (d_void **)malloc(compiler_data.kernels[id].num_datas   * sizeof(d_void *));
+  result->desc = kernel;
+
+  result->scalar_ptrs = (  void **)malloc(kernel->num_scalars * sizeof(  void *));
+  result->data_ptrs   = (d_void **)malloc(kernel->num_datas   * sizeof(d_void *));
+
+  result->loops = (acc_kernel_loop_t)malloc(kernel->num_loops * sizeof(struct acc_kernel_loop_t_));
 
   return result;
 }
@@ -766,9 +779,42 @@ acc_kernel_t acc_build_kernel(size_t id) {
 void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
   acc_init_once();
 
-  assert(!"NIY"); /// \todo
+  assert(region->num_gang > 0 && region->num_worker > 0 && region->vector_length > 0);
 
-  return -1;
+  assert(kernel->loops[0]->stride == 1); /// \todo currently only support loops with positive unit stride
+
+  unsigned best_matching_version = 0; // version #0 is always the generic (default) version 
+  unsigned best_matching_score = 0;
+  unsigned i;
+  for (i = 1; i < kernel->desc->num_versions; i++) {
+    if (    ( kernel->desc->versions[i]->num_gang == 0      || kernel->desc->versions[i]->num_gang      == region->num_gang      )
+         && ( kernel->desc->versions[i]->num_worker == 0    || kernel->desc->versions[i]->num_worker    == region->num_worker    )
+         && ( kernel->desc->versions[i]->vector_length == 0 || kernel->desc->versions[i]->vector_length == region->vector_length )
+    ) {
+      unsigned score = 0;
+      if (kernel->desc->versions[i]->num_gang      == region->num_gang     ) score++;
+      if (kernel->desc->versions[i]->num_worker    == region->num_worker   ) score++;
+      if (kernel->desc->versions[i]->vector_length == region->vector_length) score++;
+
+      if (kernel->desc->versions[i]->loops_tiling != NULL) {
+        /// \todo check that tilling is compatible...
+        /// \todo tile matching/scoring
+      }
+
+      if (score >= best_matching_score) {
+        best_matching_version = i;
+        best_matching_score = score;
+      }
+    }
+  }
+
+  char * version_suffix = kernel->desc->versions[best_matching_version]->suffix;
+
+  char * kernel_name = (char *)malloc((strlen(kernel->desc->name) + strlen(version_suffix) + 1) * sizeof(char));
+  strcpy(kernel_name, kernel->desc->name);
+  strcat(kernel_name, version_suffix);
+
+  assert(!"NIY"); /// \todo
 }
 
 void acc_dbg_dump_runtime() {
@@ -856,11 +902,11 @@ void acc_region_init(size_t region_id, acc_device_t dev, int num) {
     strcat(build_options, "-DOPENACC_HOST_RUNTIME_NAME=\"OpenACC for Rose Compiler\" ");
     strcat(build_options, "-DOPENACC_HOST_RUNTIME_VERSION=201310 ");
 
-    assert(compiler_data.regions[region_id].num_options == 0 || compiler_data.regions[region_id].options != NULL);
+    assert(compiler_data.regions[region_id]->num_options == 0 || compiler_data.regions[region_id]->options != NULL);
 
     unsigned i;
-    for (i = 0; i < compiler_data.regions[region_id].num_options; i++) {
-      strcat(build_options, compiler_data.regions[region_id].options[i]);
+    for (i = 0; i < compiler_data.regions[region_id]->num_options; i++) {
+      strcat(build_options, compiler_data.regions[region_id]->options[i]);
       strcat(build_options, " ");
     }
 
@@ -872,6 +918,18 @@ void acc_region_init(size_t region_id, acc_device_t dev, int num) {
       printf("[fatal]   clBuildProgram : %s, %u for region %u return %u : failed\n", acc_device_name[dev], num, region_id, status);
       exit(-1);
     }
+  }
+}
+
+void acc_get_region_defaults(acc_region_t region, acc_device_t dev) {
+  if (region->num_gang == 0) {
+    region->num_gang = acc_device_defaults[dev].num_gang;
+  }
+  if (region->num_worker == 0) {
+    region->num_worker = acc_device_defaults[dev].num_worker;
+  }
+  if (region->vector_length == 0) {
+    region->vector_length = acc_device_defaults[dev].vector_length;
   }
 }
 
@@ -922,43 +980,6 @@ char * readSource(const char * sourceFilename) {
    source[size] = '\0';
 
    return source;
-}
-
-/// Called by acc_init_kernel_first for each parallel/kernel region.
-size_t acc_register_region(
-  size_t region_cnt,
-  const char * file,
-  const size_t num_options,
-  const char ** options,
-  const size_t num_kernels,
-  const acc_kernel_desc_t kernels
-) {
-  compiler_data.regions[region_cnt].id           = region_cnt;
-  compiler_data.regions[region_cnt].file         = file;
-  compiler_data.regions[region_cnt].num_options  = num_options;
-  compiler_data.regions[region_cnt].options      = options;
-  compiler_data.regions[region_cnt].num_kernels  = num_kernels;
-  compiler_data.regions[region_cnt].kernels      = kernels;
-
-  return region_cnt;
-}
-
-/// Called by acc_init_kernel_first for each kernel.
-size_t acc_register_kernel(
-  size_t kernel_cnt,
-  size_t kernel_idx,
-  const char * name,
-  const size_t num_scalars,
-  const size_t * size_scalars,
-  const size_t num_datas
-) {
-  compiler_data.kernels[kernel_idx].id           = kernel_idx;
-  compiler_data.kernels[kernel_idx].name         = name;
-  compiler_data.kernels[kernel_idx].num_scalars  = num_scalars;
-  compiler_data.kernels[kernel_idx].size_scalars = size_scalars;
-  compiler_data.kernels[kernel_idx].num_datas    = num_datas;
-
-  return kernel_idx;
 }
 
 /** @} */
