@@ -2,15 +2,26 @@
  * \addtogroup grp_libopenacc_api_h2d Host to Device Communication
  * @{
  * 
- * \file libopenacc-host-to-device.h
+ * \file OpenACC/device/host-context.h
  *
  * \author Tristan Vanderbruggen
- * \date 09/2013
+ * \date 10/31/2013
  *
  */
 
-#ifndef __LIB_OPENACC_HOST_TO_DEVICE_RUNTIME_H__
-#define __LIB_OPENACC_HOST_TO_DEVICE_RUNTIME_H__
+#ifndef LIBOPENACC_INTERNAL_H2D
+#define LIBOPENACC_INTERNAL_H2D 20131031
+
+#include "OpenACC/private/loop.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct acc_kernel_loop_t_ {
+  struct acc_loop_desc_t_ original;
+  struct acc_loop_desc_t_ tiles[4];
+};
 
 /*!
  *  This structure build by the host and transfered to the device's constant memory. 
@@ -20,7 +31,7 @@
  *  \todo only support 1d worksize
  *  \todo only support increasing loops (however // loops can be reversed)
  */
-typedef struct acc_context_t_ {
+struct acc_context_t_ {
    /// Number of Gang associated with the current parallel construct. Unused: number of gangs == number of workgroups.
    unsigned long num_gang;
    /// Number of Worker associated with the current parallel construct. Unused: number of gangs == number of workgroups.
@@ -38,12 +49,14 @@ typedef struct acc_context_t_ {
     *      - the 4 remaining levels are placed in the kernel surrounding the vector
     *  Inclusive bounds
     */
-   struct {
-     unsigned long strides[4];
-     long lower;
-     long upper;
-   } loops[];
-} * acc_context_t;
+   struct acc_kernel_loop_t_ loops[];
+};
 
-#endif /* __LIB_OPENACC_HOST_TO_DEVICE_RUNTIME_H__ */ /** @} */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* LIBOPENACC_INTERNAL_H2D */
+
+/** @} */
 

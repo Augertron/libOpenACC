@@ -13,7 +13,9 @@
  *
  */
 
-#include "OpenACC/libopenacc.h"
+#include "OpenACC/openacc.h"
+#include "OpenACC/private/init.h"
+#include "OpenACC/private/debug.h"
 
 #include <stdio.h>
 

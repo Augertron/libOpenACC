@@ -9,10 +9,14 @@
  *
  */
 
-#ifndef __OPENACC_ARCH_H__
-#define __OPENACC_ARCH_H__
+#ifndef OPENACC_PUBLIC_ARCH
+#define OPENACC_PUBLIC_ARCH 20131031
 
 #include <CL/cl.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Represent a type of accelerator (the API says "a value to tell [..] what type of device" API 2.0 at 3.2.3)
  * \note Added a target language on another "dimension". It is just an idea (not used for now)
@@ -31,10 +35,13 @@ typedef enum acc_device_e {
   acc_device_last
 } acc_device_t;
 
+/// List of environment names for the different supported devices
 extern const char * acc_device_env_name [acc_device_last];
 
+/// Listing name for the different devices (for printing)
 extern const char * acc_device_name [acc_device_last];
 
+/// Default number of Gang, Worker, and Vector
 struct acc_device_defaults_t_ { 
   unsigned long num_gang;
   unsigned long num_worker;
@@ -42,8 +49,10 @@ struct acc_device_defaults_t_ {
 };
 typedef const struct acc_device_defaults_t_ acc_device_defaults_t;
 
+/// List of default number of Gang, Worker, and Vector for each supported device.
 extern acc_device_defaults_t acc_device_defaults [acc_device_last];
 
+/// Descriptor for a specific device 
 struct device_desc_t_ {
   const char * ocl_name; ///< Name of a specific model of CPU/GPU/Accelerator (can be partial)
 
@@ -51,6 +60,7 @@ struct device_desc_t_ {
 };
 typedef const struct device_desc_t_ device_desc_t;
 
+/// Descriptor for a type of device in a given platform
 struct device_type_desc_t_ {
   cl_device_type ocl_device_type; ///< The type of device in OpenCL classification
 
@@ -61,6 +71,7 @@ struct device_type_desc_t_ {
 };
 typedef const struct device_type_desc_t_ device_type_desc_t;
 
+/// Descriptor of a vendor platform
 struct platform_desc_t_ {
   const char * ocl_name;
 
@@ -73,11 +84,20 @@ typedef const struct platform_desc_t_ platform_desc_t;
 
 #define NUM_OPENCL_PLATFORMS 4
 
+/// List of supported platforms
 extern platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS];
 
+/// List of supported type of devices
 extern device_type_desc_t devices_type_desc[12];
 
+/// List of supported devices
 extern device_desc_t devices_desc[2];
 
-#endif /* __OPENACC_ARCH_H__ */ /** @} */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* OPENACC_PUBLIC_ARCH */
+
+/** @} */
 

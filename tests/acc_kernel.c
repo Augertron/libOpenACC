@@ -8,21 +8,25 @@
  *
  */
 
-#include "OpenACC/libopenacc.h"
+#include <math.h>
 
 #include <assert.h>
 
-#ifndef N
-# define N 16*64*1*18
-#endif
+#include "OpenACC/openacc.h"
+#include "OpenACC/private/debug.h"
+#include "OpenACC/private/region.h"
+#include "OpenACC/private/kernel.h"
+#include "OpenACC/private/loop.h"
 
-extern struct acc_kernel_desc_t_ kernel_0x00000000_desc;
+typedef struct acc_kernel_t_ * acc_kernel_t;
+typedef struct acc_region_t_ * acc_region_t;
 
-extern struct acc_region_desc_t_ region_0x00000000_desc;
+extern struct acc_kernel_desc_t_ kernel_0x00_desc;
+extern struct acc_region_desc_t_ region_0x00_desc;
+
+const unsigned long n = 16*64*1*18;
 
 int main() {
-  const unsigned long n = N;
-
   float a[n];
   float b[n];
   float c[n];
@@ -42,12 +46,12 @@ int main() {
   unsigned long region_0_vector_length = 1; // clause vector_length(1)
 
   // construct parallel region descriptor
-  acc_region_t region_0 = acc_build_region(&region_0x00000000_desc, 1, &region_0_num_gang, &region_0_num_worker, region_0_vector_length);
+  acc_region_t region_0 = acc_build_region(&region_0x00_desc, 1, &region_0_num_gang, &region_0_num_worker, region_0_vector_length);
 
   acc_region_start(region_0);
 
     // Create a kernel descriptor
-    acc_kernel_t kernel_0 = acc_build_kernel(&kernel_0x00000000_desc);
+    acc_kernel_t kernel_0 = acc_build_kernel(&kernel_0x00_desc);
 
     kernel_0->data_ptrs[0] = NULL;
     kernel_0->data_ptrs[1] = NULL;

@@ -1,5 +1,5 @@
 
-#include "OpenACC/libopenacc-device.h"
+#include "OpenACC/device/opencl.h"
 
 /*!
  *  Generic kernel generated for Vector Addition. Include the 3 levels from OpenACC (gang, worker, vector) and the 4 tiles.
@@ -21,7 +21,7 @@ __kernel void vect_add_kernel(__global float * a, __global float * b, __global f
   const unsigned long stride_loop_0_vector = ctx->loops[0].strides[3] * ctx->vector_length;
 
   // Outer tile loop
-  for (it_loop_0_tile_0 = ctx->loops[0].lower; it_loop_0_tile_0 <= ctx->loops[0].upper; it_loop_0_tile_0 += ctx->loops[0].strides[0]) {
+  for (it_loop_0_tile_0 = ctx->loops[0].lower; it_loop_0_tile_0 < ctx->loops[0].upper; it_loop_0_tile_0 += ctx->loops[0].strides[0]) {
 
     // Gang "loop"
     it_loop_0_gang = it_loop_0_tile_0 + acc_gang_id(ctx) * stride_loop_0_gang;
