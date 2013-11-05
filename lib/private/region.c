@@ -27,17 +27,11 @@ struct acc_region_t_ * acc_build_region(acc_region_desc_t region, size_t num_dim
 void acc_region_start(acc_region_t region) {
   acc_init_once();
 
-  acc_region_init(region->desc->id, acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+  region->device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
-  acc_get_region_defaults(region, acc_runtime.curr_device_type);
+  acc_region_init(region);
 
-  // Compute device index
-  acc_device_t dev = acc_get_device_type();
-  size_t num = acc_get_device_type(dev);
-  unsigned first_device = acc_runtime.devices[dev].first;
-  size_t num_devices = acc_get_num_devices(dev);
-  assert(num >= 0 && num < num_devices);
-  region->device_idx = first_device + num;
+  acc_get_region_defaults(region);
 
   /// \todo acc_region_start : what else?
 }

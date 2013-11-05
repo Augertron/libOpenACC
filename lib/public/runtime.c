@@ -29,12 +29,12 @@ void acc_init(acc_device_t dev) {
 void acc_init_(acc_device_t dev, int num) {
   acc_init_once();
 
+  unsigned device_idx = acc_get_device_idx(dev, num);
+
   unsigned first_device = acc_runtime.devices[dev].first;
   size_t num_devices = acc_get_num_devices(dev);
 
   assert(num >= 0 && num < num_devices);
-
-  unsigned device_idx = first_device + num;
 
   if (acc_runtime.opencl_data->devices_data[device_idx] == NULL) {
     cl_int status;
@@ -66,6 +66,22 @@ void acc_init_(acc_device_t dev, int num) {
     unsigned i;
     for (i = 0; i < compiler_data.num_regions; i++)
       device_data->programs[i] = NULL;
+
+    device_data->command_queue = clCreateCommandQueue(device_data->context, *device, 0, &status);
+    if (status != CL_SUCCESS || device_data->command_queue == NULL) {
+      char * status_str;
+      switch (status) {
+        case CL_INVALID_CONTEXT:          status_str = "CL_INVALID_CONTEXT";          break;
+        case CL_INVALID_DEVICE:           status_str = "CL_INVALID_DEVICE";           break;
+        case CL_INVALID_VALUE:            status_str = "CL_INVALID_VALUE";            break;
+        case CL_INVALID_QUEUE_PROPERTIES: status_str = "CL_INVALID_QUEUE_PROPERTIES"; break;
+        case CL_OUT_OF_RESOURCES:         status_str = "CL_OUT_OF_RESOURCES";         break;
+        case CL_OUT_OF_HOST_MEMORY:       status_str = "CL_OUT_OF_HOST_MEMORY";       break;
+        default:                          status_str = "CL_UNKNOWN_ERROR_CODE";       break;
+      }
+      printf("[fatal  ] clCreateCommandQueue... return %s\n", status_str);
+      exit(-1); /// \todo error code
+    }
   }
 }
 
@@ -84,12 +100,7 @@ void acc_shutdown(acc_device_t dev) {
 void acc_shutdown_(acc_device_t dev, int num) {
   acc_init_once();
 
-  unsigned first_device = acc_runtime.devices[dev].first;
-  size_t num_devices = acc_get_num_devices(dev);
-
-  assert(num >= 0 && num < num_devices);
-
-  unsigned device_idx = first_device + num;
+  unsigned device_idx = acc_get_device_idx(dev, num);
 
   if (acc_runtime.opencl_data->devices_data[device_idx] != NULL) {
     cl_int status;

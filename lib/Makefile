@@ -17,6 +17,7 @@ OPENACC_INTERNAL_LIB = \
   internal/opencl-init.o \
   internal/opencl-debug.o \
   internal/region.o \
+  internal/runtime.o \
   internal/kernel.o
 
 OPENACC_UTILS_LIB = \

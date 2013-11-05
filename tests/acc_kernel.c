@@ -39,7 +39,12 @@ int main() {
     c[i] = 0.;
   }
 
-  acc_init_(acc_device_any, 0);
+  acc_set_device_type(acc_device_any);
+  acc_set_device_num(0, acc_device_any);
+
+  acc_device_t dev = acc_get_device_type();
+  int num = acc_get_device_num(dev);
+  acc_init_(dev, num);
 
   unsigned long region_0_num_gang = 16;     // clause num_gang(16)
   unsigned long region_0_num_worker = 64;   // clause num_worker(64)

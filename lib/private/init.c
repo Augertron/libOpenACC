@@ -12,12 +12,7 @@ void acc_init_once() {
     acc_runtime.opencl_data = (acc_opencl_data_t)malloc(sizeof(struct acc_opencl_data_t_));
     set_flag(f_alloc);
   }
-/*
-  if (!check_flag(f_ocl_kernels)) {
-    acc_init_kernel_first();
-    set_flag(f_ocl_kernels);
-  }
-*/
+
   if (!check_flag(f_ocl_devices))
     acc_collect_ocl_devices();
   assert(check_flag(f_ocl_devices));

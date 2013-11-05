@@ -25,6 +25,8 @@ struct acc_device_data_t_ {
   cl_context context;
   /// OpenCL Programs for one device for each parallel region
   cl_program * programs;
+  // OpenCL Command Queue associated with this device
+  cl_command_queue command_queue;
 };
 typedef struct acc_device_data_t_ * acc_device_data_t;
 
@@ -50,7 +52,6 @@ typedef struct acc_opencl_data_t_ {
   char * runtime_sources;
   char ** region_sources;
 
-  cl_command_queue command_queue;
 } * acc_opencl_data_t;
 
 enum flags_e {
@@ -60,8 +61,7 @@ enum flags_e {
   f_acc_devices   = 0x0004,
 
   f_ocl_devices   = 0x0008,
-  f_ocl_sources   = 0x000F,
-  f_ocl_kernels   = 0x0010
+  f_ocl_sources   = 0x000F
 };
 
 /// OpenACC runtime global data (singleton)

@@ -37,12 +37,12 @@ struct acc_region_desc_t_ {
 /**
  *  Initialize a region : build the associated OpenCL program (only have to be done once)
  */
-void acc_region_init(size_t region_id, acc_device_t dev, int num);
+void acc_region_init(struct acc_region_t_ * region);
 
 /*!
  *  Set number gangs, number workers, and vector length to the current device default if they were not provided (value set to 0) 
  */
-void acc_get_region_defaults(struct acc_region_t_ * region, acc_device_t dev);
+void acc_get_region_defaults(struct acc_region_t_ * region);
 
 #ifdef __cplusplus
 }

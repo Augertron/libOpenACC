@@ -252,8 +252,10 @@ cl_kernel acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_con
 
   cl_program program = acc_runtime.opencl_data->devices_data[region->device_idx]->programs[region->desc->id];
 
+  assert(program != NULL);
+
   cl_int status;
-  cl_kernel ocl_kernel = clCreateKernel(program, kernel_name, status);
+  cl_kernel ocl_kernel = clCreateKernel(program, kernel_name, &status);
   if (status != CL_SUCCESS) {
     printf("[fatal]   clCreateKernel return %u for %s.\n", status, kernel_name);
     exit(-1); /// \todo error code
