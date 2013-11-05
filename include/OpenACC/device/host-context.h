@@ -12,7 +12,7 @@
 #ifndef LIBOPENACC_INTERNAL_H2D
 #define LIBOPENACC_INTERNAL_H2D 20131031
 
-#include "OpenACC/private/loop.h"
+#include "OpenACC/internal/loop.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,7 +20,10 @@ extern "C" {
 
 struct acc_kernel_loop_t_ {
   struct acc_loop_desc_t_ original;
-  struct acc_loop_desc_t_ tiles[4];
+  struct {
+    long stride;
+    long length; /// Negative length for negative stride
+  } tiles[7];
 };
 
 /*!

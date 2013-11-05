@@ -23,6 +23,8 @@ struct acc_region_t_ {
   /// Pointer to region descriptor
   struct acc_region_desc_t_ * desc;
 
+  size_t device_idx;
+
   /// Number of dimension in the parallel region (currently only 1 supported by OpenACC directives)
   size_t num_dims;
   /// Number of gang   for each dimension

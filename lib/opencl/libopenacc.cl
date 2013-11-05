@@ -11,6 +11,14 @@
 
 #include "OpenACC/device/opencl.h"
 
+long acc_gang_iteration(__constant struct acc_context_t_ * ctx, size_t loop_id, long it_tile_0) {
+  return it_tile_0 + acc_gang_id(ctx) * ctx->loops[loop_id].tiles[e_gang].stride;
+}
+
+long acc_worker_iteration(__constant struct acc_context_t_ * ctx, size_t loop_id, long it_tile_1) {
+  return it_tile_1 + acc_worker_id(ctx) * ctx->loops[loop_id].tiles[e_worker].stride;
+}
+
 size_t acc_gang_id(__constant struct acc_context_t_ * ctx) {
   return get_group_id(0);
 }

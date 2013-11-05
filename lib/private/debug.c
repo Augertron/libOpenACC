@@ -5,6 +5,8 @@
 
 #include <stdio.h>
 
+#include <assert.h>
+
 void acc_dbg_dump_runtime() {
   printf("Device type : ");
   switch (acc_runtime.curr_device_type) {

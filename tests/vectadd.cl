@@ -7,43 +7,51 @@
  */
 __kernel void vect_add_kernel(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
   long it_loop_0_tile_0;
-  long it_loop_0_gang;
   long it_loop_0_tile_1;
-  long it_loop_0_worker;
   long it_loop_0_tile_2;
-  long it_loop_0_vect;
   long it_loop_0_tile_3;
 
-  long it_loop_0;
-
-  const unsigned long stride_loop_0_gang   = ctx->loops[0].strides[1] * ctx->num_gang;
-  const unsigned long stride_loop_0_worker = ctx->loops[0].strides[2] * ctx->num_worker;
-  const unsigned long stride_loop_0_vector = ctx->loops[0].strides[3] * ctx->vector_length;
+  long it_loop_0_vect;
 
   // Outer tile loop
-  for (it_loop_0_tile_0 = ctx->loops[0].lower; it_loop_0_tile_0 < ctx->loops[0].upper; it_loop_0_tile_0 += ctx->loops[0].strides[0]) {
+  for (it_loop_0_tile_0  = ctx->loops[0].original.lower;
+       it_loop_0_tile_0  < ctx->loops[0].original.upper;
+       it_loop_0_tile_0 += ctx->loops[0].tiles[e_tile_0].stride) {
 
     // Gang "loop"
-    it_loop_0_gang = it_loop_0_tile_0 + acc_gang_id(ctx) * stride_loop_0_gang;
+    const long it_loop_0_gang = acc_gang_iteration(ctx, 0, it_loop_0_tile_0);
 
     // Loop for tile between Gang and Worker
-    for (it_loop_0_tile_1 = it_loop_0_gang; it_loop_0_tile_1 <= it_loop_0_gang + stride_loop_0_gang; it_loop_0_tile_1 += ctx->loops[0].strides[1]) {
+    for (it_loop_0_tile_1  = it_loop_0_gang;
+         it_loop_0_tile_1  < it_loop_0_gang + ctx->loops[0].tiles[e_tile_1].length;
+         it_loop_0_tile_1 += ctx->loops[0].tiles[e_tile_1].stride) {
 
       // Worker "loop"
-      it_loop_0_worker = it_loop_0_tile_1 + acc_worker_id(ctx) * stride_loop_0_worker;
+      const long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_tile_1);
 
       // Loop for tile between Worker and Vector
-      for (it_loop_0_tile_2 = it_loop_0_worker; it_loop_0_tile_2 <= it_loop_0_worker + stride_loop_0_worker; it_loop_0_tile_2 += ctx->loops[0].strides[2]) {
+      for (it_loop_0_tile_2  = it_loop_0_worker;
+           it_loop_0_tile_2  < it_loop_0_worker + ctx->loops[0].tiles[e_tile_2].length;
+           it_loop_0_tile_2 += ctx->loops[0].tiles[e_tile_2].stride) {
 
-        // Inner tile loop
-        for (it_loop_0_tile_3 = it_loop_0_tile_2; it_loop_0_tile_3 <= it_loop_0_tile_2 + stride_loop_0_vector; it_loop_0_tile_3 += ctx->loops[0].strides[3]) {
+        // vector loop (real vector loop should be unroll/interchange/fused, need static length to do that)
+        for (it_loop_0_vect  = it_loop_0_tile_2;
+             it_loop_0_vect  < it_loop_0_tile_2 + ctx->loops[0].tiles[e_vector].length;
+             it_loop_0_vect += ctx->loops[0].tiles[e_vector].stride) {
 
-          // vector loop
-          for (it_loop_0_vect = 0; it_loop_0_vect < ctx->vector_length; it_loop_0_vect++) {
-            it_loop_0 = it_loop_0_tile_3 + it_loop_0_vect * ctx->loops[0].strides[3];
-            if (it_loop_0 >= ctx->loops[0].lower && it_loop_0 <= ctx->loops[0].upper) {
+          // Inner tile loop
+          for (it_loop_0_tile_3  = it_loop_0_vect;
+               it_loop_0_tile_3  < it_loop_0_vect + ctx->loops[0].tiles[e_tile_3].length;
+               it_loop_0_tile_3 += ctx->loops[0].tiles[e_tile_3].stride
+          ) {
+            const long it_loop_0 = it_loop_0_tile_3;
+//          if (
+//                   it_loop_0 >= ctx->loops[0].original.lower
+//               &&  it_loop_0  < ctx->loops[0].original.upper
+//               && (it_loop_0  - ctx->loops[0].original.lower) % ctx->loops[0].original.stride == 0
+//          ) {
               res[it_loop_0] = a[it_loop_0] + b[it_loop_0];
-            }
+//          }
           }
         }
       }
@@ -56,36 +64,29 @@ __kernel void vect_add_kernel(__global float * a, __global float * b, __global f
  */
 __kernel void vect_add_kernel_gang_worker_tile_2(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
   long it_loop_0_tile_0;
-  long it_loop_0_gang;
   long it_loop_0_tile_1;
-  long it_loop_0_worker;
   long it_loop_0_tile_2;
-  long it_loop_0_vect;
   long it_loop_0_tile_3;
 
-  long it_loop_0;
-
-  const unsigned long stride_loop_0_gang   = ctx->num_gang;
-  const unsigned long stride_loop_0_worker = ctx->loops[0].strides[2] * ctx->num_worker;
-
-  // Outer tile loop
-  it_loop_0_tile_0 = ctx->loops[0].lower;
-
   // Gang "loop"
-  it_loop_0_gang = it_loop_0_tile_0 + acc_gang_id(ctx) * stride_loop_0_gang;
-
-  // Loop for tile between Gang and Worker
-  it_loop_0_tile_1 = it_loop_0_gang;
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, it_loop_0_tile_0);
 
   // Worker "loop"
-  it_loop_0_worker = it_loop_0_tile_1 + acc_worker_id(ctx) * stride_loop_0_worker;
+  long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_tile_1);
 
   // Loop for tile between Worker and Vector
-  for (it_loop_0_tile_2 = it_loop_0_worker; it_loop_0_tile_2 <= it_loop_0_worker + stride_loop_0_worker; it_loop_0_tile_2 += ctx->loops[0].strides[2]) {
-    it_loop_0 = it_loop_0_tile_2;
-    if (it_loop_0 >= ctx->loops[0].lower && it_loop_0 <= ctx->loops[0].upper) {
+  for (it_loop_0_tile_2  = it_loop_0_worker;
+       it_loop_0_tile_2  < it_loop_0_worker + ctx->loops[0].tiles[e_tile_2].length;
+       it_loop_0_tile_2 += ctx->loops[0].tiles[e_tile_2].stride
+  ) {
+    long it_loop_0 = it_loop_0_tile_2;
+//  if (
+//          it_loop_0 >= ctx->loops[0].original.lower
+//      &&  it_loop_0  < ctx->loops[0].original.upper
+//      && (it_loop_0  - ctx->loops[0].original.lower) % ctx->loops[0].original.stride == 0
+//  ) {
       res[it_loop_0] = a[it_loop_0] + b[it_loop_0];
-    }
+//  }
   }
 }
 

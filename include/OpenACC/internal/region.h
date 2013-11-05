@@ -35,7 +35,7 @@ struct acc_region_desc_t_ {
 };
 
 /**
- *  Initialize a region : build the associated OpenCL program
+ *  Initialize a region : build the associated OpenCL program (only have to be done once)
  */
 void acc_region_init(size_t region_id, acc_device_t dev, int num);
 

@@ -61,6 +61,18 @@ struct acc_kernel_desc_t_ {
   acc_kernel_version_t * versions;
 };
 
+/*! \func acc_create_context
+ *
+ *  Create the context associated to 'region' and 'kernel'
+ *
+ *  \param region pointer to a parallel region descriptor
+ *  \param kernel pointer to a kernel descriptor
+ *  \return a non-zero value if an error occured
+ */
+struct acc_context_t_ * acc_create_context(struct acc_region_t_ * region, struct acc_kernel_t_ * kernel);
+
+cl_kernel acc_build_ocl_kernel(struct acc_region_t_ * region, struct acc_kernel_t_ * kernel, struct acc_context_t_ * context);
+
 #ifdef __cplusplus
 }
 #endif

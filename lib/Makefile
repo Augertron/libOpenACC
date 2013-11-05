@@ -10,7 +10,6 @@ OPENACC_PRIVATE_LIB = \
   private/init.o \
   private/kernel.o \
   private/region.o \
-  private/runtime.o \
   private/debug.o
 
 OPENACC_INTERNAL_LIB = \
@@ -18,7 +17,7 @@ OPENACC_INTERNAL_LIB = \
   internal/opencl-init.o \
   internal/opencl-debug.o \
   internal/region.o \
-  internal/runtime.o
+  internal/kernel.o
 
 OPENACC_UTILS_LIB = \
   utils/io.o

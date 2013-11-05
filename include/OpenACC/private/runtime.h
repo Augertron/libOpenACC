@@ -50,6 +50,7 @@ typedef struct acc_opencl_data_t_ {
   char * runtime_sources;
   char ** region_sources;
 
+  cl_command_queue command_queue;
 } * acc_opencl_data_t;
 
 enum flags_e {
