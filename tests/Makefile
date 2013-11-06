@@ -24,7 +24,7 @@ LDFLAGS+=
 
 MAKE=make
 
-all: acc_init acc_kernel
+all: acc_init acc_kernel acc_rc_test_01
 
 # we need to compile 'main' with g++ as OpenCL Intel uses C++
 
@@ -46,10 +46,14 @@ acc_data: acc_data.o acc_compiler_data.o $(DEPS)
 acc_kernel: acc_kernel.o acc_compiler_data.o $(DEPS)
 	$(LD) $(LDFLAGS) $(LIBS) acc_kernel.o acc_compiler_data.o -o acc_kernel
 
-check: acc_init acc_kernel
+acc_rc_test_01: acc_rc_test_01.o acc_compiler_data.o $(DEPS)
+	$(LD) $(LDFLAGS) $(LIBS) acc_rc_test_01.o acc_compiler_data.o -o acc_rc_test_01
+
+check: acc_init acc_kernel acc_rc_test_01
 	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./acc_init
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./acc_kernel
+#	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./acc_kernel
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./acc_rc_test_01
 
 clean:
-	rm -f *.o acc_init acc_data acc_kernel
+	rm -f *.o acc_init acc_data acc_kernel acc_rc_test_01
 

@@ -27,6 +27,8 @@ struct acc_region_t_ * acc_build_region(acc_region_desc_t region, size_t num_dim
 void acc_region_start(acc_region_t region) {
   acc_init_once();
 
+  acc_init_(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+
   region->device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
   acc_region_init(region);
