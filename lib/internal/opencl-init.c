@@ -5,6 +5,8 @@
 #include "OpenACC/internal/compiler.h"
 #include "OpenACC/internal/region.h"
 
+#include "OpenACC/utils/io.h"
+
 #include <stdio.h>
 #include <string.h>
 

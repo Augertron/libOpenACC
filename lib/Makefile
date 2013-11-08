@@ -24,7 +24,13 @@ OPENACC_INTERNAL_LIB = \
   internal/kernel.o
 
 OPENACC_UTILS_LIB = \
-  utils/io.o
+  utils/io.o \
+  utils/bimap.o \
+  utils/linked_list.o \
+  utils/map.o \
+  utils/node.o \
+  utils/sorted_array.o \
+  utils/sorted_list.o
 
 CC=gcc
 CFLAGS=-g -I../include/ -fPIC
