@@ -7,12 +7,15 @@ OPENACC_PUBLIC_LIB = \
   public/runtime.o
 
 OPENACC_PRIVATE_LIB = \
+  private/data-env.o \
   private/init.o \
   private/kernel.o \
   private/region.o \
   private/debug.o
 
 OPENACC_INTERNAL_LIB = \
+  internal/allocator.o \
+  internal/data-env.o \
   internal/init.o \
   internal/opencl-init.o \
   internal/opencl-debug.o \

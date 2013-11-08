@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+typedef struct acc_opencl_allocator_t_ * acc_opencl_allocator_t;
+
 struct acc_device_data_t_ {
   /// OpenCL Context for one device
   cl_context context;
@@ -27,6 +29,8 @@ struct acc_device_data_t_ {
   cl_program * programs;
   // OpenCL Command Queue associated with this device
   cl_command_queue command_queue;
+  // OpenCL Command Queue associated with this device
+  acc_opencl_allocator_t allocator;
 };
 typedef struct acc_device_data_t_ * acc_device_data_t;
 
@@ -81,7 +85,6 @@ typedef struct acc_runtime_t_ {
 
   /// Current device number
   int curr_device_num;
-
 } acc_runtime_t;
 /// Forward declaration of the unique instance of the singleton acc_runtime_t
 extern acc_runtime_t acc_runtime;

@@ -31,6 +31,8 @@ struct acc_kernel_loop_t_ {
  *  A new instance is created for each invocation of a kernel.
  *  It contains information from the parallel region and structural infornation about the loops.
  *
+ *  \note See http://enja.org/2011/03/30/adventures-in-opencl-part-3-constant-memory-structs/                                                                                                                  
+ *
  *  \todo only support 1d worksize
  *  \todo only support increasing loops (however // loops can be reversed)
  */

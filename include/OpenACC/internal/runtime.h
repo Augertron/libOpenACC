@@ -12,6 +12,7 @@
 #define OPENACC_INTERNAL_RUNTIME 20131105
 
 #include "OpenACC/public/arch.h"
+#include "OpenACC/private/runtime.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,4 +23,6 @@ size_t acc_get_device_idx(acc_device_t dev, int num);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* OPENACC_INTERNAL_RUNTIME */
 

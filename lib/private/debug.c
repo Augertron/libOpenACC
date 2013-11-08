@@ -45,3 +45,37 @@ void acc_dbg_dump_runtime() {
     printf("No OpenCL Data !\n");
 }
 
+char * acc_ocl_status_to_char(cl_int status) {
+  char * status_str;
+  switch (status) {
+      case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST: status_str = "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST"; break;
+      case CL_INVALID_ARG_INDEX:                         status_str = "CL_INVALID_ARG_INDEX";                         break;
+      case CL_INVALID_ARG_SIZE:                          status_str = "CL_INVALID_ARG_SIZE";                          break;
+      case CL_INVALID_ARG_VALUE:                         status_str = "CL_INVALID_ARG_VALUE";                         break;
+      case CL_INVALID_BUFFER_SIZE:                       status_str = "CL_INVALID_BUFFER_SIZE";                       break;
+      case CL_INVALID_COMMAND_QUEUE:                     status_str = "CL_INVALID_COMMAND_QUEUE";                     break;
+      case CL_INVALID_CONTEXT:                           status_str = "CL_INVALID_CONTEXT";                           break;
+      case CL_INVALID_EVENT_WAIT_LIST:                   status_str = "CL_INVALID_EVENT_WAIT_LIST";                   break;
+      case CL_INVALID_GLOBAL_OFFSET:                     status_str = "CL_INVALID_GLOBAL_OFFSET";                     break;
+      case CL_INVALID_GLOBAL_WORK_SIZE:                  status_str = "CL_INVALID_GLOBAL_WORK_SIZE";                  break;
+      case CL_INVALID_HOST_PTR:                          status_str = "CL_INVALID_HOST_PTR";                          break;
+      case CL_INVALID_IMAGE_SIZE:                        status_str = "CL_INVALID_IMAGE_SIZE";                        break;
+//    case CL_INVALID_IMAGE_FORMAT:                      status_str = "CL_INVALID_IMAGE_FORMAT";                      break;
+      case CL_INVALID_KERNEL:                            status_str = "CL_INVALID_KERNEL";                            break;
+      case CL_INVALID_KERNEL_ARGS:                       status_str = "CL_INVALID_KERNEL_ARGS";                       break;
+      case CL_INVALID_MEM_OBJECT:                        status_str = "CL_INVALID_MEM_OBJECT";                        break;
+      case CL_INVALID_PROGRAM_EXECUTABLE:                status_str = "CL_INVALID_PROGRAM_EXECUTABLE";                break;
+      case CL_INVALID_SAMPLER:                           status_str = "CL_INVALID_SAMPLER";                           break;
+      case CL_INVALID_VALUE:                             status_str = "CL_INVALID_VALUE";                             break;
+      case CL_INVALID_WORK_DIMENSION:                    status_str = "CL_INVALID_WORK_DIMENSION";                    break;
+      case CL_INVALID_WORK_GROUP_SIZE:                   status_str = "CL_INVALID_WORK_GROUP_SIZE";                   break;
+      case CL_INVALID_WORK_ITEM_SIZE:                    status_str = "CL_INVALID_WORK_ITEM_SIZE";                    break;
+      case CL_MEM_OBJECT_ALLOCATION_FAILURE:             status_str = "CL_MEM_OBJECT_ALLOCATION_FAILURE";             break;
+      case CL_MISALIGNED_SUB_BUFFER_OFFSET:              status_str = "CL_MISALIGNED_SUB_BUFFER_OFFSET";              break;
+      case CL_OUT_OF_HOST_MEMORY:                        status_str = "CL_OUT_OF_HOST_MEMORY";                        break;
+      case CL_OUT_OF_RESOURCES:                          status_str = "CL_OUT_OF_RESOURCES";                          break;
+      default:                                           status_str = "CL_UNKNOWN_ERROR_CODE";                        break;
+    }
+  return status_str;
+}
+
