@@ -13,6 +13,7 @@
 #define LIBOPENACC_INTERNAL_DATA_ENV 20131031
 
 #include "OpenACC/private/data-env.h"
+#include "OpenACC/public/def.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +30,10 @@ struct acc_data_environment_t_ {
 extern struct acc_data_environment_t_ * data_environment;
 
 struct acc_data_environment_t_ * acc_build_data_environment(struct acc_data_environment_t_ * parent);
+
+void acc_map_data_(unsigned device_idx, h_void * host_ptr, d_void * dev_ptr, size_t n);
+
+void acc_unmap_data_(unsigned device_idx, h_void * host_ptr);
 
 #ifdef __cplusplus
 }

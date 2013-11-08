@@ -5,7 +5,7 @@
 
 #include <assert.h>
 
-struct acc_data_environment_t_ data_environment_  = (struct acc_data_environment_t_){NULL, NULL};
+struct acc_data_environment_t_ data_environment_  = (struct acc_data_environment_t_){NULL, NULL}; /// \todo finish init
 struct acc_data_environment_t_ * data_environment = &data_environment_;
 
 struct acc_data_environment_t_ * acc_build_data_environment(struct acc_data_environment_t_ * parent) {
@@ -19,5 +19,13 @@ struct acc_data_environment_t_ * acc_build_data_environment(struct acc_data_envi
   /// \todo init fields
 
   return result;
+}
+
+void acc_map_data_(unsigned device_idx, h_void * host_ptr, d_void * dev_ptr, size_t n) {
+  assert(0);
+}
+
+void acc_unmap_data_(unsigned device_idx, h_void * host_ptr) {
+  assert(0);
 }
 
