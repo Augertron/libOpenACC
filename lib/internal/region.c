@@ -4,6 +4,7 @@
 #include "OpenACC/public/arch.h"
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/private/region.h"
+#include "OpenACC/internal/opencl-debug.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -13,20 +14,20 @@
 #ifndef PRINT_BUILD_LOG
 # define PRINT_BUILD_LOG 1
 #endif
-#if PRINT_BUILD_LOG
-#include "OpenACC/internal/opencl-debug.h"
-#endif
 
 void acc_get_region_defaults(struct acc_region_t_ * region) {
-  if (region->num_gang == 0) {
-    region->num_gang = acc_device_defaults[acc_runtime.curr_device_type].num_gang;
+  if (region->num_dims == 0 || region->num_dims == acc_device_defaults[acc_runtime.curr_device_type].num_dims) {
+    region->num_dims = acc_device_defaults[acc_runtime.curr_device_type].num_dims;
+    size_t i;
+    for (i = 0; i < region->num_dims; i++) {
+      if (region->num_gang[i] == 0)
+        region->num_gang[i] = acc_device_defaults[acc_runtime.curr_device_type].num_gang[i];
+      if (region->num_worker[i] == 0)
+        region->num_worker[i] = acc_device_defaults[acc_runtime.curr_device_type].num_worker[i];
+    }
   }
-  if (region->num_worker == 0) {
-    region->num_worker = acc_device_defaults[acc_runtime.curr_device_type].num_worker;
-  }
-  if (region->vector_length == 0) {
+  if (region->vector_length == 0)
     region->vector_length = acc_device_defaults[acc_runtime.curr_device_type].vector_length;
-  }
 }
 
 void acc_region_init(struct acc_region_t_ * region) {
@@ -43,7 +44,7 @@ void acc_region_init(struct acc_region_t_ * region) {
       acc_runtime.opencl_data->region_sources[region->desc->id]
     };
 
-    *program = clCreateProgramWithSource(*context, 2, ocl_sources, NULL, &status);
+    *program = clCreateProgramWithSource(*context, 2, (const char **)ocl_sources, NULL, &status);
     if (status != CL_SUCCESS) {
       printf("[fatal]   clCreateProgramWithSource : %s, %u for region %u return %u : failed\n",
              acc_device_name[acc_runtime.curr_device_type], acc_runtime.curr_device_num, region->desc->id, status);

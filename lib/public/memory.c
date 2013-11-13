@@ -1,6 +1,7 @@
 
 #include "OpenACC/openacc.h"
 #include "OpenACC/private/runtime.h"
+#include "OpenACC/internal/mem-manager.h"
 
 #include <stdio.h>
 
@@ -12,7 +13,7 @@ d_void * acc_malloc(size_t n) {
   unsigned device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
   cl_int status;
-
+	
   cl_mem buffer = clCreateBuffer(
     /* cl_context context  */ acc_runtime.opencl_data->devices_data[device_idx]->context,
     /* cl_mem_flags flags  */ CL_MEM_READ_WRITE,
@@ -25,6 +26,8 @@ d_void * acc_malloc(size_t n) {
     printf("[fatal]   clCreateBuffer return %s for device %u and size %u.\n", status_str, device_idx, (unsigned)n);
     exit(-1); /// \todo error code
   }
+
+//printf("acc_malloc(n = %u) = %x\n", n, buffer);
 
   return (d_void *)buffer;
 }
@@ -40,7 +43,7 @@ void acc_free(d_void * dev_ptr) {
   }
 }
 
-
+////////////////////////////////////////////////////////////////////////
 
 d_void * acc_copyin(h_void * host_ptr, size_t n) {
   acc_init_once();
@@ -112,7 +115,7 @@ void acc_delete(h_void * host_ptr, size_t n) {
   acc_free(dev_ptr);
 }
 
-
+////////////////////////////////////////////////////////////////////////
 
 void acc_update_device(h_void * host_ptr, size_t n) {
   acc_init_once();
@@ -134,10 +137,12 @@ void acc_update_self(h_void * host_ptr, size_t n) {
   acc_memcpy_from_device(host_ptr, dev_ptr, n);
 }
 
-
+////////////////////////////////////////////////////////////////////////
 
 void acc_map_data(h_void * host_ptr, d_void * dev_ptr, size_t n) {
   acc_init_once();
+
+  printf("acc_map_data(host = %x, dest = %x, sizes = %u)\n", host_ptr, dev_ptr, n);
 
   unsigned device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
@@ -152,7 +157,7 @@ void acc_unmap_data(h_void * host_ptr) {
   acc_unmap_data_(device_idx, host_ptr);
 }
 
-
+////////////////////////////////////////////////////////////////////////
 
 d_void * acc_deviceptr(h_void * host_ptr) {
   acc_init_once();
@@ -174,7 +179,7 @@ h_void * acc_hostptr(d_void * dev_ptr) {
   return host_ptr;
 }
 
-
+////////////////////////////////////////////////////////////////////////
 
 int acc_is_present(h_void * host_ptr, size_t n) {
   acc_init_once();
@@ -184,16 +189,19 @@ int acc_is_present(h_void * host_ptr, size_t n) {
   return acc_check_present(device_idx, host_ptr, n);
 }
 
+////////////////////////////////////////////////////////////////////////
 
 void acc_memcpy_to_device(d_void * dest, h_void * src, size_t bytes) {
   acc_init_once();
+
+  printf("acc_memcpy_to_device(dest = %x, src = %x, bytes = %u)\n", dest, src, bytes);
 
   unsigned device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
   cl_int status = clEnqueueWriteBuffer(
     /* cl_command_queue command_queue  */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer                   */ (cl_mem)dest,
-    /* cl_bool blocking_write          */ CL_FALSE,
+    /* cl_bool blocking_write          */ CL_TRUE,
     /* size_t offset                   */ 0,
     /* size_t cb                       */ bytes,
     /* const void *ptr                 */ src,
@@ -211,12 +219,15 @@ void acc_memcpy_to_device(d_void * dest, h_void * src, size_t bytes) {
 void acc_memcpy_from_device(h_void * dest, d_void * src, size_t bytes) {
   acc_init_once();
 
+  printf("acc_memcpy_from_device(dest = %x, src = %x, bytes = %u)\n", dest, src, bytes);
+
   unsigned device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+
 
   cl_int status = clEnqueueReadBuffer (
     /* cl_command_queue command_queue  */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer                   */ (cl_mem)src,
-    /* cl_bool blocking_read           */ CL_FALSE,
+    /* cl_bool blocking_read           */ CL_TRUE,
     /* size_t offset                   */ 0,
     /* size_t cb                       */ bytes,
     /* void *ptr                       */ dest,

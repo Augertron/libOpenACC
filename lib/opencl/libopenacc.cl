@@ -28,7 +28,7 @@ size_t acc_gang_size(__constant struct acc_context_t_ * ctx) {
 }
 
 size_t acc_worker_id(__constant struct acc_context_t_ * ctx) {
-  return get_global_id(0);
+  return get_local_id(0);
 }
 
 size_t acc_worker_size(__constant struct acc_context_t_ * ctx) {

@@ -20,17 +20,7 @@
 struct acc_kernel_version_t_ kernel_0x00_default = {
   0, 0, 0, NULL, ""
 };
-/*
-struct acc_loop_tile_t_ kernel_0x00_v1_loop_0[7] = {
-  (struct acc_loop_tile_t_){ e_tiling_static_iteration, 1 , 0 }, ///!< Filing Tile 0
-  (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!<   Gang Tile
-  (struct acc_loop_tile_t_){ e_tiling_static_iteration, 1 , 0 }, ///!< Filing Tile 1
-  (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Worker Tile
-  (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Filing Tile 2
-  (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Vector Tile
-  (struct acc_loop_tile_t_){ e_tiling_static_iteration, 1 , 0 }  ///!< Filing Tile 3
-};
-*/
+
 struct acc_loop_t_ kernel_0x00_v1_loops[1] = {
   {
     (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 0
@@ -49,11 +39,13 @@ struct acc_kernel_version_t_ kernel_0x00_v1 = {
 
 acc_kernel_version_t kernel_0x00_versions[2] = { &kernel_0x00_default , &kernel_0x00_v1 };
 
+const size_t kernel_0x00_scalar_sizes[1] = { sizeof(float) };
+
 struct acc_kernel_desc_t_ kernel_0x00_desc = {
   0,
-  "vect_add_kernel",
-  0, NULL,
-  3,
+  "offset_add_kernel",
+  1, kernel_0x00_scalar_sizes,
+  1,
   1,
   2, kernel_0x00_versions
 };
@@ -62,7 +54,7 @@ acc_kernel_desc_t region_0x00_kernels[1] = { &kernel_0x00_desc };
 
 struct acc_region_desc_t_ region_0x00_desc = {
   0,
-  "vectadd.cl",
+  "offsetadd.cl",
   0, NULL,
   1, region_0x00_kernels
 };

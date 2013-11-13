@@ -17,6 +17,7 @@ const char * acc_device_env_name [acc_device_last] = {
   "RADEON",
   "INTEL",
   "CORE",
+  "I5-670",
   "I7-3610QM",
   "I7-950",
   "XEONPHI"
@@ -29,24 +30,27 @@ const char * acc_device_name [acc_device_last] = {
   "AMD radeon",
   "Intel(R)",
   "Intel(R) Core(TM)",
+  "Intel(R) Core(TM) i5 CPU 670",
   "Intel(R) Core(TM) i7-3610QM CPU",
   "Intel(R) Core(TM) i7 CPU 950",
   "Intel(R) XeonPhi(TM)"
 };
 
 acc_device_defaults_t acc_device_defaults [acc_device_last] = {
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 }
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
 };
 
 device_desc_t devices_desc [2] = {
+  { "Intel(R) Core(TM) i5 CPU         670" , acc_device_i5_670    },
   { "Intel(R) Core(TM) i7-3610QM CPU"      , acc_device_i7_3610QM },
   { "Intel(R) Core(TM) i7 CPU         950" , acc_device_i7_950    }
 };
@@ -58,7 +62,7 @@ device_type_desc_t devices_type_desc [12] = {
   { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
   { CL_DEVICE_TYPE_GPU         , acc_device_radeon  , 0, NULL               }, ///< Radeon
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 2, &(devices_desc[0]) }, ///< Core
+  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 3, &(devices_desc[0]) }, ///< Core
   { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL               },
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi , 0, NULL               }, ///< XeonPhi
   { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },

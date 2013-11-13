@@ -10,6 +10,8 @@
 
 #include <math.h>
 
+#include <stdio.h>
+
 #include <assert.h>
 
 #include "OpenACC/openacc.h"
@@ -25,7 +27,7 @@ typedef struct acc_region_t_ * acc_region_t;
 extern struct acc_kernel_desc_t_ kernel_0x00_desc;
 extern struct acc_region_desc_t_ region_0x00_desc;
 
-const unsigned long n = 16*64*1*18;
+const unsigned long n = 16*64*1*4;
 
 int main() {
   float a[n];
@@ -43,15 +45,12 @@ int main() {
   acc_set_device_type(acc_device_any);
   acc_set_device_num(0, acc_device_any);
 
-  acc_device_t dev = acc_get_device_type();
-  int num = acc_get_device_num(dev);
-
   // Push a new data environment for region_0
   acc_push_data_environment();
 
-  acc_copyin(a + 0, n); // clause copyin(a[0:n])
-  acc_copyin(b + 0, n); // clause copyin(b[n])
-  acc_present_or_create(c + 0, n); // allocation for : clause copyout(c)
+  acc_copyin(a, n * sizeof(float)); // clause copyin(a[0:n])
+  acc_copyin(b, n * sizeof(float)); // clause copyin(b[n])
+  acc_present_or_create(c, n * sizeof(float)); // allocation for : clause copyout(c)
 
   unsigned long region_0_num_gang = 16;     // clause num_gang(16)
   unsigned long region_0_num_worker = 64;   // clause num_worker(64)
@@ -79,9 +78,13 @@ int main() {
 
   acc_region_stop(region_0);
 
-  acc_copyout(c + 0, n); // clause copyout(c)
+  acc_copyout(c, n * sizeof(float)); // clause copyout(c)
 
   acc_pop_data_environment();
+
+  for (i = 0; i < 10; i++) {
+    printf("%e + %e = %e\n", a[i], b[i], c[i]);
+  }
 
   return 0;
 }

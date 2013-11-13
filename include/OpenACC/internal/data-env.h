@@ -15,21 +15,26 @@
 #include "OpenACC/private/data-env.h"
 #include "OpenACC/public/def.h"
 
+#include "OpenACC/utils/containers/set.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct acc_opencl_data_alloc_t_ * acc_opencl_data_alloc_t;
+typedef struct acc_data_allocation_t_ * acc_data_allocation_t;
 
 struct acc_data_environment_t_ {
   struct acc_data_environment_t_ * parent;
   struct acc_data_environment_t_ * child;
 
-  /// \todo fields: host to device ptrs map, one per device...
+  /// Array of set of alloc
+  set_t * data_allocs;
 };
 extern struct acc_data_environment_t_ * data_environment;
 
 struct acc_data_environment_t_ * acc_build_data_environment(struct acc_data_environment_t_ * parent);
+
+void acc_clear_data_environment(struct acc_data_environment_t_ * parent);
 
 void acc_map_data_(unsigned device_idx, h_void * host_ptr, d_void * dev_ptr, size_t n);
 

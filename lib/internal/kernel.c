@@ -117,7 +117,7 @@ cl_kernel acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_con
 
             assert(ctx_loops[j].tiles[tile].stride != 0 && ctx_loops[j].tiles[tile].length != 0);
 
-            if (ctx_loops[j].tiles[tile].length == tile_length / ctx_loops[j].tiles[tile].stride)
+            if (ctx_loops[j].tiles[tile].length != tile_length / ctx_loops[j].tiles[tile].stride)
               break;
           }
           if (tile < 7) break;
@@ -236,7 +236,7 @@ cl_kernel acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_con
     }
   }
 
-  assert(best_matching_version != 0);
+  assert(best_matching_version != 0); // default version disable for now (for checking purpose)
   assert(best_matching_loops != NULL);
 
   for (i = 0; i < context->num_loop; i++)

@@ -20,7 +20,7 @@ extern "C" {
  */
 void acc_dbg_dump_runtime();
 
-char * acc_ocl_status_to_char(cl_int status);
+const char * acc_ocl_status_to_char(cl_int status);
 
 #ifdef __cplusplus
 }

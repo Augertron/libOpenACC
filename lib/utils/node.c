@@ -3,6 +3,16 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+void
+node_set_left (node_t, node_t);
+
+void
+node_set_right (node_t, node_t);
+
+void
+node_set_left_right (node_t, node_t, node_t);
+
+
 node_t
 node_create ()
 {

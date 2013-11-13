@@ -20,8 +20,6 @@
 extern "C" {
 #endif
 
-typedef struct acc_opencl_allocator_t_ * acc_opencl_allocator_t;
-
 struct acc_device_data_t_ {
   /// OpenCL Context for one device
   cl_context context;
@@ -29,8 +27,6 @@ struct acc_device_data_t_ {
   cl_program * programs;
   // OpenCL Command Queue associated with this device
   cl_command_queue command_queue;
-  // OpenCL Command Queue associated with this device
-  acc_opencl_allocator_t allocator;
 };
 typedef struct acc_device_data_t_ * acc_device_data_t;
 
@@ -65,7 +61,10 @@ enum flags_e {
   f_acc_devices   = 0x0004,
 
   f_ocl_devices   = 0x0008,
-  f_ocl_sources   = 0x000F
+  f_ocl_sources   = 0x000F,
+
+  f_mem_manager   = 0x0010,
+  f_data_env      = 0x0020
 };
 
 /// OpenACC runtime global data (singleton)

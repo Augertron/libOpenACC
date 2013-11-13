@@ -28,6 +28,7 @@ typedef enum acc_device_e {
     acc_device_radeon,          ///<   Radeon \todo list model
   acc_device_intel,             ///< Intel devices
     acc_device_core,            ///<   Intel Core Processor \todo list models
+      acc_device_i5_670,        ///      Intel(R) Core(TM) i5 670 CPU \bug with valgrind this is returned instead of my i73610QM !
       acc_device_i7_3610QM,     ///<     Intel(R) Core(TM) i7-3610QM CPU
       acc_device_i7_950,        ///<     Intel(R) Core(TM) i7 950 CPU
     acc_device_xeonphi,         ///<   Intel Xeon Processor \todo list models
@@ -42,9 +43,10 @@ extern const char * acc_device_env_name [acc_device_last];
 extern const char * acc_device_name [acc_device_last];
 
 /// Default number of Gang, Worker, and Vector
-struct acc_device_defaults_t_ { 
-  unsigned long num_gang;
-  unsigned long num_worker;
+struct acc_device_defaults_t_ {
+  unsigned num_dims;
+  unsigned long num_gang[3];
+  unsigned long num_worker[3];
   unsigned long vector_length;
 };
 typedef const struct acc_device_defaults_t_ acc_device_defaults_t;

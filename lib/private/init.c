@@ -2,6 +2,8 @@
 #include "OpenACC/private/init.h"
 #include "OpenACC/internal/init.h"
 
+#include "OpenACC/internal/data-env.h"
+
 #include "OpenACC/public/arch.h"
 #include "OpenACC/private/runtime.h"
 
@@ -28,5 +30,14 @@ void acc_init_once() {
   if (!check_flag(f_acc_defaults))
     acc_init_defaults();
   assert(check_flag(f_acc_defaults));
+
+  if (!check_flag(f_mem_manager))
+    init_memory_manager();
+  assert(check_flag(f_mem_manager));
+
+  if (!check_flag(f_data_env)) {
+    data_environment = acc_build_data_environment(NULL);
+    set_flag(f_data_env);
+  }
 }
 

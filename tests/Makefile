@@ -14,7 +14,7 @@ LIBS+=-L$(OPENACC_LIB_DIR) -l$(OPENACC_LIB_NAME) -l$(OPENCL_LIB_NAME)
 DEPS+=$(OPENACC_LIB_FILE)
 
 CC=gcc
-CFLAGS+=
+CFLAGS+=-g
 
 CXX=g++
 CXXFLAGS+=
@@ -24,36 +24,33 @@ LDFLAGS+=
 
 MAKE=make
 
-all: acc_init acc_kernel acc_rc_test_01
+all: test_00 test_01 test_02
 
 # we need to compile 'main' with g++ as OpenCL Intel uses C++
 
-%.o: %.c
+test_%.o: test_%.c
 	$(CXX) $(CFLAGS) $(INCLUDES) -c $? -o $@
 
-acc_compiler_data.o: acc_compiler_data.c
-	$(CC) $(CFLAGS) $(INCLUDES) -DACC_RUNTIME_DIR=\"$(OPENACC_DIR)\" -c acc_compiler_data.c -o acc_compiler_data.o
+data_%.o: data_%.c
+	$(CC) $(CFLAGS) $(INCLUDES) -DACC_RUNTIME_DIR=\"$(OPENACC_DIR)\" -c $? -o $@
 
 $(OPENACC_LIB_FILE):
 	$(MAKE) -C $(OPENACC_LIB_DIR) lib$(OPENACC_LIB_NAME).so
 
-acc_init: acc_init.o acc_compiler_data.o $(DEPS)
-	$(LD) $(LDFLAGS) $(LIBS) acc_init.o acc_compiler_data.o -o acc_init
+test_00: test_00.o data_00.o $(DEPS)
+	$(LD) $(LDFLAGS) $(LIBS) test_00.o data_00.o -o test_00
 
-acc_data: acc_data.o acc_compiler_data.o $(DEPS)
-	$(LD) $(LDFLAGS) $(LIBS) acc_data.o acc_compiler_data.o -o acc_data
+test_01: test_01.o data_01.o $(DEPS)
+	$(LD) $(LDFLAGS) $(LIBS) test_01.o data_01.o -o test_01
 
-acc_kernel: acc_kernel.o acc_compiler_data.o $(DEPS)
-	$(LD) $(LDFLAGS) $(LIBS) acc_kernel.o acc_compiler_data.o -o acc_kernel
+test_02: test_02.o data_02.o $(DEPS)
+	$(LD) $(LDFLAGS) $(LIBS) test_02.o data_02.o -o test_02
 
-acc_rc_test_01: acc_rc_test_01.o acc_compiler_data.o $(DEPS)
-	$(LD) $(LDFLAGS) $(LIBS) acc_rc_test_01.o acc_compiler_data.o -o acc_rc_test_01
-
-check: acc_init acc_kernel acc_rc_test_01
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./acc_init
-#	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./acc_kernel
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./acc_rc_test_01
+check: test_01 test_02
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./test_00
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./test_01
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./test_02
 
 clean:
-	rm -f *.o acc_init acc_data acc_kernel acc_rc_test_01
+	rm -f *.o test_00 test_01 test_02
 

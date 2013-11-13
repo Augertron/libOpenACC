@@ -8,6 +8,8 @@
 #include <assert.h>
 
 void acc_dbg_dump_runtime() {
+  acc_init_once();
+
   printf("Device type : ");
   switch (acc_runtime.curr_device_type) {
     case acc_device_any:     printf("ACC_DEVICE_ANY\n");     break;
@@ -45,37 +47,39 @@ void acc_dbg_dump_runtime() {
     printf("No OpenCL Data !\n");
 }
 
-char * acc_ocl_status_to_char(cl_int status) {
+extern const char * cl_invalid_mem_object_tag = "CL_INVALID_MEM_OBJECT";
+
+const char * acc_ocl_status_to_char(cl_int status) {
   char * status_str;
   switch (status) {
-      case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST: status_str = "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST"; break;
-      case CL_INVALID_ARG_INDEX:                         status_str = "CL_INVALID_ARG_INDEX";                         break;
-      case CL_INVALID_ARG_SIZE:                          status_str = "CL_INVALID_ARG_SIZE";                          break;
-      case CL_INVALID_ARG_VALUE:                         status_str = "CL_INVALID_ARG_VALUE";                         break;
-      case CL_INVALID_BUFFER_SIZE:                       status_str = "CL_INVALID_BUFFER_SIZE";                       break;
-      case CL_INVALID_COMMAND_QUEUE:                     status_str = "CL_INVALID_COMMAND_QUEUE";                     break;
-      case CL_INVALID_CONTEXT:                           status_str = "CL_INVALID_CONTEXT";                           break;
-      case CL_INVALID_EVENT_WAIT_LIST:                   status_str = "CL_INVALID_EVENT_WAIT_LIST";                   break;
-      case CL_INVALID_GLOBAL_OFFSET:                     status_str = "CL_INVALID_GLOBAL_OFFSET";                     break;
-      case CL_INVALID_GLOBAL_WORK_SIZE:                  status_str = "CL_INVALID_GLOBAL_WORK_SIZE";                  break;
-      case CL_INVALID_HOST_PTR:                          status_str = "CL_INVALID_HOST_PTR";                          break;
-      case CL_INVALID_IMAGE_SIZE:                        status_str = "CL_INVALID_IMAGE_SIZE";                        break;
-//    case CL_INVALID_IMAGE_FORMAT:                      status_str = "CL_INVALID_IMAGE_FORMAT";                      break;
-      case CL_INVALID_KERNEL:                            status_str = "CL_INVALID_KERNEL";                            break;
-      case CL_INVALID_KERNEL_ARGS:                       status_str = "CL_INVALID_KERNEL_ARGS";                       break;
-      case CL_INVALID_MEM_OBJECT:                        status_str = "CL_INVALID_MEM_OBJECT";                        break;
-      case CL_INVALID_PROGRAM_EXECUTABLE:                status_str = "CL_INVALID_PROGRAM_EXECUTABLE";                break;
-      case CL_INVALID_SAMPLER:                           status_str = "CL_INVALID_SAMPLER";                           break;
-      case CL_INVALID_VALUE:                             status_str = "CL_INVALID_VALUE";                             break;
-      case CL_INVALID_WORK_DIMENSION:                    status_str = "CL_INVALID_WORK_DIMENSION";                    break;
-      case CL_INVALID_WORK_GROUP_SIZE:                   status_str = "CL_INVALID_WORK_GROUP_SIZE";                   break;
-      case CL_INVALID_WORK_ITEM_SIZE:                    status_str = "CL_INVALID_WORK_ITEM_SIZE";                    break;
-      case CL_MEM_OBJECT_ALLOCATION_FAILURE:             status_str = "CL_MEM_OBJECT_ALLOCATION_FAILURE";             break;
-      case CL_MISALIGNED_SUB_BUFFER_OFFSET:              status_str = "CL_MISALIGNED_SUB_BUFFER_OFFSET";              break;
-      case CL_OUT_OF_HOST_MEMORY:                        status_str = "CL_OUT_OF_HOST_MEMORY";                        break;
-      case CL_OUT_OF_RESOURCES:                          status_str = "CL_OUT_OF_RESOURCES";                          break;
-      default:                                           status_str = "CL_UNKNOWN_ERROR_CODE";                        break;
+      case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST: return (char *)"CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
+      case CL_INVALID_ARG_INDEX:                         return (char *)"CL_INVALID_ARG_INDEX";
+      case CL_INVALID_ARG_SIZE:                          return (char *)"CL_INVALID_ARG_SIZE";
+      case CL_INVALID_ARG_VALUE:                         return (char *)"CL_INVALID_ARG_VALUE";
+      case CL_INVALID_BUFFER_SIZE:                       return (char *)"CL_INVALID_BUFFER_SIZE";
+      case CL_INVALID_COMMAND_QUEUE:                     return (char *)"CL_INVALID_COMMAND_QUEUE";
+      case CL_INVALID_CONTEXT:                           return (char *)"CL_INVALID_CONTEXT";
+      case CL_INVALID_EVENT_WAIT_LIST:                   return (char *)"CL_INVALID_EVENT_WAIT_LIST";
+      case CL_INVALID_GLOBAL_OFFSET:                     return (char *)"CL_INVALID_GLOBAL_OFFSET";
+      case CL_INVALID_GLOBAL_WORK_SIZE:                  return (char *)"CL_INVALID_GLOBAL_WORK_SIZE";
+      case CL_INVALID_HOST_PTR:                          return (char *)"CL_INVALID_HOST_PTR";
+      case CL_INVALID_IMAGE_SIZE:                        return (char *)"CL_INVALID_IMAGE_SIZE";
+//    case CL_INVALID_IMAGE_FORMAT:                      return (char *)"CL_INVALID_IMAGE_FORMAT";
+      case CL_INVALID_KERNEL:                            return (char *)"CL_INVALID_KERNEL";
+      case CL_INVALID_KERNEL_ARGS:                       return (char *)"CL_INVALID_KERNEL_ARGS";
+      case CL_INVALID_MEM_OBJECT:                        return cl_invalid_mem_object_tag;        // return (char *)"CL_INVALID_MEM_OBJECT";
+      case CL_INVALID_PROGRAM_EXECUTABLE:                return (char *)"CL_INVALID_PROGRAM_EXECUTABLE";
+      case CL_INVALID_SAMPLER:                           return (char *)"CL_INVALID_SAMPLER";
+      case CL_INVALID_VALUE:                             return (char *)"CL_INVALID_VALUE";
+      case CL_INVALID_WORK_DIMENSION:                    return (char *)"CL_INVALID_WORK_DIMENSION";
+      case CL_INVALID_WORK_GROUP_SIZE:                   return (char *)"CL_INVALID_WORK_GROUP_SIZE";
+      case CL_INVALID_WORK_ITEM_SIZE:                    return (char *)"CL_INVALID_WORK_ITEM_SIZE";
+      case CL_MEM_OBJECT_ALLOCATION_FAILURE:             return (char *)"CL_MEM_OBJECT_ALLOCATION_FAILURE";
+      case CL_MISALIGNED_SUB_BUFFER_OFFSET:              return (char *)"CL_MISALIGNED_SUB_BUFFER_OFFSET";
+      case CL_OUT_OF_HOST_MEMORY:                        return (char *)"CL_OUT_OF_HOST_MEMORY";
+      case CL_OUT_OF_RESOURCES:                          return (char *)"CL_OUT_OF_RESOURCES";
+      default:                                           return (char *)"CL_UNKNOWN_ERROR_CODE";
     }
-  return status_str;
+  return (char *)"CL_UNKNOWN_ERROR_CODE";
 }
 

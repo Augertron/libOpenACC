@@ -14,7 +14,7 @@ OPENACC_PRIVATE_LIB = \
   private/debug.o
 
 OPENACC_INTERNAL_LIB = \
-  internal/allocator.o \
+  internal/mem-manager.o \
   internal/data-env.o \
   internal/init.o \
   internal/opencl-init.o \
@@ -24,13 +24,12 @@ OPENACC_INTERNAL_LIB = \
   internal/kernel.o
 
 OPENACC_UTILS_LIB = \
+  utils/utils.o \
   utils/io.o \
-  utils/bimap.o \
-  utils/linked_list.o \
-  utils/map.o \
-  utils/node.o \
-  utils/sorted_array.o \
-  utils/sorted_list.o
+  utils/containers/associative.o \
+  utils/containers/set.o \
+  utils/containers/map.o \
+  utils/containers/bimap.o
 
 CC=gcc
 CFLAGS=-g -I../include/ -fPIC

@@ -43,9 +43,11 @@ unsigned acc_get_device_desc(cl_device_id device, unsigned r, unsigned s) {
   unsigned t;
 
   clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(name), name, NULL);
-  for (t = 0; t < platforms_desc[r].devices_type_desc[s].num_devices; t++)
+  for (t = 0; t < platforms_desc[r].devices_type_desc[s].num_devices; t++) {
+//    printf("compare %s\n     to %s\n return %s\n", name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name, strstr(name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name));
     if (strstr(name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name) != NULL)
       break;
+  }
   if (t == platforms_desc[r].devices_type_desc[s].num_devices) {
     printf("[fatal]   Unrecognized OpenCL Device : %s.\n", name);
     exit(-1);

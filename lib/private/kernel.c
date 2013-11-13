@@ -35,7 +35,6 @@ acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
 }
 
 void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
-  acc_init_once();
 
   // Checks
   assert(region->num_dims == 1);
@@ -66,8 +65,9 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
   }
 
   // Set data kernel argument
+  assert(kernel->data_ptrs[i] != NULL);
   for (i = 0; i < kernel->desc->num_datas; i++) {
-    status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), kernel->data_ptrs[i]);
+    status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(kernel->data_ptrs[i]));
     if (status != CL_SUCCESS) {
       char * status_str = acc_ocl_status_to_char(status);
       printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (data #%u).\n", status_str, region->desc->id, kernel->desc->id, idx, i);
@@ -88,7 +88,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
   }
 
   // Set context of the kernel
-  status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), ocl_context);
+  status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &ocl_context);
   if (status != CL_SUCCESS) {
     char * status_str = acc_ocl_status_to_char(status);
     printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (context).\n", status_str, region->desc->id, kernel->desc->id, idx, i);
@@ -114,7 +114,5 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     printf("[fatal]   clEnqueueNDRangeKernel return %s for region[%u].kernel[%u].\n", status_str, region->desc->id, kernel->desc->id);
     exit(-1); /// \todo error code
   }
-
-  assert(!"NIY"); /// \todo
 }
 

@@ -1,3 +1,4 @@
+
 #ifndef _NODE_H_
 #define _NODE_H_
 
@@ -22,14 +23,6 @@ node_insert_after (node_t, node_t);
 
 void
 node_insert_before (node_t, node_t);
-
-void
-node_set_left (node_t, node_t);
-
-void
-node_set_right (node_t, node_t);
-
-void
-node_set_left_right (node_t, node_t, node_t);
-
+ 
 #endif /* _NODE_H_ */
+
