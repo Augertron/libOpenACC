@@ -43,10 +43,21 @@ size_t associative_lookup_(
 
   if (n == 1) {
     const key_type * key_ = associative_get_key_by_index(container, start);
-    if ((*container->key_less)(key_, key))
+    if ((*container->key_less)(key, key_))
       return start - 1;
     else
       return start;
+  }
+  else if (n == 2) {
+    const key_type * key_0 = associative_get_key_by_index(container, start);
+    const key_type * key_1 = associative_get_key_by_index(container, start + 1);
+
+    if ((*container->key_less)(key, key_0))
+      return start - 1;
+    else if ((*container->key_less)(key, key_1))
+      return start;
+    else
+      return start + 1;
   }
   else {
     size_t pivot = n/2;
@@ -54,15 +65,12 @@ size_t associative_lookup_(
 //    printf("associative_lookup_(...) : pivot = %u\n", pivot);
 
     const key_type * key_ = associative_get_key_by_index(container, start + pivot);
-    if ((*container->key_less)(key, key_))
-      return associative_lookup_(container, key, start, pivot);
-    else if ((*container->key_less)(key_, key))
-      if (n == 2)
-        return start + 1;
-      else
-        return associative_lookup_(container, key, start + pivot + 1, n - pivot - 1);
-    else
-      return pivot;
+    if ((*container->key_less)(key, key_))                                          // key < key[start + pivot]
+      return associative_lookup_(container, key, start, pivot);                       // search in [ start , start+pivot [
+    else if ((*container->key_less)(key_, key))                                     // key > key[start + pivot]
+      return associative_lookup_(container, key, start + pivot + 1, n - pivot - 1);   // search in ] start+pivot , start+n [
+    else                                                                            // key == key[start + pivot]
+      return pivot;                                                                   // Found!
   }
 }
 
@@ -104,9 +112,10 @@ void associative_insert_(
   if (container->count == container->size) {
     container->datas = realloc(container->datas, 2 * container->size);
     assert(container->datas != NULL);
+    container->size = 2 * container->size;
   }
 
-  void * storage_start = idx == -1 ? container->datas : associative_get_storage_by_index(container, idx);
+  void * storage_start = idx == -1 ? container->datas : associative_get_storage_by_index(container, idx+1);
   void * storage_stop  = storage_start + container->storage_size;
 
   void * container_end = container->datas + container->count * container->storage_size;

@@ -11,6 +11,8 @@
 #ifndef OPENACC_PRIVATE_DEBUG
 #define OPENACC_PRIVATE_DEBUG 20131031
 
+#include "OpenACC/public/arch.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

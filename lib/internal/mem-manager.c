@@ -4,6 +4,7 @@
 #include "OpenACC/utils/containers/bimap.h"
 #include "OpenACC/internal/init.h"
 #include "OpenACC/utils/utils.h"
+#include "OpenACC/private/debug.h"
 
 #include <assert.h>
 

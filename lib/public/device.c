@@ -1,6 +1,7 @@
 
 #include "OpenACC/openacc.h"
 #include "OpenACC/private/runtime.h"
+#include "OpenACC/private/debug.h"
 
 #include <assert.h>
 

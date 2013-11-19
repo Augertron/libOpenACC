@@ -1,6 +1,6 @@
 
 #include "OpenACC/device/opencl.h"
-
+#if 0
 /*!
  *  Generic kernel generated for Vector Addition. Include the 3 levels from OpenACC (gang, worker, vector) and the 4 tiles.
  *  Suffix should be "_gang_worker_vector_tile_0_tile_1_tile_2_tile_3" but by conv this suffix is replaced by ""
@@ -58,7 +58,7 @@ __kernel void vect_add_kernel(__global float * a, __global float * b, __global f
     }
   }
 }
-
+#endif
 /*!
  *  Kernel generated for Vector Addition when only considering Gang and Worker (no Vector) and only tile #2 (ie. between Worker and Vector).
  */

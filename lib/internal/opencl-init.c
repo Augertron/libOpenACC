@@ -4,6 +4,7 @@
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/internal/compiler.h"
 #include "OpenACC/internal/region.h"
+#include "OpenACC/private/debug.h"
 
 #include "OpenACC/utils/io.h"
 

@@ -1,6 +1,7 @@
 
 #include "OpenACC/openacc.h"
 #include "OpenACC/private/runtime.h"
+#include "OpenACC/private/debug.h"
 #include "OpenACC/internal/mem-manager.h"
 
 #include <stdio.h>
@@ -22,7 +23,7 @@ d_void * acc_malloc(size_t n) {
     /* cl_int *errcode_ret */ &status
   );
   if (status != CL_SUCCESS) {
-    char * status_str = acc_ocl_status_to_char(status);
+    const char * status_str = acc_ocl_status_to_char(status);
     printf("[fatal]   clCreateBuffer return %s for device %u and size %u.\n", status_str, device_idx, (unsigned)n);
     exit(-1); /// \todo error code
   }
@@ -37,8 +38,8 @@ void acc_free(d_void * dev_ptr) {
 
   cl_int status = clReleaseMemObject((cl_mem)dev_ptr);
   if (status != CL_SUCCESS) {
-    char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clReleaseMemObject return %s for device ptr = %u.\n", status_str, dev_ptr);
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clReleaseMemObject return %s for device ptr = %x.\n", status_str, dev_ptr);
     exit(-1); /// \todo error code
   }
 }

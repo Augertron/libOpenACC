@@ -2,6 +2,7 @@
 #include "OpenACC/internal/data-env.h"
 #include "OpenACC/internal/mem-manager.h"
 #include "OpenACC/internal/runtime.h"
+#include "OpenACC/private/debug.h"
 
 #include "OpenACC/utils/containers/set.h"
 #include "OpenACC/utils/utils.h"

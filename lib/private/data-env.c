@@ -1,6 +1,7 @@
 
 #include "OpenACC/internal/data-env.h"
 #include "OpenACC/internal/runtime.h"
+#include "OpenACC/private/debug.h"
 
 #include <stddef.h>
 

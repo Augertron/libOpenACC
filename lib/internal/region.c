@@ -5,6 +5,7 @@
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/private/region.h"
 #include "OpenACC/internal/opencl-debug.h"
+#include "OpenACC/private/debug.h"
 
 #include <stdio.h>
 #include <string.h>

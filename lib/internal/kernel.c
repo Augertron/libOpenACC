@@ -10,6 +10,7 @@
 #include "OpenACC/internal/loop.h"
 
 #include "OpenACC/private/runtime.h"
+#include "OpenACC/private/debug.h"
 
 #include <stdlib.h>
 #include <string.h>

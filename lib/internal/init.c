@@ -4,6 +4,7 @@
 #include "OpenACC/public/arch.h"
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/internal/opencl-init.h"
+#include "OpenACC/private/debug.h"
 
 #include <assert.h>
 

@@ -18,7 +18,7 @@ void map_remove(map_t map, const key_type * key) {
   associative_remove(map, key);
 }
 
-void * map_lookup(map_t map, const key_type * key) {
+const void * map_lookup(map_t map, const key_type * key) {
   return associative_lookup(map, key);
 }
 

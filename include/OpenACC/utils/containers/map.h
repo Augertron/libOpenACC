@@ -17,7 +17,7 @@ void map_insert(map_t map, const key_type * key, const data_type * data);
 
 void map_remove(map_t map, const key_type * key);
 
-void * map_lookup(map_t map, const key_type * key);
+const void * map_lookup(map_t map, const key_type * key);
 
 void map_free (map_t map);
 
