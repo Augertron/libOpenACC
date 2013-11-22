@@ -2,10 +2,6 @@
  * \addtogroup grp_libopenacc_tests
  * @{
  *
- * \file tests/acc_kernel.c
- * 
- * In this file, we tests:
- *
  */
 
 #include <math.h>
@@ -21,7 +17,7 @@
 #include "OpenACC/private/loop.h"
 #include "OpenACC/private/data-env.h"
 
-#include <time.h>
+#include "OpenACC/utils/timer.h"
 
 typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_region_t_ * acc_region_t;
@@ -29,25 +25,21 @@ typedef struct acc_region_t_ * acc_region_t;
 extern struct acc_kernel_desc_t_ kernel_0x00_desc;
 extern struct acc_region_desc_t_ region_0x00_desc;
 
-const unsigned long n = 8*64*1*96*1024;
+int main(int argc, char ** argv) {
+  assert(argc == 4);
 
-float a[n];
-float b[n];
-float c[n];
+  unsigned long n = atoi(argv[1]);
 
-void print_timer(struct timespec * timer_start, struct timespec * timer_stop) {
-  long delta_ns = timer_stop->tv_nsec - timer_start->tv_nsec;
-  if (delta_ns >= 0) {
-    delta_ns += (timer_stop->tv_sec - timer_start->tv_sec) * 1000000000;
-  }
-  else {
-    delta_ns = (timer_stop->tv_sec - timer_start->tv_sec - 1) * 1000000000 + delta_ns;
-  }
-  printf("timer = %d\n", delta_ns);
-}
+  struct timespec data_start;
+  struct timespec data_stop;
+  struct timespec computation_start;
+  struct timespec computation_stop;
 
-int main() {
   unsigned i;
+
+  float * a = (float*)malloc(n * sizeof(float));
+  float * b = (float*)malloc(n * sizeof(float));
+  float * c = (float*)malloc(n * sizeof(float));
 
   for (i = 0; i < n; i++) {
     a[i] = rand();
@@ -58,6 +50,8 @@ int main() {
   acc_set_device_type(acc_device_any);
   acc_set_device_num(0, acc_device_any);
 
+  clock_gettime(CLOCK_REALTIME, &data_start);
+
   // Push a new data environment for region_0
   acc_push_data_environment();
 
@@ -65,12 +59,11 @@ int main() {
   acc_copyin(b, n * sizeof(float)); // clause copyin(b[n])
   acc_present_or_create(c, n * sizeof(float)); // allocation for : clause copyout(c)
 
-  struct timespec timer_start;
-  clock_gettime(CLOCK_REALTIME, &timer_start);
+  clock_gettime(CLOCK_REALTIME, &computation_start);
 
-  unsigned long region_0_num_gang = 8;     // clause num_gang(16)
-  unsigned long region_0_num_worker = 64;   // clause num_worker(64)
-  unsigned long region_0_vector_length = 1; // clause vector_length(1)
+  unsigned long region_0_num_gang = atoi(argv[2]);
+  unsigned long region_0_num_worker = atoi(argv[3]);
+  unsigned long region_0_vector_length = 1;
 
   // construct and start parallel region descriptor
   acc_region_t region_0 = acc_build_region(&region_0x00_desc, 1, &region_0_num_gang, &region_0_num_worker, region_0_vector_length);
@@ -94,18 +87,22 @@ int main() {
 
   acc_region_stop(region_0);
 
-  struct timespec timer_stop;
-  clock_gettime(CLOCK_REALTIME, &timer_stop);
+  clock_gettime(CLOCK_REALTIME, &computation_stop);
 
-  print_timer(&timer_start, &timer_stop);
-
-  acc_copyout(c, n * sizeof(float)); // clause copyout(c)
+  acc_copyout(c, n * sizeof(float));
 
   acc_pop_data_environment();
 
-  for (i = 0; i < 10; i++) {
-    printf("%e + %e = %e\n", a[i], b[i], c[i]);
-  }
+  clock_gettime(CLOCK_REALTIME, &data_stop);
+
+  long delta_computation = delta_timer(&computation_start, &computation_stop);
+  long delta_data = delta_timer(&data_start, &data_stop);
+
+  printf("%d %d\n", delta_computation, delta_data);
+
+  free(a);
+  free(b);
+  free(c);
 
   return 0;
 }

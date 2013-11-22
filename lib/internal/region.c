@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #ifndef PRINT_BUILD_LOG
-# define PRINT_BUILD_LOG 1
+# define PRINT_BUILD_LOG 0
 #endif
 
 void acc_get_region_defaults(struct acc_region_t_ * region) {
@@ -57,7 +57,6 @@ void acc_region_init(struct acc_region_t_ * region) {
     strcpy(build_options, "-I");
     strcat(build_options, compiler_data.acc_runtime_dir);
     strcat(build_options, "/include/ ");
-    strcat(build_options, "-DOPENACC_RUNTIME=20131031 "); /// \todo based on MACRO
 
     assert(compiler_data.regions[region->desc->id]->num_options == 0 || compiler_data.regions[region->desc->id]->options != NULL);
 

@@ -17,27 +17,82 @@
 # define ACC_RUNTIME_OPENCL "lib/opencl/libopenacc.cl"
 #endif
 
+/// generic implementation of the kernel : unused
+
 struct acc_kernel_version_t_ kernel_0x00_default = {
   0, 0, 0, NULL, ""
 };
 
+#if !defined(KERNEL_VERSION) || KERNEL_VERSION < 1 || KERNEL_VERSION > 3
+#error Available versions : 1, 2, 3
+#endif
+
+/// Dynamic gang, worker, and tile 0 ; tile 1, 2, 3, and vector are empty
+
 struct acc_loop_t_ kernel_0x00_v1_loops[1] = {
   {
-    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 0
-    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!<   Gang Tile
-    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 1
-    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Worker Tile
-    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Filing Tile 2
-    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Vector Tile
-    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }  ///!< Filing Tile 3
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Filing Tile 0 : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!<   Gang Tile   : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 1 : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Worker Tile   : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 2 : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Vector Tile   : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }  ///!< Filing Tile 3 : static = 1
   }
 };
 
 struct acc_kernel_version_t_ kernel_0x00_v1 = {
-  0, 0, 1, kernel_0x00_v1_loops, "_gang_worker_tile_2"
+  0, 0, 1, kernel_0x00_v1_loops, "_gang_worker_tile_0"
 };
 
-acc_kernel_version_t kernel_0x00_versions[2] = { &kernel_0x00_default , &kernel_0x00_v1 };
+/// Dynamic gang, worker, and tile 1 ; tile 0, 2, 3, and vector are empty
+
+struct acc_loop_t_ kernel_0x00_v2_loops[1] = {
+  {
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 0 : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!<   Gang Tile   : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Filing Tile 1 : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Worker Tile   : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 2 : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Vector Tile   : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }  ///!< Filing Tile 3 : static = 1
+  }
+};
+
+struct acc_kernel_version_t_ kernel_0x00_v2 = {
+  0, 0, 1, kernel_0x00_v2_loops, "_gang_worker_tile_1"
+};
+
+/// Dynamic gang, worker, and tile 2 ; tile 0, 1, 3, and vector are empty
+
+struct acc_loop_t_ kernel_0x00_v3_loops[1] = {
+  {
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 0 : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!<   Gang Tile   : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Filing Tile 1 : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Worker Tile   : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_dynamic         , 0 , 0 }, ///!< Filing Tile 2 : dynamic
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }, ///!< Vector Tile   : static = 1
+    (struct acc_loop_tile_t_){ e_tiling_static_iteration, 0 , 1 }  ///!< Filing Tile 3 : static = 1
+  }
+};
+
+struct acc_kernel_version_t_ kernel_0x00_v3 = {
+  0, 0, 1, kernel_0x00_v3_loops, "_gang_worker_tile_2"
+};
+
+/// Kernel descriptor
+
+acc_kernel_version_t kernel_0x00_versions[2] = {
+  &kernel_0x00_default,
+#if KERNEL_VERSION == 1
+  &kernel_0x00_v1
+#elif KERNEL_VERSION == 2
+  &kernel_0x00_v2
+#elif KERNEL_VERSION == 3
+  &kernel_0x00_v3
+#endif
+};
 
 struct acc_kernel_desc_t_ kernel_0x00_desc = {
   0,

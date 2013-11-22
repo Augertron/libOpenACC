@@ -59,9 +59,44 @@ __kernel void vect_add_kernel(__global float * a, __global float * b, __global f
   }
 }
 #endif
-/*!
- *  Kernel generated for Vector Addition when only considering Gang and Worker (no Vector) and only tile #2 (ie. between Worker and Vector).
- */
+
+
+__kernel void vect_add_kernel_gang_worker_tile_0(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_0;
+
+  // Loop for tile #0
+  for (it_loop_0_tile_0  = 0;
+       it_loop_0_tile_0  < ctx->loops[0].tiles[e_tile_0].length;
+       it_loop_0_tile_0 += ctx->loops[0].tiles[e_tile_0].stride
+  ) {
+    // Gang "loop"
+    long it_loop_0_gang = acc_gang_iteration(ctx, 0, it_loop_0_tile_0);
+
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+    res[it_loop_0_worker] = a[it_loop_0_worker] + b[it_loop_0_worker];
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_1(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_1;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Loop for tile #1
+  for (it_loop_0_tile_1  = it_loop_0_gang;
+       it_loop_0_tile_1  < it_loop_0_gang + ctx->loops[0].tiles[e_tile_1].length;
+       it_loop_0_tile_1 +=                  ctx->loops[0].tiles[e_tile_1].stride
+  ) {
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_tile_1);
+
+    res[it_loop_0_worker] = a[it_loop_0_worker] + b[it_loop_0_worker];
+  }
+}
+
 __kernel void vect_add_kernel_gang_worker_tile_2(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
   long it_loop_0_tile_2;
 
@@ -74,7 +109,7 @@ __kernel void vect_add_kernel_gang_worker_tile_2(__global float * a, __global fl
   // Loop for tile between Worker and Vector
   for (it_loop_0_tile_2  = it_loop_0_worker;
        it_loop_0_tile_2  < it_loop_0_worker + ctx->loops[0].tiles[e_tile_2].length;
-       it_loop_0_tile_2 += ctx->loops[0].tiles[e_tile_2].stride
+       it_loop_0_tile_2 +=                    ctx->loops[0].tiles[e_tile_2].stride
   )
     res[it_loop_0_tile_2] = a[it_loop_0_tile_2] + b[it_loop_0_tile_2];
 }

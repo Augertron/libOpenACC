@@ -26,6 +26,7 @@ OPENACC_INTERNAL_LIB = \
 OPENACC_UTILS_LIB = \
   utils/utils.o \
   utils/io.o \
+  utils/timer.o \
   utils/containers/associative.o \
   utils/containers/set.o \
   utils/containers/map.o \

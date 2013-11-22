@@ -143,7 +143,7 @@ void acc_update_self(h_void * host_ptr, size_t n) {
 void acc_map_data(h_void * host_ptr, d_void * dev_ptr, size_t n) {
   acc_init_once();
 
-  printf("acc_map_data(host = %x, dest = %x, sizes = %u)\n", host_ptr, dev_ptr, n);
+//printf("acc_map_data(host = %x, dest = %x, sizes = %u)\n", host_ptr, dev_ptr, n);
 
   unsigned device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
@@ -195,7 +195,7 @@ int acc_is_present(h_void * host_ptr, size_t n) {
 void acc_memcpy_to_device(d_void * dest, h_void * src, size_t bytes) {
   acc_init_once();
 
-  printf("acc_memcpy_to_device(dest = %x, src = %x, bytes = %u)\n", dest, src, bytes);
+//printf("acc_memcpy_to_device(dest = %x, src = %x, bytes = %u)\n", dest, src, bytes);
 
   unsigned device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
@@ -220,7 +220,7 @@ void acc_memcpy_to_device(d_void * dest, h_void * src, size_t bytes) {
 void acc_memcpy_from_device(h_void * dest, d_void * src, size_t bytes) {
   acc_init_once();
 
-  printf("acc_memcpy_from_device(dest = %x, src = %x, bytes = %u)\n", dest, src, bytes);
+//printf("acc_memcpy_from_device(dest = %x, src = %x, bytes = %u)\n", dest, src, bytes);
 
   unsigned device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
