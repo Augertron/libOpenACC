@@ -38,7 +38,7 @@ int main(int argc, char ** argv) {
   struct timespec timer_stop;
   clock_gettime(CLOCK_REALTIME, &stop);
 
-  printf("%d\n", delta_timer(&start, &stop));
+  printf("%d %d\n", n, delta_timer(&start, &stop));
 /*
   for (i = 0; i < 10; i++) {
     printf("%e + %e = %e\n", a[i], b[i], c[i]);

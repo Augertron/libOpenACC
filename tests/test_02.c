@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
   long delta_computation = delta_timer(&computation_start, &computation_stop);
   long delta_data = delta_timer(&data_start, &data_stop);
 
-  printf("%d %d\n", delta_computation, delta_data);
+  printf("%d %d %d %d %d\n", n, region_0_num_gang, region_0_num_worker, delta_computation, delta_data);
 
   free(a);
   free(b);
