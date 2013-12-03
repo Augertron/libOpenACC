@@ -10,9 +10,14 @@
 #include "OpenACC/internal/kernel.h"
 #include "OpenACC/internal/loop.h"
 
-#ifndef ACC_RUNTIME_DIR
+#ifndef ACC_RUNTIME_ABS_DIR
 # error "Need OpenACC runtime directory."
 #endif
+
+#ifndef ACC_KERNELS_ABS_DIR
+# error "Need generated kernels directory."
+#endif
+
 #ifndef ACC_RUNTIME_OPENCL
 # define ACC_RUNTIME_OPENCL "lib/opencl/libopenacc.cl"
 #endif
@@ -24,7 +29,7 @@ struct acc_kernel_version_t_ kernel_0x00_default = {
 };
 
 #if !defined(KERNEL_VERSION) || KERNEL_VERSION < 1 || KERNEL_VERSION > 3
-#error Available versions : 1, 2, 3
+# define KERNEL_VERSION 1
 #endif
 
 /// Dynamic gang, worker, and tile 0 ; tile 1, 2, 3, and vector are empty
@@ -115,8 +120,9 @@ struct acc_region_desc_t_ region_0x00_desc = {
 acc_region_desc_t regions[1] = { &region_0x00_desc };
 
 acc_compiler_data_t compiler_data = {
-  (const char * ) ACC_RUNTIME_DIR,    /* Absolute (or relative) directory for OpenACC runtime (needed to compile OpenCL C codes) */
-  (const char * ) ACC_RUNTIME_OPENCL, /* Name of the OpenCL C runtime file */
+  (const char * ) ACC_RUNTIME_ABS_DIR, /* Absolute directory for OpenACC runtime (needed to compile OpenCL C codes) */
+  (const char * ) ACC_RUNTIME_OPENCL,  /* Name of the OpenCL C runtime file */
+  (const char * ) ACC_KERNELS_ABS_DIR, /* Absolute directory where the OpenCL C kernels have been stored. */
   1, regions
 };
 

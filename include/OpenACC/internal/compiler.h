@@ -22,6 +22,7 @@ typedef struct acc_region_desc_t_ * acc_region_desc_t;
 struct acc_compiler_data_t_ {
   const char * acc_runtime_dir;
   const char * acc_runtime_ocl;
+  const char * acc_kernels_dir;
   const unsigned long num_regions;
   const acc_region_desc_t * regions;
 };
