@@ -113,5 +113,8 @@ container: container.o data_empty.o $(DEPS)
 # Cleanning...
 
 clean:
-	rm -f *.o test_00 test_01 test_02 cpu_ref_02 test_02_v1 test_02_v2 test_02_v3 container
+	rm -f *.o test_00 test_01 test_02 cpu_ref_02
+	rm -f test_02_v1 test_02_v2 test_02_v3
+	rm -f ref.log acc*-*-*.*
+	rm -f container
 
