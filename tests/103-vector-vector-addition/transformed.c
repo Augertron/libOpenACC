@@ -26,7 +26,7 @@ extern struct acc_kernel_desc_t_ kernel_0x00_desc;
 extern struct acc_region_desc_t_ region_0x00_desc;
 
 int main(int argc, char ** argv) {
-  assert(argc == 4);
+  assert(argc == 5);
 
   unsigned long n = atoi(argv[1]);
 
@@ -63,7 +63,7 @@ int main(int argc, char ** argv) {
 
   unsigned long region_0_num_gang = atoi(argv[2]);
   unsigned long region_0_num_worker = atoi(argv[3]);
-  unsigned long region_0_vector_length = 1;
+  unsigned long region_0_vector_length = atoi(argv[4]);
 
   // construct and start parallel region descriptor
   acc_region_t region_0 = acc_build_region(&region_0x00_desc, 1, &region_0_num_gang, &region_0_num_worker, region_0_vector_length);
@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
   long delta_computation = delta_timer(&computation_start, &computation_stop);
   long delta_data = delta_timer(&data_start, &data_stop);
 
-  printf("%d %d %d %d %d\n", n, region_0_num_gang, region_0_num_worker, delta_computation, delta_data);
+  printf("%d %d %d %d %d %d\n", n, region_0_num_gang, region_0_num_worker, region_0_vector_length, delta_computation, delta_data);
 
   free(a);
   free(b);

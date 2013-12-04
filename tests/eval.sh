@@ -1,54 +1,32 @@
 #!/bin/bash
 
+source $1/test-vars.rc
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../lib
+mkdir -p $1/datas
+rm -f $1/datas/$2.log
 
-rm -f ref.log acc*-*-*.log
-
-for size in 20 23 27 30 35 39 44 50 57 64 72 81 90 101 113 126 140
+for size in $LIBACC_TEST_SIZE_LIST
 do
-
-  echo "size = $size"
-
-  ./cpu_ref_02 $(($size*1000000)) >> ref.log
-
-  echo "----------------------------"
-
-  for gang in 1 2 4 8 16
+  for gang in $LIBACC_TEST_GANG_LIST
   do
-    for worker in 4 8 16 32 64
+    for worker in $LIBACC_TEST_WORKER_LIST
     do
-      echo "size = $size"
-      echo "gang = $gang"
-      echo "worker = $worker"
+      for vector in $LIBACC_TEST_VECTOR_LIST
+      do
+        echo "size = $size"
+        echo "gang = $gang"
+        echo "worker = $worker"
+        echo "vector = $vector"
 
-      ./test_02_v1 $(($size*1000000)) $gang $worker >> acc1-$gang-$worker.log
-      ./test_02_v2 $(($size*1000000)) $gang $worker >> acc2-$gang-$worker.log
-      ./test_02_v3 $(($size*1000000)) $gang $worker >> acc3-$gang-$worker.log
+        for i in `seq 1 $LIBACC_TEST_SAMPLING_SIZE`
+        do
+          echo -n "."
+          ./$2 $(($size*1000000)) $gang $worker $vector >> $1/datas/$2.log
+        done
 
-      echo "----------------------------"
+        echo;echo "----------------------------"
+      done
     done
   done
 done
-
-echo "" > plotter.gplot
-
-echo -n "plot" >> plotter.gplot
-
-for gang in 1 2 4 8 16 32
-do
-  for worker in 1 2 4 8 16 32 64 128
-  do
-    paste ref.log acc1-$gang-$worker.log | awk '{ print $1, $4, $5, $2/$6, $2/$7 }' > acc1-$gang-$worker.dat
-    echo -n " \"acc1-$gang-$worker.log\" using 1:4 title \"T0=? G=$gang T1=1 W=$worker T2=1\"," >> plotter.gplot
-
-    paste ref.log acc2-$gang-$worker.log | awk '{ print $1, $4, $5, $2/$6, $2/$7 }' > acc2-$gang-$worker.dat
-    echo -n " \"acc2-$gang-$worker.log\" using 1:4 title \"T0=1 G=$gang T1=? W=$worker T2=1\"," >> plotter.gplot
-
-    paste ref.log acc3-$gang-$worker.log | awk '{ print $1, $4, $5, $2/$6, $2/$7 }' > acc3-$gang-$worker.dat
-    echo -n " \"acc3-$gang-$worker.log\" using 1:4 title \"T0=1 G=$gang T1=1 W=$worker T2=?\"," >> plotter.gplot
-  done
-done
-
-gnuplot plotter.gplot
 

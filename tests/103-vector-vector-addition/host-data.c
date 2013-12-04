@@ -112,7 +112,7 @@ acc_kernel_desc_t region_0x00_kernels[1] = { &kernel_0x00_desc };
 
 struct acc_region_desc_t_ region_0x00_desc = {
   0,
-  "vectadd.cl",
+  "kernels.cl",
   0, NULL,
   1, region_0x00_kernels
 };
