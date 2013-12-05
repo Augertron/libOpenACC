@@ -3,7 +3,7 @@
 source $1/test-vars.rc
 
 mkdir -p $1/datas
-rm -f $1/datas/$2.log
+rm -f $1/datas/$2.dat
 
 for size in $LIBACC_TEST_SIZE_LIST
 do
@@ -21,7 +21,7 @@ do
         for i in `seq 1 $LIBACC_TEST_SAMPLING_SIZE`
         do
           echo -n "."
-          ./$2 $(($size*1000000)) $gang $worker $vector >> $1/datas/$2.log
+          ./$2 $(($size*1024*1024)) $gang $worker $vector >> $1/datas/$2.dat
         done
 
         echo;echo "----------------------------"

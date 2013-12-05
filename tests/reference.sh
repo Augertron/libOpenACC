@@ -13,7 +13,7 @@ do
   for i in `seq 1 $LIBACC_TEST_SAMPLING_SIZE`
   do
     echo -n "."
-    ./$2 $(($size*1000000)) >> $1/datas/$2.dat
+    ./$2 $(($size*1024*1024)) >> $1/datas/$2.dat
   done
 
   echo;echo "----------------------------"

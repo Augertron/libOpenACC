@@ -60,6 +60,9 @@ __kernel void vect_add_kernel(__global float * a, __global float * b, __global f
 }
 #endif
 
+//////////////////////////////////
+// Version with tile #0 dynamic //
+//////////////////////////////////
 
 __kernel void vect_add_kernel_gang_worker_tile_0(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
   long it_loop_0_tile_0;
@@ -79,6 +82,94 @@ __kernel void vect_add_kernel_gang_worker_tile_0(__global float * a, __global fl
   }
 }
 
+__kernel void vect_add_kernel_gang_worker_tile_0_vector_2(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_0;
+
+  // Loop for tile #0
+  for (it_loop_0_tile_0  = 0;
+       it_loop_0_tile_0  < ctx->loops[0].tiles[e_tile_0].length;
+       it_loop_0_tile_0 += ctx->loops[0].tiles[e_tile_0].stride
+  ) {
+    // Gang "loop"
+    long it_loop_0_gang = acc_gang_iteration(ctx, 0, it_loop_0_tile_0);
+
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+    float2 a_2 = vload2(it_loop_0_worker, a);
+    float2 b_2 = vload2(it_loop_0_worker, b);
+    float2 res_2 = a_2 + b_2;
+    vstore2(res_2, it_loop_0_worker, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_0_vector_4(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_0;
+
+  // Loop for tile #0
+  for (it_loop_0_tile_0  = 0;
+       it_loop_0_tile_0  < ctx->loops[0].tiles[e_tile_0].length;
+       it_loop_0_tile_0 += ctx->loops[0].tiles[e_tile_0].stride
+  ) {
+    // Gang "loop"
+    long it_loop_0_gang = acc_gang_iteration(ctx, 0, it_loop_0_tile_0);
+
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+    float4 a_4 = vload4(it_loop_0_worker, a);
+    float4 b_4 = vload4(it_loop_0_worker, b);
+    float4 res_4 = a_4 + b_4;
+    vstore4(res_4, it_loop_0_worker, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_0_vector_8(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_0;
+
+  // Loop for tile #0
+  for (it_loop_0_tile_0  = 0;
+       it_loop_0_tile_0  < ctx->loops[0].tiles[e_tile_0].length;
+       it_loop_0_tile_0 += ctx->loops[0].tiles[e_tile_0].stride
+  ) {
+    // Gang "loop"
+    long it_loop_0_gang = acc_gang_iteration(ctx, 0, it_loop_0_tile_0);
+
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+    float8 a_8 = vload8(it_loop_0_worker, a);
+    float8 b_8 = vload8(it_loop_0_worker, b);
+    float8 res_8 = a_8 + b_8;
+    vstore8(res_8, it_loop_0_worker, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_0_vector_16(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_0;
+
+  // Loop for tile #0
+  for (it_loop_0_tile_0  = 0;
+       it_loop_0_tile_0  < ctx->loops[0].tiles[e_tile_0].length;
+       it_loop_0_tile_0 += ctx->loops[0].tiles[e_tile_0].stride
+  ) {
+    // Gang "loop"
+    long it_loop_0_gang = acc_gang_iteration(ctx, 0, it_loop_0_tile_0);
+
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+    float16 a_16 = vload16(it_loop_0_worker, a);
+    float16 b_16 = vload16(it_loop_0_worker, b);
+    float16 res_16 = a_16 + b_16;
+    vstore16(res_16, it_loop_0_worker, res);
+  }
+}
+
+//////////////////////////////////
+// Version with tile #1 dynamic //
+//////////////////////////////////
+
 __kernel void vect_add_kernel_gang_worker_tile_1(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
   long it_loop_0_tile_1;
 
@@ -97,6 +188,94 @@ __kernel void vect_add_kernel_gang_worker_tile_1(__global float * a, __global fl
   }
 }
 
+__kernel void vect_add_kernel_gang_worker_tile_1_vector_2(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_1;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Loop for tile #1
+  for (it_loop_0_tile_1  = it_loop_0_gang;
+       it_loop_0_tile_1  < it_loop_0_gang + ctx->loops[0].tiles[e_tile_1].length;
+       it_loop_0_tile_1 +=                  ctx->loops[0].tiles[e_tile_1].stride
+  ) {
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_tile_1);
+
+    float2 a_2 = vload2(it_loop_0_worker, a);
+    float2 b_2 = vload2(it_loop_0_worker, b);
+    float2 res_2 = a_2 + b_2;
+    vstore2(res_2, it_loop_0_worker, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_1_vector_4(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_1;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Loop for tile #1
+  for (it_loop_0_tile_1  = it_loop_0_gang;
+       it_loop_0_tile_1  < it_loop_0_gang + ctx->loops[0].tiles[e_tile_1].length;
+       it_loop_0_tile_1 +=                  ctx->loops[0].tiles[e_tile_1].stride
+  ) {
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_tile_1);
+
+    float4 a_4 = vload4(it_loop_0_worker, a);
+    float4 b_4 = vload4(it_loop_0_worker, b);
+    float4 res_4 = a_4 + b_4;
+    vstore4(res_4, it_loop_0_worker, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_1_vector_8(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_1;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Loop for tile #1
+  for (it_loop_0_tile_1  = it_loop_0_gang;
+       it_loop_0_tile_1  < it_loop_0_gang + ctx->loops[0].tiles[e_tile_1].length;
+       it_loop_0_tile_1 +=                  ctx->loops[0].tiles[e_tile_1].stride
+  ) {
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_tile_1);
+
+    float8 a_8 = vload8(it_loop_0_worker, a);
+    float8 b_8 = vload8(it_loop_0_worker, b);
+    float8 res_8 = a_8 + b_8;
+    vstore8(res_8, it_loop_0_worker, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_1_vector_16(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_1;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Loop for tile #1
+  for (it_loop_0_tile_1  = it_loop_0_gang;
+       it_loop_0_tile_1  < it_loop_0_gang + ctx->loops[0].tiles[e_tile_1].length;
+       it_loop_0_tile_1 +=                  ctx->loops[0].tiles[e_tile_1].stride
+  ) {
+    // Worker "loop"
+    long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_tile_1);
+
+    float16 a_16 = vload16(it_loop_0_worker, a);
+    float16 b_16 = vload16(it_loop_0_worker, b);
+    float16 res_16 = a_16 + b_16;
+    vstore16(res_16, it_loop_0_worker, res);
+  }
+}
+
+//////////////////////////////////
+// Version with tile #2 dynamic //
+//////////////////////////////////
+
 __kernel void vect_add_kernel_gang_worker_tile_2(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
   long it_loop_0_tile_2;
 
@@ -112,5 +291,89 @@ __kernel void vect_add_kernel_gang_worker_tile_2(__global float * a, __global fl
        it_loop_0_tile_2 +=                    ctx->loops[0].tiles[e_tile_2].stride
   )
     res[it_loop_0_tile_2] = a[it_loop_0_tile_2] + b[it_loop_0_tile_2];
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_2_vector_2(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_2;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Worker "loop"
+  long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+  // Loop for tile between Worker and Vector
+  for (it_loop_0_tile_2  = it_loop_0_worker;
+       it_loop_0_tile_2  < it_loop_0_worker + ctx->loops[0].tiles[e_tile_2].length;
+       it_loop_0_tile_2 +=                    ctx->loops[0].tiles[e_tile_2].stride
+  ) {
+    float2 a_2 = vload2(it_loop_0_tile_2, a);
+    float2 b_2 = vload2(it_loop_0_tile_2, b);
+    float2 res_2 = a_2 + b_2;
+    vstore2(res_2, it_loop_0_tile_2, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_2_vector_4(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_2;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Worker "loop"
+  long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+  // Loop for tile between Worker and Vector
+  for (it_loop_0_tile_2  = it_loop_0_worker;
+       it_loop_0_tile_2  < it_loop_0_worker + ctx->loops[0].tiles[e_tile_2].length;
+       it_loop_0_tile_2 +=                    ctx->loops[0].tiles[e_tile_2].stride
+  ) {
+    float4 a_4 = vload4(it_loop_0_tile_2, a);
+    float4 b_4 = vload4(it_loop_0_tile_2, b);
+    float4 res_4 = a_4 + b_4;
+    vstore4(res_4, it_loop_0_tile_2, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_2_vector_8(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_2;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Worker "loop"
+  long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+  // Loop for tile between Worker and Vector
+  for (it_loop_0_tile_2  = it_loop_0_worker;
+       it_loop_0_tile_2  < it_loop_0_worker + ctx->loops[0].tiles[e_tile_2].length;
+       it_loop_0_tile_2 +=                    ctx->loops[0].tiles[e_tile_2].stride
+  ) {
+    float8 a_8 = vload8(it_loop_0_tile_2, a);
+    float8 b_8 = vload8(it_loop_0_tile_2, b);
+    float8 res_8 = a_8 + b_8;
+    vstore8(res_8, it_loop_0_tile_2, res);
+  }
+}
+
+__kernel void vect_add_kernel_gang_worker_tile_2_vector_16(__global float * a, __global float * b, __global float * res, __constant struct acc_context_t_ * ctx) {
+  long it_loop_0_tile_2;
+
+  // Gang "loop"
+  long it_loop_0_gang = acc_gang_iteration(ctx, 0, 0);
+
+  // Worker "loop"
+  long it_loop_0_worker = acc_worker_iteration(ctx, 0, it_loop_0_gang);
+
+  // Loop for tile between Worker and Vector
+  for (it_loop_0_tile_2  = it_loop_0_worker;
+       it_loop_0_tile_2  < it_loop_0_worker + ctx->loops[0].tiles[e_tile_2].length;
+       it_loop_0_tile_2 +=                    ctx->loops[0].tiles[e_tile_2].stride
+  ) {
+    float16 a_16 = vload16(it_loop_0_tile_2, a);
+    float16 b_16 = vload16(it_loop_0_tile_2, b);
+    float16 res_16 = a_16 + b_16;
+    vstore16(res_16, it_loop_0_tile_2, res);
+  }
 }
 

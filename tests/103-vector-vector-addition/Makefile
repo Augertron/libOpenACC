@@ -15,15 +15,15 @@ include ../test-vars.cg
 
 check: reference-103 executable-103-tile_0 executable-103-tile_1 executable-103-tile_2
 	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./reference-103 $(SIZE_N_103)
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./executable-103-tile_0 $(SIZE_N_103) $(NBR_GANG_103) $(NBR_WORKER_103)
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./executable-103-tile_1 $(SIZE_N_103) $(NBR_GANG_103) $(NBR_WORKER_103)
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./executable-103-tile_2 $(SIZE_N_103) $(NBR_GANG_103) $(NBR_WORKER_103)
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./executable-103-tile_0 $(SIZE_N_103) $(NBR_GANG_103) $(NBR_WORKER_103) $(NBR_VECTOR_103)
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./executable-103-tile_1 $(SIZE_N_103) $(NBR_GANG_103) $(NBR_WORKER_103) $(NBR_VECTOR_103)
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ./executable-103-tile_2 $(SIZE_N_103) $(NBR_GANG_103) $(NBR_WORKER_103) $(NBR_VECTOR_103)
 
 eval: reference-103 executable-103-tile_0 executable-103-tile_1 executable-103-tile_2
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ../reference.sh $(OPENACC_DIR)/tests reference-103
 	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ../eval.sh $(OPENACC_DIR)/tests executable-103-tile_0
 	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ../eval.sh $(OPENACC_DIR)/tests executable-103-tile_1
 	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ../eval.sh $(OPENACC_DIR)/tests executable-103-tile_2
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(OPENACC_LIB_DIR) ../reference.sh $(OPENACC_DIR)/tests reference-103
 
 include ../rules.mk
 

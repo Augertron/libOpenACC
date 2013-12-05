@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #ifndef PRINT_BUILD_LOG
-# define PRINT_BUILD_LOG 0
+# define PRINT_BUILD_LOG 1
 #endif
 
 void acc_get_region_defaults(struct acc_region_t_ * region) {
