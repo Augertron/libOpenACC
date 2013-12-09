@@ -181,7 +181,7 @@ void acc_collect_ocl_devices() {
 void acc_load_ocl_sources() {
   unsigned i;
 
-  char ocl_rt_file[50];
+  char ocl_rt_file[512];
   strcpy(ocl_rt_file, compiler_data.acc_runtime_dir);
   strcat(ocl_rt_file, "/");
   strcat(ocl_rt_file, compiler_data.acc_runtime_ocl);
