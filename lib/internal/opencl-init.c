@@ -198,8 +198,14 @@ void acc_load_ocl_sources() {
     exit(-1);
   }
 
-  for (i = 0; i < compiler_data.num_regions; i++)
-    acc_runtime.opencl_data->region_sources[i] = readSource(compiler_data.regions[i]->file);
+  char ocl_kernel_file[512];
+  for (i = 0; i < compiler_data.num_regions; i++) {
+    ocl_kernel_file[0] = '\0';
+    strcpy(ocl_kernel_file, compiler_data.acc_kernels_dir);
+    strcat(ocl_kernel_file, "/");
+    strcat(ocl_kernel_file, compiler_data.regions[i]->file);
+    acc_runtime.opencl_data->region_sources[i] = readSource(ocl_kernel_file);
+  }
 
   set_flag(f_ocl_sources);
 }
