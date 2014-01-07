@@ -20,7 +20,7 @@ extern "C" {
 
 struct acc_kernel_loop_t_ {
   struct acc_loop_desc_t_ original;
-  struct {
+  struct kernel_loop_tile_t_ {
     long stride;
     long length; /// Negative length for negative stride
   } tiles[7];
