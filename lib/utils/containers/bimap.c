@@ -90,6 +90,8 @@ void bimap_remove_by_key_1(bimap_t bimap, const key_type * k1) {
   map_remove(bimap->key_2_map, k2);
 
   /// \todo rm data
+
+  bimap->count--;
 }
 
 void bimap_remove_by_key_2(bimap_t bimap, const key_type * k2) {
@@ -103,6 +105,8 @@ void bimap_remove_by_key_2(bimap_t bimap, const key_type * k2) {
   map_remove(bimap->key_2_map, k2);
 
   /// \todo rm data
+
+  bimap->count--;
 }
 
 void bimap_free(bimap_t bimap) {
