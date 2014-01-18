@@ -32,6 +32,8 @@ void acc_clear_data_environment(struct acc_data_environment_t_ * data_env) {
   for (i = 0; i < num_devices; i++) {
     for (j = 0; j < data_env->data_allocs[i]->count; j++) {
       h_void * host_ptr = *(void **)(data_env->data_allocs[i]->datas + j * data_env->data_allocs[i]->storage_size);
+      d_void * dev_ptr = acc_get_deviceptr(i, host_ptr);
+      acc_free(dev_ptr);
       remove_data_allocation(i, host_ptr);
     }
     data_env->data_allocs[i]->count = 0;
