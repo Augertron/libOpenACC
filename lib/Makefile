@@ -1,4 +1,6 @@
 
+OPENCL_INC_DIR=/home/tristan/cuda_sdk/OpenCL/common/inc
+
 OPENACC_PUBLIC_LIB = \
   public/arch.o \
   public/async.o \
@@ -33,7 +35,7 @@ OPENACC_UTILS_LIB = \
   utils/containers/bimap.o
 
 CC=gcc
-CFLAGS=-g -I../include/ -fPIC
+CFLAGS=-g -I../include/ -I$(OPENCL_INC_DIR) -fPIC
 OPTS=
 LD=gcc
 LDFLAGS+=-Wl,--no-as-needed 

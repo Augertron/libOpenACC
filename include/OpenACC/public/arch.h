@@ -24,6 +24,8 @@ extern "C" {
 typedef enum acc_device_e {
   acc_device_any = 0,           ///< All devices
   acc_device_nvidia,            ///< Nvidia devices \todo list type/model
+    acc_device_tesla,
+      acc_device_M2070,
   acc_device_amd,               ///< AMD devices \todo more type ?
     acc_device_radeon,          ///<   Radeon \todo list model
   acc_device_intel,             ///< Intel devices
@@ -93,7 +95,7 @@ extern platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS];
 extern device_type_desc_t devices_type_desc[12];
 
 /// List of supported devices
-extern device_desc_t devices_desc[2];
+extern device_desc_t devices_desc[4];
 
 #ifdef __cplusplus
 }

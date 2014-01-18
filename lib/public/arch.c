@@ -13,6 +13,8 @@
 const char * acc_device_env_name [acc_device_last] = {
   "ANY",
   "NVIDIA",
+  "TESLA",
+  "M2070",
   "AMD",
   "RADEON",
   "INTEL",
@@ -26,6 +28,8 @@ const char * acc_device_env_name [acc_device_last] = {
 const char * acc_device_name [acc_device_last] = {
   "All",
   "Nvidia",
+  "Tesla",
+  "Tesla M2070",
   "AMD",
   "AMD radeon",
   "Intel(R)",
@@ -47,9 +51,12 @@ acc_device_defaults_t acc_device_defaults [acc_device_last] = {
   { 1, {0, 0, 0}, {0, 0, 0}, 0 },
   { 1, {0, 0, 0}, {0, 0, 0}, 0 },
   { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
 };
 
-device_desc_t devices_desc [2] = {
+device_desc_t devices_desc [4] = {
+  { "Tesla M2070"                          , acc_device_M2070     },
   { "Intel(R) Core(TM) i5 CPU         670" , acc_device_i5_670    },
   { "Intel(R) Core(TM) i7-3610QM CPU"      , acc_device_i7_3610QM },
   { "Intel(R) Core(TM) i7 CPU         950" , acc_device_i7_950    }
@@ -57,12 +64,12 @@ device_desc_t devices_desc [2] = {
 
 device_type_desc_t devices_type_desc [12] = {
   { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL               }, ///< \todo NVidia GPU
+  { CL_DEVICE_TYPE_GPU         , acc_device_nvidia  , 1, &(devices_desc[0]) },
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               },
   { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
   { CL_DEVICE_TYPE_GPU         , acc_device_radeon  , 0, NULL               }, ///< Radeon
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 3, &(devices_desc[0]) }, ///< Core
+  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 3, &(devices_desc[1]) }, ///< Core
   { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL               },
   { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi , 0, NULL               }, ///< XeonPhi
   { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
@@ -71,7 +78,7 @@ device_type_desc_t devices_type_desc [12] = {
 };
 
 platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS] = {
-  { "Nvidia",          acc_device_nvidia, 3, &(devices_type_desc[0]) }, /// \todo find actual platform name for Nvidia
+  { "NVIDIA CUDA",     acc_device_nvidia, 3, &(devices_type_desc[0]) }, /// \todo find actual platform name for Nvidia
   { "AMD",             acc_device_amd,    3, &(devices_type_desc[3]) }, /// \todo find actual platform name for AMD
   { "Intel(R) OpenCL", acc_device_intel,  3, &(devices_type_desc[6]) },
   { "Altera",          acc_device_altera, 3, &(devices_type_desc[9]) }  /// \todo find actual platform name for Altera

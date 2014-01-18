@@ -13,6 +13,10 @@
 
 #include <assert.h>
 
+#ifndef DEBUG_OUTPUT
+# define DEBUG_OUTPUT 1
+#endif
+
 unsigned acc_get_platform_desc(cl_platform_id platform) {
   char name[50];
   unsigned r;
@@ -21,7 +25,10 @@ unsigned acc_get_platform_desc(cl_platform_id platform) {
   for (r = 0; r < NUM_OPENCL_PLATFORMS; r++)
     if (strcmp(name, platforms_desc[r].ocl_name) == 0)
       break;
-  assert(r < NUM_OPENCL_PLATFORMS); /// \todo unrecognized CL_PLATFORM_NAME
+  if (r == NUM_OPENCL_PLATFORMS) {
+    printf("[fatal]   Unrecognized OpenCL Platform: \"%s\"\n", name);
+    exit(-1);
+  }
 
   return r;
 }
@@ -50,7 +57,7 @@ unsigned acc_get_device_desc(cl_device_id device, unsigned r, unsigned s) {
       break;
   }
   if (t == platforms_desc[r].devices_type_desc[s].num_devices) {
-    printf("[fatal]   Unrecognized OpenCL Device : %s.\n", name);
+    printf("[fatal]   Unrecognized OpenCL Device : %s\n", name);
     exit(-1);
   }
 
