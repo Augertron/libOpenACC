@@ -47,12 +47,12 @@ cl_kernel acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_con
   unsigned best_matching_score = 0;
   struct acc_kernel_loop_t_ * best_matching_loops;
 
-  printf("acc_match_kernel_version\n");
+//printf("acc_match_kernel_version\n");
 
   unsigned i, j;
   for (i = 1; i < kernel->desc->num_versions; i++) {
 
-    printf("  version %u\n", i);
+//  printf("  version %u\n", i);
 
     if (    ( kernel->desc->versions[i]->num_gang      == 0 || kernel->desc->versions[i]->num_gang      == context->num_gang      )
          && ( kernel->desc->versions[i]->num_worker    == 0 || kernel->desc->versions[i]->num_worker    == context->num_worker    )
@@ -63,12 +63,12 @@ cl_kernel acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_con
 
       struct acc_kernel_loop_t_ * ctx_loops = (struct acc_kernel_loop_t_ *)malloc(context->num_loop * sizeof(struct acc_kernel_loop_t_));
 
-      printf("  scan loops\n");
+//    printf("  scan loops\n");
 
       for (j = 0; j < context->num_loop; j++) {
         struct acc_loop_t_ * loop = &(kernel->desc->versions[i]->loops[j]);
 
-        printf("    loop %u\n", j);
+//      printf("    loop %u\n", j);
 
         unsigned num_dynamic = 0;
         if (loop->tiles[e_tile_0].tiling == e_tiling_dynamic) num_dynamic++;
@@ -76,7 +76,7 @@ cl_kernel acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_con
         if (loop->tiles[e_tile_2].tiling == e_tiling_dynamic) num_dynamic++;
         if (loop->tiles[e_tile_3].tiling == e_tiling_dynamic) num_dynamic++;
 
-        printf("    num_dynamic %u\n", num_dynamic);
+//      printf("    num_dynamic %u\n", num_dynamic);
 
         size_t tile;
 
@@ -132,7 +132,7 @@ cl_kernel acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_con
           else if (loop->tiles[e_tile_3].tiling == e_tiling_dynamic) dynamic_tile = e_tile_3;
           else assert(!"Problem with dynamic tiling...");
 
-          printf("    dynamic_tile %u\n", dynamic_tile);
+//        printf("    dynamic_tile %u\n", dynamic_tile);
 
           // Propagate value from outer tile to the dynamic tile
           for (tile = 0; tile < dynamic_tile; tile++) {
