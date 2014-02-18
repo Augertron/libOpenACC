@@ -59,7 +59,9 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     status = clSetKernelArg(ocl_kernel, idx, kernel->desc->size_scalars[i], kernel->scalar_ptrs[i]);
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
-      printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (scalar #%u).\n", status_str, region->desc->id, kernel->desc->id, idx, i);
+      printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (scalar #%u).\n",
+                status_str, region->desc->id, kernel->desc->id, idx, i
+            );
       exit(-1); /// \todo error code
     }
     idx++;
@@ -71,7 +73,9 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(kernel->data_ptrs[i]));
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
-      printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (data #%u).\n", status_str, region->desc->id, kernel->desc->id, idx, i);
+      printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (data #%u).\n",
+                status_str, region->desc->id, kernel->desc->id, idx, i
+            );
       exit(-1); /// \todo error code
     }
     idx++;
@@ -84,7 +88,9 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
                                        context, &status );
   if (status != CL_SUCCESS) {
     const char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clCreateBuffer return %s for region[%u].kernel[%u] when call to build the kernel copy of context.\n", status_str, region->desc->id, kernel->desc->id);
+    printf("[fatal]   clCreateBuffer return %s for region[%u].kernel[%u] when call to build the kernel copy of context.\n",
+              status_str, region->desc->id, kernel->desc->id
+          );
     exit(-1); /// \todo error code
   }
 
@@ -92,9 +98,12 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
   status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &ocl_context);
   if (status != CL_SUCCESS) {
     const char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (context).\n", status_str, region->desc->id, kernel->desc->id, idx, i);
+    printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (context).\n",
+              status_str, region->desc->id, kernel->desc->id, idx, i
+          );
     exit(-1); /// \todo error code
   }
+  idx++;
 
   // Launch the kernel
   size_t global_work_size[1] = { region->num_gang[0] * region->num_worker[0] };

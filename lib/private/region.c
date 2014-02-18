@@ -16,6 +16,9 @@ struct acc_region_t_ * acc_build_region(acc_region_desc_t region, size_t num_dim
 
   struct acc_region_t_ * result = (struct acc_region_t_ *)malloc(sizeof(struct acc_region_t_));
 
+  result->num_devices = 0;
+  result->device_idx = NULL;
+
   result->desc          = region;
   result->num_dims      = num_dims;
   result->num_gang      = num_gang;
@@ -26,20 +29,28 @@ struct acc_region_t_ * acc_build_region(acc_region_desc_t region, size_t num_dim
 }
 
 void acc_region_start(acc_region_t region) {
-  region->device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+  region->num_devices = 1;
+  region->device_idx = malloc(sizeof(size_t));
+  region->device_idx[0] = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
   acc_region_init(region);
 
   acc_get_region_defaults(region);
 
-  assert(acc_runtime.opencl_data->devices_data[region->device_idx]->command_queue != NULL);
-  clFinish(acc_runtime.opencl_data->devices_data[region->device_idx]->command_queue);
+  unsigned idx;
+  for (idx = 0; idx < region->num_devices; idx++) {
+    assert(acc_runtime.opencl_data->devices_data[region->device_idx[idx]]->command_queue != NULL);
+    clFinish(acc_runtime.opencl_data->devices_data[region->device_idx[idx]]->command_queue);
+  }
 }
 
 void acc_region_stop(acc_region_t region) {
-  assert(region->device_idx == acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num));
+  assert(region->num_devices != 1 || region->device_idx[0] == acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num));
 
-  assert(acc_runtime.opencl_data->devices_data[region->device_idx]->command_queue != NULL);
-  clFinish(acc_runtime.opencl_data->devices_data[region->device_idx]->command_queue);
+  unsigned idx;
+  for (idx = 0; idx < region->num_devices; idx++) {
+    assert(acc_runtime.opencl_data->devices_data[region->device_idx[idx]]->command_queue != NULL);
+    clFinish(acc_runtime.opencl_data->devices_data[region->device_idx[idx]]->command_queue);
+  }
 }
 

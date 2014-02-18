@@ -22,6 +22,9 @@
 extern "C" {
 #endif
 
+/**
+ * Descriptor of one version of one kernel
+ */
 struct acc_kernel_version_t_ {
   /// Number of Gangs assumed by this version (0 means dynamic)
   unsigned long num_gang;
@@ -59,6 +62,9 @@ struct acc_kernel_desc_t_ {
 
   unsigned num_versions;
   acc_kernel_version_t * versions;
+
+  unsigned num_splitted_loops;
+  unsigned * splitted_loops;
 };
 
 /*! \func acc_create_context
