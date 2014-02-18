@@ -24,7 +24,7 @@ struct acc_region_t_ {
   struct acc_region_desc_t_ * desc;
 
   unsigned num_devices;
-  size_t * device_idx;
+  size_t * devices_idx;
 
   /// Number of dimension in the parallel region (currently only 1 supported by OpenACC directives)
   size_t num_dims;

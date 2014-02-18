@@ -17,7 +17,7 @@ struct acc_region_t_ * acc_build_region(acc_region_desc_t region, size_t num_dim
   struct acc_region_t_ * result = (struct acc_region_t_ *)malloc(sizeof(struct acc_region_t_));
 
   result->num_devices = 0;
-  result->device_idx = NULL;
+  result->devices_idx = NULL;
 
   result->desc          = region;
   result->num_dims      = num_dims;
@@ -30,8 +30,8 @@ struct acc_region_t_ * acc_build_region(acc_region_desc_t region, size_t num_dim
 
 void acc_region_start(acc_region_t region) {
   region->num_devices = 1;
-  region->device_idx = malloc(sizeof(size_t));
-  region->device_idx[0] = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+  region->devices_idx = malloc(sizeof(size_t));
+  region->devices_idx[0] = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
   acc_region_init(region);
 
@@ -39,18 +39,18 @@ void acc_region_start(acc_region_t region) {
 
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
-    assert(acc_runtime.opencl_data->devices_data[region->device_idx[idx]]->command_queue != NULL);
-    clFinish(acc_runtime.opencl_data->devices_data[region->device_idx[idx]]->command_queue);
+    assert(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->command_queue != NULL);
+    clFinish(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->command_queue);
   }
 }
 
 void acc_region_stop(acc_region_t region) {
-  assert(region->num_devices != 1 || region->device_idx[0] == acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num));
+  assert(region->num_devices != 1 || region->devices_idx[0] == acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num));
 
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
-    assert(acc_runtime.opencl_data->devices_data[region->device_idx[idx]]->command_queue != NULL);
-    clFinish(acc_runtime.opencl_data->devices_data[region->device_idx[idx]]->command_queue);
+    assert(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->command_queue != NULL);
+    clFinish(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->command_queue);
   }
 }
 
