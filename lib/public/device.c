@@ -33,8 +33,6 @@ void acc_set_device_num (int num, acc_device_t dev) {
 int acc_get_device_num(acc_device_t dev) {
   acc_init_once();
 
-  assert(acc_runtime.curr_device_type == dev);
-
   return acc_runtime.curr_device_num;
 }
 

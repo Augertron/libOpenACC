@@ -20,21 +20,23 @@ extern "C" {
 
 typedef struct acc_loop_desc_t_ * acc_loop_desc_t;
 
+typedef enum acc_splitting_mode_e_ {
+  e_contiguous,
+  e_chunk
+} acc_splitting_mode_e;
+
 /**
  *  Describe how one loop can be distributed accross devices.
  */
 struct acc_loop_splitter_t_ {
   unsigned loop_id;
 
-  enum acc_splitting_mode_e {
-    e_contiguous,
-    e_chunk
-  } mode;
+  acc_splitting_mode_e mode;
 
   union {
     struct {
       unsigned nbr_dev;
-      unsigned long * portion;
+      unsigned long * portions;
     } contiguous;
     struct {
       unsigned long size;

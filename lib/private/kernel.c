@@ -36,21 +36,20 @@ acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
 }
 
 void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
-
-  // Checks
-  assert(region->num_dims == 1);
-  assert(region->num_gang[0] > 0 && region->num_worker[0] > 0 && region->vector_length > 0);
-  assert(kernel->loops[0]->stride == 1); /// \todo currently only support loops with positive unit stride
-
   unsigned dev_idx;
   for (dev_idx = 0; dev_idx < region->num_devices; dev_idx++) {
-    assert(acc_runtime.opencl_data->devices_data[region->devices_idx[dev_idx]] != NULL);
+    assert(region->devices[dev_idx].num_gang > 0);
+    assert(region->devices[dev_idx].num_worker > 0);
+    assert(region->devices[dev_idx].vector_length > 0);
+
+    size_t device_idx = region->devices[dev_idx].device_idx;
+    assert(acc_runtime.opencl_data->devices_data[device_idx] != NULL);
 
     // Create a default context
-    acc_context_t context = acc_create_context(region, kernel);
+    acc_context_t context = acc_create_context(region, kernel, device_idx);
 
     // Look for a matching ‭version of the kernel, fill the context according to the selected version
-    cl_kernel ocl_kernel = acc_build_ocl_kernel(region, kernel, context, region->devices_idx[dev_idx]);
+    cl_kernel ocl_kernel = acc_build_ocl_kernel(region, kernel, context, device_idx);
 
     cl_int status;
     cl_uint idx = 0;
@@ -84,7 +83,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     }
 
     // Allocate/copy context in constant memory \todo alloc only copy before launch with event wait
-    cl_mem ocl_context = clCreateBuffer( acc_runtime.opencl_data->devices_data[region->devices_idx[dev_idx]]->context,
+    cl_mem ocl_context = clCreateBuffer( acc_runtime.opencl_data->devices_data[device_idx]->context,
                                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                                          sizeof(struct acc_context_t_) + context->num_loop * sizeof(struct acc_kernel_loop_t_),
                                          context, &status );
@@ -107,13 +106,13 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     }
     idx++;
 
-    assert(acc_runtime.opencl_data->devices_data[region->devices_idx[dev_idx]]->command_queue != NULL);
+    assert(acc_runtime.opencl_data->devices_data[device_idx]->command_queue != NULL);
 
     // Launch the kernel
-    size_t global_work_size[1] = { region->num_gang[0] * region->num_worker[0] };
-    size_t local_work_size[1] = { region->num_worker[0] };
+    size_t global_work_size[1] = { region->devices[dev_idx].num_gang * region->devices[dev_idx].num_worker };
+    size_t local_work_size[1] = { region->devices[dev_idx].num_worker };
     status = clEnqueueNDRangeKernel(
-      acc_runtime.opencl_data->devices_data[region->devices_idx[dev_idx]]->command_queue,
+      acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
       ocl_kernel,
       /* cl_uint work_dim                  = */ 1,
       /* const size_t * global_work_offset = */ NULL,
@@ -125,7 +124,9 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     );
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
-      printf("[fatal]   clEnqueueNDRangeKernel return %s for region[%u].kernel[%u].\n", status_str, region->desc->id, kernel->desc->id);
+      printf("[fatal]   clEnqueueNDRangeKernel return %s for region[%u].kernel[%u].\n",
+                status_str, region->desc->id, kernel->desc->id
+            );
       exit(-1); /// \todo error code
     }
   }

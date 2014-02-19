@@ -32,6 +32,12 @@ struct acc_region_desc_t_ {
 
   size_t num_kernels;
   acc_kernel_desc_t * kernels;
+
+  size_t num_devices;
+  struct {
+    acc_device_t kind;
+    size_t num;
+  } * devices;
 };
 
 /**

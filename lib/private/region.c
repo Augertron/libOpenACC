@@ -11,46 +11,56 @@
 typedef struct acc_region_desc_t_ * acc_region_desc_t;
 typedef struct acc_region_t_ * acc_region_t;
 
-struct acc_region_t_ * acc_build_region(acc_region_desc_t region, size_t num_dims, size_t * num_gang, size_t * num_worker, size_t vector_length) {
+struct acc_region_t_ * acc_build_region(acc_region_desc_t region) {
   acc_init_once();
 
-  struct acc_region_t_ * result = (struct acc_region_t_ *)malloc(sizeof(struct acc_region_t_));
+  unsigned num_devices = region->num_devices;
 
-  result->num_devices = 0;
-  result->devices_idx = NULL;
+  assert(num_devices > 0); /// \todo case when all present devices are used.
 
-  result->desc          = region;
-  result->num_dims      = num_dims;
-  result->num_gang      = num_gang;
-  result->num_worker    = num_worker;
-  result->vector_length = vector_length;
+  struct acc_region_t_ * result = (struct acc_region_t_ *)malloc(sizeof(struct acc_region_t_) + num_devices * sizeof(struct acc_region_per_device_t_));
+
+  result->desc = region;
+  result->num_devices = num_devices;
+
+  if (region->devices == NULL) {
+    assert(num_devices == 1);
+
+    result->devices[0].device_idx = acc_get_device_idx(acc_get_device_type(), acc_get_device_num());
+    result->devices[0].num_gang = 0;
+    result->devices[0].num_worker = 0;
+    result->devices[0].vector_length = 0;
+  }
+  else {
+    unsigned i;
+    for (i = 0; i < num_devices; i++) {
+      result->devices[i].device_idx = acc_get_device_idx(region->devices[i].kind, region->devices[i].num);
+      result->devices[i].num_gang = 0;
+      result->devices[i].num_worker = 0;
+      result->devices[i].vector_length = 0;
+    }
+  }
 
   return result;
 }
 
 void acc_region_start(acc_region_t region) {
-  region->num_devices = 1;
-  region->devices_idx = malloc(sizeof(size_t));
-  region->devices_idx[0] = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
-
   acc_region_init(region);
 
   acc_get_region_defaults(region);
 
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
-    assert(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->command_queue != NULL);
-    clFinish(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->command_queue);
+    assert(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue != NULL);
+    clFinish(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue);
   }
 }
 
 void acc_region_stop(acc_region_t region) {
-  assert(region->num_devices != 1 || region->devices_idx[0] == acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num));
-
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
-    assert(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->command_queue != NULL);
-    clFinish(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->command_queue);
+    assert(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue != NULL);
+    clFinish(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue);
   }
 }
 

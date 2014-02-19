@@ -17,18 +17,18 @@
 #endif
 
 void acc_get_region_defaults(struct acc_region_t_ * region) {
-  if (region->num_dims == 0 || region->num_dims == acc_device_defaults[acc_runtime.curr_device_type].num_dims) {
-    region->num_dims = acc_device_defaults[acc_runtime.curr_device_type].num_dims;
-    size_t i;
-    for (i = 0; i < region->num_dims; i++) {
-      if (region->num_gang[i] == 0)
-        region->num_gang[i] = acc_device_defaults[acc_runtime.curr_device_type].num_gang[i];
-      if (region->num_worker[i] == 0)
-        region->num_worker[i] = acc_device_defaults[acc_runtime.curr_device_type].num_worker[i];
-    }
+  unsigned i;
+  for (i = 0; i < region->num_devices; i++) {
+    if (region->devices[i].num_gang == 0)
+      region->devices[i].num_gang = acc_device_defaults[region->desc->devices[i].kind].num_gang;
+    assert(region->devices[i].num_gang > 0);
+    if (region->devices[i].num_worker == 0)
+      region->devices[i].num_worker = acc_device_defaults[region->desc->devices[i].kind].num_worker;
+    assert(region->devices[i].num_worker > 0);
+    if (region->devices[i].vector_length == 0)
+      region->devices[i].vector_length = acc_device_defaults[region->desc->devices[i].kind].vector_length;
+    assert(region->devices[i].vector_length > 0);
   }
-  if (region->vector_length == 0)
-    region->vector_length = acc_device_defaults[acc_runtime.curr_device_type].vector_length;
 }
 
 void acc_region_init(struct acc_region_t_ * region) {
@@ -56,11 +56,13 @@ void acc_region_init(struct acc_region_t_ * region) {
 
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx ++) {
-    assert(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]] != NULL);
+    size_t device_idx = region->devices[idx].device_idx;
 
-    if (acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->programs[region->desc->id] == NULL) {
-      cl_context * context = &(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->context);
-      cl_program * program = &(acc_runtime.opencl_data->devices_data[region->devices_idx[idx]]->programs[region->desc->id]);
+    assert(acc_runtime.opencl_data->devices_data[device_idx] != NULL);
+
+    if (acc_runtime.opencl_data->devices_data[device_idx]->programs[region->desc->id] == NULL) {
+      cl_context * context = &(acc_runtime.opencl_data->devices_data[device_idx]->context);
+      cl_program * program = &(acc_runtime.opencl_data->devices_data[device_idx]->programs[region->desc->id]);
 
       *program = clCreateProgramWithSource(*context, 2, (const char **)ocl_sources, NULL, &status);
       if (status != CL_SUCCESS) {
@@ -69,10 +71,10 @@ void acc_region_init(struct acc_region_t_ * region) {
         exit(-1);
       }
 
-      status = clBuildProgram(*program, 1, &(acc_runtime.opencl_data->devices[0][region->devices_idx[idx]]), build_options, NULL, NULL);
+      status = clBuildProgram(*program, 1, &(acc_runtime.opencl_data->devices[0][device_idx]), build_options, NULL, NULL);
 #if PRINT_BUILD_LOG
       /// \todo cannot rely on acc_runtime.curr_device_type and acc_runtime.curr_device_num
-      acc_dbg_ocl_build_log(region->devices_idx[idx], *program, acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+      acc_dbg_ocl_build_log(device_idx, *program, acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 #endif
       if (status != CL_SUCCESS) {
         printf("[fatal]   clBuildProgram : %s, %u for region %u return %u : failed\n",

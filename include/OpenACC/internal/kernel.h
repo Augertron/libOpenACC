@@ -77,7 +77,8 @@ struct acc_kernel_desc_t_ {
  */
 struct acc_context_t_ * acc_create_context(
   struct acc_region_t_ * region,
-  struct acc_kernel_t_ * kernel
+  struct acc_kernel_t_ * kernel,
+  size_t device_idx
 );
 
 cl_kernel acc_build_ocl_kernel(

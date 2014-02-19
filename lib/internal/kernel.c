@@ -22,12 +22,12 @@ typedef struct acc_region_t_ * acc_region_t;
 typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_context_t_ * acc_context_t;
 
-acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel) {
+acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_t device_idx) {
   acc_context_t result = (acc_context_t)malloc(sizeof(struct acc_context_t_) + kernel->desc->num_loops * sizeof(struct acc_kernel_loop_t_));
 
-  result->num_gang      = region->num_gang[0];
-  result->num_worker    = region->num_worker[0];
-  result->vector_length = region->vector_length;
+  result->num_gang      = region->devices[device_idx].num_gang;
+  result->num_worker    = region->devices[device_idx].num_worker;
+  result->vector_length = region->devices[device_idx].vector_length;
 
   result->num_loop = kernel->desc->num_loops;
 
