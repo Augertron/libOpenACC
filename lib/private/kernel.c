@@ -71,7 +71,8 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     // Set data kernel argument
     assert(kernel->data_ptrs[i] != NULL);
     for (i = 0; i < kernel->desc->num_datas; i++) {
-      status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(kernel->data_ptrs[i]));
+      d_void * data_ptr = acc_deviceptr_(device_idx, kernel->data_ptrs[i]);
+      status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(data_ptr));
       if (status != CL_SUCCESS) {
         const char * status_str = acc_ocl_status_to_char(status);
         printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (data #%u).\n",

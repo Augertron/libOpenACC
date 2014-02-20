@@ -13,6 +13,7 @@
 
 #include "OpenACC/public/arch.h"
 #include "OpenACC/private/region.h"
+#include "OpenACC/internal/kernel.h"
 
 #include <stddef.h>
 
@@ -21,6 +22,15 @@ extern "C" {
 #endif
 
 typedef struct acc_kernel_desc_t_ * acc_kernel_desc_t;
+
+struct acc_data_distribution_t_ {
+  acc_splitting_mode_e mode;
+
+  unsigned nbr_dev;
+  unsigned long * portions;
+
+  unsigned long chunk;
+};
 
 struct acc_region_desc_t_ {
   unsigned id;
@@ -38,6 +48,9 @@ struct acc_region_desc_t_ {
     acc_device_t kind;
     size_t num;
   } * devices;
+
+  size_t num_distributed_datas;
+  struct acc_data_distribution_t_ * data_distributions;
 };
 
 /**

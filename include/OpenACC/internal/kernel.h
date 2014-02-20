@@ -43,6 +43,26 @@ struct acc_kernel_version_t_ {
 };
 typedef struct acc_kernel_version_t_ * acc_kernel_version_t;
 
+typedef enum acc_splitting_mode_e_ {
+  e_contiguous,
+  e_chunk
+} acc_splitting_mode_e;
+
+/**
+ *  Describe how one loop can be distributed accross devices.
+ */
+struct acc_loop_splitter_t_ {
+  unsigned loop_id;
+
+  acc_splitting_mode_e mode;
+
+  unsigned nbr_dev;
+  unsigned long * portions;
+
+  unsigned long chunk;
+};
+typedef struct acc_loop_splitter_t_ * acc_loop_splitter_t;
+
 struct acc_kernel_desc_t_ {
   unsigned id;
 
@@ -63,8 +83,8 @@ struct acc_kernel_desc_t_ {
   unsigned num_versions;
   acc_kernel_version_t * versions;
 
-  unsigned num_splitted_loops;
-  unsigned * splitted_loops;
+  /// splitted loop, no splitted loop if NULL
+  acc_loop_splitter_t * splitted_loop;
 };
 
 /*! \func acc_create_context

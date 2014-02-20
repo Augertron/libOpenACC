@@ -12,6 +12,8 @@
 #ifndef LIBOPENACC_PRIVATE_REGION
 #define LIBOPENACC_PRIVATE_REGION 20131031
 
+#include "OpenACC/openacc.h"
+
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -22,6 +24,8 @@ extern "C" {
 struct acc_region_t_ {
   /// Pointer to region descriptor
   struct acc_region_desc_t_ * desc;
+
+  h_void ** distributed_datas;
 
   unsigned num_devices;
 

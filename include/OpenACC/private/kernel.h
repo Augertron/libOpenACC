@@ -20,31 +20,6 @@ extern "C" {
 
 typedef struct acc_loop_desc_t_ * acc_loop_desc_t;
 
-typedef enum acc_splitting_mode_e_ {
-  e_contiguous,
-  e_chunk
-} acc_splitting_mode_e;
-
-/**
- *  Describe how one loop can be distributed accross devices.
- */
-struct acc_loop_splitter_t_ {
-  unsigned loop_id;
-
-  acc_splitting_mode_e mode;
-
-  union {
-    struct {
-      unsigned nbr_dev;
-      unsigned long * portions;
-    } contiguous;
-    struct {
-      unsigned long size;
-    } chunk;
-  } params;
-};
-typedef struct acc_loop_splitter_t_ * acc_loop_splitter_t;
-
 struct acc_kernel_t_ {
   /// Pointer to kernel descriptor
   struct acc_kernel_desc_t_ * desc;
@@ -57,8 +32,6 @@ struct acc_kernel_t_ {
 
   /// Loops descriptor for dynamically defined bounds and strides
   acc_loop_desc_t * loops;
-
-  acc_loop_splitter_t * splitters;
 };
 
 /*! \func acc_build_kernel

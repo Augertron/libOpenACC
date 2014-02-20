@@ -40,6 +40,8 @@ void acc_map_data_(unsigned device_idx, h_void * host_ptr, d_void * dev_ptr, siz
 
 void acc_unmap_data_(unsigned device_idx, h_void * host_ptr);
 
+//int acc_present_in_parent_env(unsigned device_idx, h_void * host_ptr);
+
 #ifdef __cplusplus
 }
 #endif

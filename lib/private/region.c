@@ -1,4 +1,5 @@
 
+#include "OpenACC/openacc.h"
 #include "OpenACC/private/region.h"
 #include "OpenACC/internal/region.h"
 #include "OpenACC/private/runtime.h"
@@ -22,11 +23,15 @@ struct acc_region_t_ * acc_build_region(acc_region_desc_t region) {
 
   result->desc = region;
   result->num_devices = num_devices;
+  result->distributed_datas = (h_void **)malloc(region->num_distributed_datas * sizeof(h_void *));
 
   if (region->devices == NULL) {
     assert(num_devices == 1);
 
-    result->devices[0].device_idx = acc_get_device_idx(acc_get_device_type(), acc_get_device_num());
+    acc_device_t dev_type = acc_get_device_type();
+    int dev_num = acc_get_device_num(dev_type);
+
+    result->devices[0].device_idx = acc_get_device_idx(dev_type, dev_num);
     result->devices[0].num_gang = 0;
     result->devices[0].num_worker = 0;
     result->devices[0].vector_length = 0;
