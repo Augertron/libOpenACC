@@ -43,6 +43,26 @@ struct acc_kernel_version_t_ {
 };
 typedef struct acc_kernel_version_t_ * acc_kernel_version_t;
 
+typedef enum acc_splitting_mode_e_ {
+  e_contiguous,
+  e_chunk
+} acc_splitting_mode_e;
+
+/**
+ *  Describe how one loop can be distributed accross devices.
+ */
+struct acc_loop_splitter_t_ {
+  unsigned loop_id;
+
+  acc_splitting_mode_e mode;
+
+  unsigned nbr_dev;
+  unsigned long * portions;
+
+  unsigned long chunk;
+};
+typedef struct acc_loop_splitter_t_ * acc_loop_splitter_t;
+
 struct acc_kernel_desc_t_ {
   unsigned id;
 
@@ -63,8 +83,8 @@ struct acc_kernel_desc_t_ {
   unsigned num_versions;
   acc_kernel_version_t * versions;
 
-  unsigned num_splitted_loops;
-  unsigned * splitted_loops;
+  /// splitted loop, no splitted loop if NULL
+  acc_loop_splitter_t * splitted_loop;
 };
 
 /*! \func acc_create_context
@@ -73,11 +93,21 @@ struct acc_kernel_desc_t_ {
  *
  *  \param region pointer to a parallel region descriptor
  *  \param kernel pointer to a kernel descriptor
+ *  \param current device being processed
  *  \return a non-zero value if an error occured
  */
-struct acc_context_t_ * acc_create_context(struct acc_region_t_ * region, struct acc_kernel_t_ * kernel);
+struct acc_context_t_ * acc_create_context(
+  struct acc_region_t_ * region,
+  struct acc_kernel_t_ * kernel,
+  size_t device_idx
+);
 
-struct _cl_kernel * acc_build_ocl_kernel(struct acc_region_t_ * region, struct acc_kernel_t_ * kernel, struct acc_context_t_ * context);
+cl_kernel acc_build_ocl_kernel(
+  struct acc_region_t_ * region,
+  struct acc_kernel_t_ * kernel,
+  struct acc_context_t_ * context,
+  size_t device_idx
+);
 
 #ifdef __cplusplus
 }

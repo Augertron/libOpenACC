@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+size_t acc_get_device_idx(acc_device_t dev, int num);
+
 struct acc_device_data_t_ {
   /// OpenCL Context for one device
   cl_context context;
