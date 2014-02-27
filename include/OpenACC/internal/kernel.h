@@ -38,7 +38,7 @@ struct acc_kernel_version_t_ {
   /// Filling tiles for each loop
   struct acc_loop_t_ * loops;
 
-  /// suffix added to the name of the kernel (suffixes have a predetermined form, but building it at runtime would be long)  
+  /// suffix added to the name of the kernel 
   char * suffix;
 };
 typedef struct acc_kernel_version_t_ * acc_kernel_version_t;
@@ -102,7 +102,7 @@ struct acc_context_t_ * acc_create_context(
   size_t device_idx
 );
 
-cl_kernel acc_build_ocl_kernel(
+struct cl_kernel_ * acc_build_ocl_kernel(
   struct acc_region_t_ * region,
   struct acc_kernel_t_ * kernel,
   struct acc_context_t_ * context,

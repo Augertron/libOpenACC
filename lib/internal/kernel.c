@@ -22,6 +22,12 @@ typedef struct acc_region_t_ * acc_region_t;
 typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_context_t_ * acc_context_t;
 
+struct loop_triplet_t {
+  unsigned long length;
+  unsigned long nbr_it;
+  unsigned long stride;
+};
+
 acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_t device_idx) {
   acc_context_t result = (acc_context_t)malloc(sizeof(struct acc_context_t_) + kernel->desc->num_loops * sizeof(struct acc_kernel_loop_t_));
 
@@ -50,134 +56,137 @@ static int version_match(acc_kernel_version_t version, acc_context_t context) {
 static unsigned num_dynamic_tiles(struct acc_loop_t_ * loop) {
   unsigned num_dynamic = 0;
 
-  if (loop->tiles[e_tile_0].tiling == e_tiling_dynamic) num_dynamic++;
-  if (loop->tiles[e_tile_1].tiling == e_tiling_dynamic) num_dynamic++;
-  if (loop->tiles[e_tile_2].tiling == e_tiling_dynamic) num_dynamic++;
-  if (loop->tiles[e_tile_3].tiling == e_tiling_dynamic) num_dynamic++;
+  if (loop->num_iterations[e_tile_0] == 0) num_dynamic++;
+  if (loop->num_iterations[e_tile_1] == 0) num_dynamic++;
+  if (loop->num_iterations[e_tile_2] == 0) num_dynamic++;
+  if (loop->num_iterations[e_tile_3] == 0) num_dynamic++;
 
   return num_dynamic;
 }
 
-static void init_ctx_loop(struct acc_loop_t_ * vers_loop, acc_context_t context, struct acc_kernel_loop_t_ * ctx_loop) {
-  size_t tile;
-
-  // Copy tiles parameter from version descriptor
-  for (tile = 0; tile < 7; tile++) {
-    ctx_loop->tiles[tile].stride = vers_loop->tiles[tile].stride;
-    ctx_loop->tiles[tile].length = vers_loop->tiles[tile].nbr_it;
-  }
-
-  // Set/Check gang tile's stride
-  if (ctx_loop->tiles[e_gang].length == 0)
-    ctx_loop->tiles[e_gang].length = context->num_gang;
-  assert(ctx_loop->tiles[e_gang].length == context->num_gang);
-
-  // Set/Check worker tile's stride
-  if (ctx_loop->tiles[e_worker].length == 0)
-    ctx_loop->tiles[e_worker].length = context->num_worker;
-  assert(ctx_loop->tiles[e_worker].length == context->num_worker);
-
-  // Set/Check vector tile's stride
-  if (ctx_loop->tiles[e_vector].length == 0)
-    ctx_loop->tiles[e_vector].length = context->vector_length;
-  assert(ctx_loop->tiles[e_vector].length == context->vector_length);
-}
-
-static size_t fill_ctx_loop_no_dynamic(struct acc_kernel_loop_t_ * ctx_loop, unsigned long loop_length) {
-  size_t tile;
-
-  for (tile = 0; tile < 7; tile++) {
-    unsigned long tile_length;
-    if (tile == 0)
-      tile_length = loop_length;
-    else
-      tile_length = ctx_loop->tiles[tile - 1].stride;
-
-    if (ctx_loop->tiles[tile].stride != 0 && ctx_loop->tiles[tile].length == 0)
-      ctx_loop->tiles[tile].length = tile_length / ctx_loop->tiles[tile].stride;
-    else if (ctx_loop->tiles[tile].stride == 0 && ctx_loop->tiles[tile].length != 0)
-      ctx_loop->tiles[tile].stride = tile_length / ctx_loop->tiles[tile].length;
-
-    assert(ctx_loop->tiles[tile].stride != 0 && ctx_loop->tiles[tile].length != 0);
-
-    if (ctx_loop->tiles[tile].length != tile_length / ctx_loop->tiles[tile].stride)
-      break;
-  }
-
-  return tile;
-}
-
-static size_t fill_ctx_loop_one_dynamic(
+static void init_loop_triplet(
+  struct loop_triplet_t * loop_triplet,
   struct acc_loop_t_ * vers_loop,
-  acc_loop_desc_t orig_loop,
-  struct acc_kernel_loop_t_ * ctx_loop,
-  unsigned long loop_length
+  acc_context_t context,
+  acc_loop_desc_t orig_loop
+) {
+  size_t tile;
+
+  // Initialize array of loop triplet
+  for (tile = 0; tile < 7; tile++) {
+    loop_triplet[tile].length = 0;
+    loop_triplet[tile].nbr_it = vers_loop->num_iterations[tile];
+    loop_triplet[tile].stride = 0;
+  }
+
+  // Set/Check gang tile's number of iteration
+  if (loop_triplet[e_gang].nbr_it == 0)
+    loop_triplet[e_gang].nbr_it = context->num_gang;
+  assert(loop_triplet[e_gang].nbr_it == context->num_gang);
+
+  // Set/Check worker tile's number of iteration
+  if (loop_triplet[e_worker].nbr_it == 0)
+    loop_triplet[e_worker].nbr_it = context->num_worker;
+  assert(loop_triplet[e_worker].nbr_it == context->num_worker);
+
+  // Set/Check vector tile's number of iteration
+  if (loop_triplet[e_vector].nbr_it == 0)
+    loop_triplet[e_vector].nbr_it = context->vector_length;
+  assert(loop_triplet[e_vector].nbr_it == context->vector_length);
+
+  // Set length of first tile to length of the original loop
+  loop_triplet[0].length = orig_loop->upper - orig_loop->lower;
+
+  // Set stride of last tile to stride of the original loop
+  loop_triplet[6].stride = orig_loop->stride;
+}
+
+void solve_no_dynamic(struct loop_triplet_t * loop_triplet) {
+  size_t tile;
+
+  assert(loop_triplet[6].stride != 0);
+  assert(loop_triplet[6].nbr_it != 0);
+
+  loop_triplet[6].length = loop_triplet[6].nbr_it * loop_triplet[6].stride;
+
+  for (tile = 5; tile > 0; tile++) {
+    assert(loop_triplet[tile].nbr_it != 0);
+
+    loop_triplet[tile].stride = loop_triplet[tile+1].length;
+    loop_triplet[tile].length = loop_triplet[tile].nbr_it * loop_triplet[tile].stride;
+  }
+
+  assert(loop_triplet[0].nbr_it != 0);
+
+  loop_triplet[0].stride = loop_triplet[1].length;
+
+  assert(loop_triplet[0].length == loop_triplet[0].nbr_it * loop_triplet[0].stride);
+}
+
+void solve_one_dynamic(
+  struct loop_triplet_t * loop_triplet
 ) {
   size_t dynamic_tile;
-  if      (vers_loop->tiles[e_tile_0].tiling == e_tiling_dynamic) dynamic_tile = e_tile_0;
-  else if (vers_loop->tiles[e_tile_1].tiling == e_tiling_dynamic) dynamic_tile = e_tile_1;
-  else if (vers_loop->tiles[e_tile_2].tiling == e_tiling_dynamic) dynamic_tile = e_tile_2;
-  else if (vers_loop->tiles[e_tile_3].tiling == e_tiling_dynamic) dynamic_tile = e_tile_3;
+  if      (loop_triplet[e_tile_0].nbr_it == 0) dynamic_tile = e_tile_0;
+  else if (loop_triplet[e_tile_1].nbr_it == 0) dynamic_tile = e_tile_1;
+  else if (loop_triplet[e_tile_2].nbr_it == 0) dynamic_tile = e_tile_2;
+  else if (loop_triplet[e_tile_3].nbr_it == 0) dynamic_tile = e_tile_3;
   else assert(!"Problem with dynamic tiling...");
 
   // Propagate value from outer tile to the dynamic tile
   size_t tile;
   for (tile = 0; tile < dynamic_tile; tile++) {
-    unsigned long tile_length;
-    if (tile == 0)
-      tile_length = loop_length;
-    else
-      tile_length = ctx_loop->tiles[tile - 1].stride;
+    assert(loop_triplet[tile].nbr_it != 0);
 
-    if (ctx_loop->tiles[tile].stride != 0 && ctx_loop->tiles[tile].length == 0)
-      ctx_loop->tiles[tile].length = tile_length / ctx_loop->tiles[tile].stride;
-    else if (ctx_loop->tiles[tile].stride == 0 && ctx_loop->tiles[tile].length != 0)
-      ctx_loop->tiles[tile].stride = tile_length / ctx_loop->tiles[tile].length;
+    if (tile > 0)
+      loop_triplet[tile].length = loop_triplet[tile - 1].stride;
 
-    assert(ctx_loop->tiles[tile].stride != 0 && ctx_loop->tiles[tile].length != 0);
+    loop_triplet[tile].stride = loop_triplet[tile].length / loop_triplet[tile].nbr_it;
   }
 
   // Propagate value from inner tile to the dynamic tile
   for (tile = 6; tile > dynamic_tile; tile--) {
-    if (ctx_loop->tiles[tile].length == 0) break; // if dynamic(tile[i]) then j>i => tile[j].length != 0.
+    assert(loop_triplet[tile].nbr_it != 0);
 
-    unsigned long stride;
-    if (tile == 6)
-      stride = orig_loop->stride;
-    else
-      stride = ctx_loop->tiles[tile + 1].stride * ctx_loop->tiles[tile + 1].length;
+    if (tile < 6)
+      loop_triplet[tile].stride = loop_triplet[tile + 1].length;
 
-    if (ctx_loop->tiles[tile].stride != 0) {
-      assert(ctx_loop->tiles[tile].stride == stride);
-    }
-    else if (ctx_loop->tiles[tile].stride == 0)
-      ctx_loop->tiles[tile].stride = stride;
-
-    assert(ctx_loop->tiles[tile].stride != 0 && ctx_loop->tiles[tile].length != 0);
+    loop_triplet[tile].length = loop_triplet[tile].nbr_it * loop_triplet[tile].stride;
   }
-
-  if (tile > dynamic_tile) return 0;
 
   // Middle point
   if (dynamic_tile == e_tile_0) {
-    ctx_loop->tiles[e_tile_0].stride = ctx_loop->tiles[e_gang].length * ctx_loop->tiles[e_gang].stride;
-    ctx_loop->tiles[e_tile_0].length = loop_length / ctx_loop->tiles[e_tile_0].stride;
+    assert(loop_triplet[e_tile_0].length != 0);
+    loop_triplet[e_tile_0].stride = loop_triplet[e_gang  ].length;
   }
   else if (dynamic_tile == e_tile_1) {
-    ctx_loop->tiles[e_tile_1].stride = ctx_loop->tiles[e_worker].length * ctx_loop->tiles[e_worker].stride;
-    ctx_loop->tiles[e_tile_1].length = ctx_loop->tiles[e_gang  ].stride / ctx_loop->tiles[e_tile_1].stride;
+    loop_triplet[e_tile_1].length = loop_triplet[e_gang  ].stride;
+    loop_triplet[e_tile_1].stride = loop_triplet[e_worker].length;
   }
   else if (dynamic_tile == e_tile_2) {
-    ctx_loop->tiles[e_tile_2].stride = ctx_loop->tiles[e_vector].length * ctx_loop->tiles[e_vector].stride;
-    ctx_loop->tiles[e_tile_2].length = ctx_loop->tiles[e_worker].stride / ctx_loop->tiles[e_tile_2].stride;
+    loop_triplet[e_tile_2].length = loop_triplet[e_worker].stride;
+    loop_triplet[e_tile_2].stride = loop_triplet[e_vector].length;
   }
   else if (dynamic_tile == e_tile_3) {
-    ctx_loop->tiles[e_tile_3].stride = orig_loop->stride;
-    ctx_loop->tiles[e_tile_3].length = ctx_loop->tiles[e_vector].stride / ctx_loop->tiles[e_tile_3].stride;
+    assert(loop_triplet[e_tile_3].stride != 0);
+    loop_triplet[e_tile_2].length = loop_triplet[e_vector].stride;
   }
   else assert(!"Dynamic tile should have been one of the four filling tile.");
 
-  return 1;
+  loop_triplet[dynamic_tile].nbr_it = loop_triplet[dynamic_tile].length / loop_triplet[dynamic_tile].stride;
+}
+
+size_t set_ctx_loop(struct acc_kernel_loop_t_ * ctx_loop, struct loop_triplet_t * loop_triplet) {
+  size_t tile;
+
+  for (tile = 0; tile < 7; tile++) {
+    if (loop_triplet[tile].length == 0 || loop_triplet[tile].nbr_it == 0 || loop_triplet[tile].stride == 0) return tile;
+
+    ctx_loop->tiles[tile].length = loop_triplet[tile].length;
+    ctx_loop->tiles[tile].stride = loop_triplet[tile].stride;
+  }
+
+  return tile;
 }
 
 void acc_select_kernel_version(
@@ -193,8 +202,6 @@ void acc_select_kernel_version(
   unsigned version_idx;
   for (version_idx = 0; version_idx < kernel->desc->num_versions; version_idx++) {
 
-//  printf("  version %u\n", version_idx);
-
     if (version_match(kernel->desc->versions[version_idx], context)) {
 
       assert(kernel->desc->versions[version_idx]->loops != NULL);
@@ -203,22 +210,25 @@ void acc_select_kernel_version(
 
       unsigned loop_idx;
       for (loop_idx = 0; loop_idx < context->num_loop; loop_idx++) {
+        struct loop_triplet_t loop_triplet[7];
 
-//      printf("    loop %u\n", loop_idx);
-
-        struct acc_loop_t_ *        vers_loop = &(kernel->desc->versions[version_idx]->loops[loop_idx]);
-        struct acc_kernel_loop_t_ * ctx_loop  = &(ctx_loops[loop_idx]);
+        struct acc_loop_t_ * vers_loop = &(kernel->desc->versions[version_idx]->loops[loop_idx]);
         acc_loop_desc_t orig_loop = kernel->loops[loop_idx];
 
-        init_ctx_loop(vers_loop, context, ctx_loop);
+        init_loop_triplet(loop_triplet, vers_loop, context, orig_loop);
 
-        unsigned long loop_length = orig_loop->upper - orig_loop->lower;
         unsigned num_dynamic = num_dynamic_tiles(vers_loop);
-        if (num_dynamic == 0 && fill_ctx_loop_no_dynamic(ctx_loop, loop_length) < 7) break;
-        else if (num_dynamic == 1 && !fill_ctx_loop_one_dynamic(vers_loop, orig_loop, ctx_loop, loop_length)) break;
+        if (num_dynamic == 0) {
+          solve_no_dynamic(loop_triplet);
+          if (set_ctx_loop(&(ctx_loops[loop_idx]), loop_triplet) < 7)
+            break;
+        }
+        else if (num_dynamic == 1) {
+          solve_one_dynamic(loop_triplet);
+          if (set_ctx_loop(&(ctx_loops[loop_idx]), loop_triplet) < 7)
+            break;
+        }
         else if (num_dynamic > 1) assert(!"NIY! More than ONE dynamic filling tile...");
-
-        assert(ctx_loop->tiles[e_tile_3].stride == orig_loop->stride);
       }
       if (loop_idx < kernel->desc->num_loops) {
         free(ctx_loops);
@@ -238,23 +248,9 @@ void acc_select_kernel_version(
 
         size_t tile;
 
-        for (tile = 0; tile < 7; tile++) {
-          switch (loop->tiles[tile].tiling) {
-            case e_tiling_dynamic:
-              break;
-            case e_tiling_static_iteration:
-              score += 1;
-              break;
-            case e_tiling_static_stride:
-              score += 1;
-              break;
-            case e_tiling_static:
-              score += 2;
-              break;
-            case e_no_tiling:
-              assert(!"Should not be used!");
-          }
-        }
+        for (tile = 0; tile < 7; tile++)
+          if (loop->num_iterations[tile] != 0)
+            score++;
       }
 
       if (score >= best_matching_score) {
@@ -273,18 +269,13 @@ void acc_select_kernel_version(
   }
 }
 
-cl_kernel acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_context_t context, size_t device_idx) {
+struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_context_t context, size_t device_idx) {
   unsigned best_matching_version = 0;
   struct acc_kernel_loop_t_ * best_matching_loops = NULL;
 
   acc_select_kernel_version(region, kernel, context, device_idx, &best_matching_version, &best_matching_loops);
 
   assert(best_matching_loops != NULL);
-
-  unsigned i, j;
-  for (i = 0; i < context->num_loop; i++)
-    for (j = 0; j < 7; j++)
-      best_matching_loops[i].tiles[j].length = best_matching_loops[i].tiles[j].length * best_matching_loops[i].tiles[j].stride;
 
   memcpy(context->loops, best_matching_loops, context->num_loop * sizeof(struct acc_kernel_loop_t_));
 
