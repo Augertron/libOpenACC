@@ -70,6 +70,11 @@ struct acc_kernel_desc_t_ {
   const char * name;
 
   /// number of scalar arguments
+  size_t num_params;
+  /// size of scalar arguments
+  size_t * size_params;
+
+  /// number of scalar arguments
   size_t num_scalars;
   /// size of scalar arguments
   size_t * size_scalars;

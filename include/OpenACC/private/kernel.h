@@ -24,6 +24,9 @@ struct acc_kernel_t_ {
   /// Pointer to kernel descriptor
   struct acc_kernel_desc_t_ * desc;
 
+  /// param pointer
+  void ** param_ptrs;
+
   /// scalar pointer
   void ** scalar_ptrs;
 

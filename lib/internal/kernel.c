@@ -228,7 +228,10 @@ void acc_select_kernel_version(
           if (set_ctx_loop(&(ctx_loops[loop_idx]), loop_triplet) < 7)
             break;
         }
-        else if (num_dynamic > 1) assert(!"NIY! More than ONE dynamic filling tile...");
+        else if (num_dynamic == 2) {
+          assert(0); /// \todo pick one then the other and try static values
+        }
+        else assert(!"NIY! More than ONE dynamic filling tile...");
       }
       if (loop_idx < kernel->desc->num_loops) {
         free(ctx_loops);
@@ -290,7 +293,7 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   assert(program != NULL);
 
   cl_int status;
-  cl_kernel ocl_kernel = clCreateKernel(program, kernel_name, &status);
+  struct cl_kernel_ * ocl_kernel = clCreateKernel(program, kernel_name, &status);
   if (status != CL_SUCCESS) {
     printf("[fatal]   clCreateKernel return %u for %s.\n", status, kernel_name);
     exit(-1); /// \todo error code

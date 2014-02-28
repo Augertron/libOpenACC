@@ -24,6 +24,7 @@ acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
 
   result->desc = kernel;
 
+  result->param_ptrs  = (  void **)malloc(kernel->num_params  * sizeof(  void *));
   result->scalar_ptrs = (  void **)malloc(kernel->num_scalars * sizeof(  void *));
   result->data_ptrs   = (d_void **)malloc(kernel->num_datas   * sizeof(d_void *));
 
@@ -54,6 +55,19 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     cl_int status;
     cl_uint idx = 0;
     unsigned i;
+
+    // Set params kernel arguments 
+    for (i = 0; i < kernel->desc->num_params; i++) {
+      status = clSetKernelArg(ocl_kernel, idx, kernel->desc->size_params[i], kernel->param_ptrs[i]);
+      if (status != CL_SUCCESS) {
+        const char * status_str = acc_ocl_status_to_char(status);
+        printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (scalar #%u).\n",
+                  status_str, region->desc->id, kernel->desc->id, idx, i
+              );
+        exit(-1); /// \todo error code
+      }
+      idx++;
+    }
 
     // Set scalar kernel arguments 
     for (i = 0; i < kernel->desc->num_scalars; i++) {

@@ -13,6 +13,7 @@ OPENACC_PRIVATE_LIB = \
   private/init.o \
   private/kernel.o \
   private/region.o \
+  private/memory.o \
   private/debug.o
 
 OPENACC_INTERNAL_LIB = \
