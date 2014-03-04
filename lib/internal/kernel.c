@@ -207,6 +207,7 @@ void acc_select_kernel_version(
       assert(kernel->desc->versions[version_idx]->loops != NULL);
 
       struct acc_kernel_loop_t_ * ctx_loops = (struct acc_kernel_loop_t_ *)malloc(context->num_loop * sizeof(struct acc_kernel_loop_t_));
+      memcpy(ctx_loops, context->loops, context->num_loop * sizeof(struct acc_kernel_loop_t_));
 
       unsigned loop_idx;
       for (loop_idx = 0; loop_idx < context->num_loop; loop_idx++) {
