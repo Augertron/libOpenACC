@@ -196,6 +196,9 @@ void acc_load_ocl_sources() {
 
   if (compiler_data.num_regions <= 0) {
     printf("[error]   There is not any OpenCL region (parallel/kernel constructs) listed! Check that acc_init_kernel_first is called (and correct).\n");
+
+    set_flag(f_ocl_sources);
+
     return;
   }
 
