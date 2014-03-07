@@ -13,10 +13,6 @@
 
 #include <assert.h>
 
-#ifndef DEBUG_OUTPUT
-# define DEBUG_OUTPUT 1
-#endif
-
 unsigned acc_get_platform_desc(cl_platform_id platform) {
   char name[50];
   unsigned r;
