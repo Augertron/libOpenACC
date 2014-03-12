@@ -15,6 +15,7 @@ const char * acc_device_env_name [acc_device_last] = {
   "NVIDIA",
   "TESLA",
   "M2070",
+  "K20XM",
   "AMD",
   "RADEON",
   "INTEL",
@@ -22,6 +23,7 @@ const char * acc_device_env_name [acc_device_last] = {
   "I5-670",
   "I7-3610QM",
   "I7-950",
+  "E5-2670",
   "XEONPHI"
 };
 
@@ -30,13 +32,15 @@ const char * acc_device_name [acc_device_last] = {
   "Nvidia",
   "Tesla",
   "Tesla M2070",
+  "Tesla K20Xm",
   "AMD",
   "AMD radeon",
   "Intel(R)",
-  "Intel(R) Core(TM)",
+  "Intel(R) CPU",
   "Intel(R) Core(TM) i5 CPU 670",
   "Intel(R) Core(TM) i7-3610QM CPU",
   "Intel(R) Core(TM) i7 CPU 950",
+  "Intel(R) Xeon(R) CPU E5-2670",
   "Intel(R) XeonPhi(TM)"
 };
 
@@ -53,28 +57,32 @@ acc_device_defaults_t acc_device_defaults [acc_device_last] = {
   { 1, {0, 0, 0}, {0, 0, 0}, 0 },
   { 1, {0, 0, 0}, {0, 0, 0}, 0 },
   { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
+  { 1, {0, 0, 0}, {0, 0, 0}, 0 },
 };
 
-device_desc_t devices_desc [4] = {
+device_desc_t devices_desc [6] = {
   { "Tesla M2070"                          , acc_device_M2070     },
+  { "Tesla K20Xm"                          , acc_device_K20Xm     },
   { "Intel(R) Core(TM) i5 CPU         670" , acc_device_i5_670    },
   { "Intel(R) Core(TM) i7-3610QM CPU"      , acc_device_i7_3610QM },
-  { "Intel(R) Core(TM) i7 CPU         950" , acc_device_i7_950    }
+  { "Intel(R) Core(TM) i7 CPU         950" , acc_device_i7_950    },
+  { "Intel(R) Xeon(R) CPU E5-2670"         , acc_device_e5_2670   }
 };
 
 device_type_desc_t devices_type_desc [12] = {
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_GPU         , acc_device_nvidia  , 1, &(devices_desc[0]) },
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_GPU         , acc_device_radeon  , 0, NULL               }, ///< Radeon
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_CPU         , acc_device_core    , 3, &(devices_desc[1]) }, ///< Core
-  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi , 0, NULL               }, ///< XeonPhi
-  { CL_DEVICE_TYPE_CPU         , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_GPU         , acc_device_last    , 0, NULL               },
-  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last    , 0, NULL               }
+  { CL_DEVICE_TYPE_CPU         , acc_device_last      , 0, NULL               },
+  { CL_DEVICE_TYPE_GPU         , acc_device_nvidia    , 2, &(devices_desc[0]) },
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last      , 0, NULL               },
+  { CL_DEVICE_TYPE_CPU         , acc_device_last      , 0, NULL               },
+  { CL_DEVICE_TYPE_GPU         , acc_device_radeon    , 0, NULL               }, ///< Radeon
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last      , 0, NULL               },
+  { CL_DEVICE_TYPE_CPU         , acc_device_intel_cpu , 4, &(devices_desc[2]) }, ///< Core
+  { CL_DEVICE_TYPE_GPU         , acc_device_last      , 0, NULL               },
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_xeonphi   , 0, NULL               }, ///< XeonPhi
+  { CL_DEVICE_TYPE_CPU         , acc_device_last      , 0, NULL               },
+  { CL_DEVICE_TYPE_GPU         , acc_device_last      , 0, NULL               },
+  { CL_DEVICE_TYPE_ACCELERATOR , acc_device_last      , 0, NULL               }
 };
 
 platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS] = {

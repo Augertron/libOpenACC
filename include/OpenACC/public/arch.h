@@ -26,13 +26,15 @@ typedef enum acc_device_e {
   acc_device_nvidia,            ///< Nvidia devices \todo list type/model
     acc_device_tesla,
       acc_device_M2070,
+      acc_device_K20Xm,
   acc_device_amd,               ///< AMD devices \todo more type ?
     acc_device_radeon,          ///<   Radeon \todo list model
   acc_device_intel,             ///< Intel devices
-    acc_device_core,            ///<   Intel Core Processor \todo list models
+    acc_device_intel_cpu,            ///<   Intel CPU
       acc_device_i5_670,        ///      Intel(R) Core(TM) i5 670 CPU \bug with valgrind this is returned instead of my i73610QM !
       acc_device_i7_3610QM,     ///<     Intel(R) Core(TM) i7-3610QM CPU
       acc_device_i7_950,        ///<     Intel(R) Core(TM) i7 950 CPU
+      acc_device_e5_2670,
     acc_device_xeonphi,         ///<   Intel Xeon Processor \todo list models
   acc_device_altera,            ///< Altera devices \todo list type/model
   acc_device_last
@@ -95,7 +97,7 @@ extern platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS];
 extern device_type_desc_t devices_type_desc[12];
 
 /// List of supported devices
-extern device_desc_t devices_desc[4];
+extern device_desc_t devices_desc[6];
 
 #ifdef __cplusplus
 }
