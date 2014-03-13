@@ -10,12 +10,14 @@
 void acc_dbg_dump_runtime() {
   acc_init_once();
 
+  assert(0); /// \todo useless before updating
+
   printf("Device type : ");
   switch (acc_runtime.curr_device_type) {
-    case acc_device_any:     printf("ACC_DEVICE_ANY\n");     break;
-    case acc_device_nvidia:  printf("ACC_DEVICE_NVIDIA\n");  break;
-    case acc_device_radeon:  printf("ACC_DEVICE_RADEON\n");  break;
-    case acc_device_xeonphi: printf("ACC_DEVICE_XEONPHI\n"); break;
+    case acc_device_any:    printf("ACC_DEVICE_ANY\n");    break;
+    case acc_device_nvidia: printf("ACC_DEVICE_NVIDIA\n"); break;
+    case acc_device_amd:    printf("ACC_DEVICE_AMD\n");    break;
+    case acc_device_intel:  printf("ACC_DEVICE_INTEL\n");  break;
     default:
       printf("invalid !\n");
   }

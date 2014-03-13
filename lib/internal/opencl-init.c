@@ -29,30 +29,17 @@ unsigned acc_get_platform_desc(cl_platform_id platform) {
   return r;
 }
 
-unsigned acc_get_device_type_desc(cl_device_id device, unsigned r) {
-  cl_device_type ocl_dev_type;
-  unsigned s;
-
-  clGetDeviceInfo(device, CL_DEVICE_TYPE, sizeof(cl_device_type), &ocl_dev_type, NULL);
-  for (s = 0; s < platforms_desc[r].num_devices_type; s++)
-    if (platforms_desc[r].devices_type_desc[s].ocl_device_type == ocl_dev_type)
-      break;
-  assert(s < platforms_desc[r].num_devices_type); /// \todo unrecognized CL_DEVICE_TYPE
-
-  return s;
-}
-
-unsigned acc_get_device_desc(cl_device_id device, unsigned r, unsigned s) {
+unsigned acc_get_device_desc(cl_device_id device, unsigned r) {
   char name[50];
   unsigned t;
 
   clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(name), name, NULL);
-  for (t = 0; t < platforms_desc[r].devices_type_desc[s].num_devices; t++) {
+  for (t = 0; t < platforms_desc[r].num_devices; t++) {
 //    printf("compare %s\n     to %s\n return %s\n", name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name, strstr(name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name));
-    if (strstr(name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name) != NULL)
+    if (strstr(name, platforms_desc[r].devices_desc[t].ocl_name) != NULL)
       break;
   }
-  if (t == platforms_desc[r].devices_type_desc[s].num_devices) {
+  if (t == platforms_desc[r].num_devices) {
     printf("[fatal]   Unrecognized OpenCL Device : %s\n", name);
     exit(-1);
   }
@@ -67,17 +54,8 @@ void acc_register_platform_desc(unsigned r, unsigned first, size_t num) {
   acc_runtime.devices[platforms_desc[r].device].num   = num;
 }
 
-void acc_register_device_type_desc(unsigned r, unsigned s, unsigned first, size_t num) {
-  acc_device_t device = platforms_desc[r].devices_type_desc[s].device;
-
-  assert(device != acc_device_last); /// \todo unsupported device type
-
-  acc_runtime.devices[device].first = first;
-  acc_runtime.devices[device].num   = num;
-}
-
-void acc_register_device_desc(unsigned r, unsigned s, unsigned t, unsigned first, size_t num) {
-  acc_device_t device = platforms_desc[r].devices_type_desc[s].devices_desc[t].device;
+void acc_register_device_desc(unsigned r, unsigned t, unsigned first, size_t num) {
+  acc_device_t device = platforms_desc[r].devices_desc[t].device;
 
   assert(device != acc_device_last); /// \todo unsupported device
 
@@ -238,12 +216,11 @@ void acc_init_ocl_devices() {
    * Devices are sorted by platform then type (CL_DEVICE_TYPE) and model (CL_DEVICE_NAME).
    * Sorting by platforms is explicit (from OpenCL calls). \todo Check that other order are also true (or enforce)
    *
-   * OpenACC devices are organized over 3 levels:
+   * OpenACC devices are organized over 2 levels:
    *   -# Platform : OpenCL Platforms associted to each vendor (Intel, Nvidia, AMD, Altera, ...)
-   *   -# Type     : OpenCL type of device : CL_DEVICE_CPU, CL_DEVICE_GPU, CL_DEVICE_ACCELERATOR, ...
    *   -# Model    : OpenCL device's name
    * Each level addresses all devices addressed by its "children".
-   * Each [platform], [platform, type], and [platform, type, model] have its own tag in acc_device_t (enumeration).
+   * Each [platform], and [platform, model] have its own tag in acc_device_t (enumeration).
    *
    * This "algorithm" associates to each of this tag the index of the first matching cl_device_id and the number of matching cl_device_id.
    * 
@@ -253,15 +230,12 @@ void acc_init_ocl_devices() {
    *
    * 3 mapping coordinates: (obtained by lookup)
    *   - r: plaform, platforms_desc[r]
-   *   - s: type,    platforms_desc[r].devices_type_desc[s]
-   *   - t: model,   platforms_desc[r].devices_type_desc[s].devices_desc[t]
+   *   - t: model,   platforms_desc[r].devices_desc[t]
    *
-   * 5 indexes and counters
+   * 3 indexes and counters
    *   - idx : index of the first cl_device_id that match platform[i]
-   *   - base_s : index of the first cl_device_id matching platforms_desc[r].devices_type_desc[s]
-   *   - cnt_s  : number of devices matching platforms_desc[r].devices_type_desc[s]
-   *   - base_t : index of the first cl_device_id matching platforms_desc[r].devices_type_desc[s].devices_desc[t]
-   *   - cnt_t  : number of devices matching platforms_desc[r].devices_type_desc[s].devices_desc[t]
+   *   - base_t : index of the first cl_device_id matching platforms_desc[r].devices_desc[t]
+   *   - cnt_t  : number of devices matching platforms_desc[r].devices_desc[t]
    */
   unsigned idx = 0;
   for (i = 0; i < acc_runtime.opencl_data->num_platforms; i++) {
@@ -270,51 +244,36 @@ void acc_init_ocl_devices() {
 
     acc_register_platform_desc(r, idx, acc_runtime.opencl_data->num_devices[i]);
 
-    unsigned base_s = idx;
     unsigned base_t = idx;
 
-    unsigned cnt_s = 1;
     unsigned cnt_t = 1;
  
     // First device
 
-    unsigned s = acc_get_device_type_desc(acc_runtime.opencl_data->devices[i][0], r);
-    unsigned t = acc_get_device_desc(acc_runtime.opencl_data->devices[i][0], r, s);
+    unsigned t = acc_get_device_desc(acc_runtime.opencl_data->devices[i][0], r);
 
     // Remaining devices, assumes that they are sorted by type then name.
 
     for (j = 1; j < acc_runtime.opencl_data->num_devices[i]; j++) {
-      unsigned prev_s = s;
       unsigned prev_t = t;
 
-      s = acc_get_device_type_desc(acc_runtime.opencl_data->devices[i][0], r);
-      t = acc_get_device_desc(acc_runtime.opencl_data->devices[i][0], r, s);
-
-      // When the device type change
-      if (s != prev_s) {
-        assert(t != prev_t);
-        acc_register_device_type_desc(r, prev_s, base_s, cnt_s);
-        base_s += cnt_s;
-        cnt_s = 0;
-      }
+      t = acc_get_device_desc(acc_runtime.opencl_data->devices[i][0], r);
 
       // When the device model change
       if (t != prev_t) {
-        acc_register_device_desc(r, prev_s, prev_t, base_t, cnt_t);
+        acc_register_device_desc(r, prev_t, base_t, cnt_t);
         base_t += cnt_t;
         cnt_t = 0;
       }
 
-      cnt_s++;
       cnt_t++;
     }
 
-    acc_register_device_type_desc(r, s, base_s, cnt_s);
-    acc_register_device_desc(r, s, t, base_t, cnt_t);
+    acc_register_device_desc(r, t, base_t, cnt_t);
 
     idx += acc_runtime.opencl_data->num_devices[i];
 
-    assert( (base_s + cnt_s == idx) && (base_t + cnt_t == idx) );
+    assert( (base_t + cnt_t == idx) );
   }
 
   set_flag(f_acc_devices);

@@ -23,19 +23,20 @@ extern "C" {
  */
 typedef enum acc_device_e {
   acc_device_any = 0,           ///< All devices
-  acc_device_nvidia,            ///< Nvidia devices \todo list type/model
-    acc_device_tesla,
+  acc_device_nvidia,
       acc_device_M2070,
       acc_device_K20Xm,
+      acc_device_1000M,
+      acc_device_GTX_460,
   acc_device_amd,               ///< AMD devices \todo more type ?
-    acc_device_radeon,          ///<   Radeon \todo list model
   acc_device_intel,             ///< Intel devices
-    acc_device_intel_cpu,            ///<   Intel CPU
       acc_device_i5_670,        ///      Intel(R) Core(TM) i5 670 CPU \bug with valgrind this is returned instead of my i73610QM !
+      acc_device_i7_2720QM,
       acc_device_i7_3610QM,     ///<     Intel(R) Core(TM) i7-3610QM CPU
       acc_device_i7_950,        ///<     Intel(R) Core(TM) i7 950 CPU
+      acc_device_e5_2620,
       acc_device_e5_2670,
-    acc_device_xeonphi,         ///<   Intel Xeon Processor \todo list models
+      acc_device_xeonphi,       ///<   Intel Xeon Processor \todo list models
   acc_device_altera,            ///< Altera devices \todo list type/model
   acc_device_last
 } acc_device_t;
@@ -66,25 +67,14 @@ struct device_desc_t_ {
 };
 typedef const struct device_desc_t_ device_desc_t;
 
-/// Descriptor for a type of device in a given platform
-struct device_type_desc_t_ {
-  cl_device_type ocl_device_type; ///< The type of device in OpenCL classification
-
-  acc_device_t device;
-
-  unsigned num_devices;
-  const device_desc_t * devices_desc;
-};
-typedef const struct device_type_desc_t_ device_type_desc_t;
-
 /// Descriptor of a vendor platform
 struct platform_desc_t_ {
   const char * ocl_name;
 
   acc_device_t device;
 
-  unsigned num_devices_type;
-  const device_type_desc_t * devices_type_desc;
+  unsigned num_devices;
+  const device_desc_t * devices_desc;
 };
 typedef const struct platform_desc_t_ platform_desc_t;
 
@@ -93,11 +83,8 @@ typedef const struct platform_desc_t_ platform_desc_t;
 /// List of supported platforms
 extern platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS];
 
-/// List of supported type of devices
-extern device_type_desc_t devices_type_desc[12];
-
 /// List of supported devices
-extern device_desc_t devices_desc[6];
+extern device_desc_t devices_desc[11];
 
 #ifdef __cplusplus
 }
