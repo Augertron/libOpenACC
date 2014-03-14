@@ -31,13 +31,18 @@ struct loop_triplet_t {
 acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_t device_idx) {
   acc_context_t result = (acc_context_t)malloc(sizeof(struct acc_context_t_) + kernel->desc->num_loops * sizeof(struct acc_kernel_loop_t_));
 
-  result->num_gang      = region->devices[device_idx].num_gang;
-  result->num_worker    = region->devices[device_idx].num_worker;
-  result->vector_length = region->devices[device_idx].vector_length;
+  unsigned i;
+
+  for (i = 0; i < region->num_devices; i++)
+    if (region->devices[i].device_idx == device_idx)
+      break;
+  assert(i < region->num_devices);
+  result->num_gang      = region->devices[i].num_gang;
+  result->num_worker    = region->devices[i].num_worker;
+  result->vector_length = region->devices[i].vector_length;
 
   result->num_loop = kernel->desc->num_loops;
 
-  unsigned i;
   for (i = 0; i < kernel->desc->num_loops; i++) {
     memcpy(&(result->loops[i].original), kernel->loops[i], sizeof(struct acc_loop_desc_t_));
     if (result->loops[i].original.nbr_it == 0)
