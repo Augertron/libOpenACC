@@ -29,11 +29,11 @@ unsigned acc_get_platform_desc(cl_platform_id platform) {
   return r;
 }
 
-unsigned acc_get_device_desc(cl_device_id device, unsigned r) {
+unsigned acc_get_device_desc(cl_device_id * device, unsigned r) {
   char name[50];
   unsigned t;
 
-  clGetDeviceInfo(device, CL_DEVICE_NAME, sizeof(name), name, NULL);
+  clGetDeviceInfo(*device, CL_DEVICE_NAME, sizeof(name), name, NULL);
   for (t = 0; t < platforms_desc[r].num_devices; t++) {
 //    printf("compare %s\n     to %s\n return %s\n", name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name, strstr(name, platforms_desc[r].devices_type_desc[s].devices_desc[t].ocl_name));
     if (strstr(name, platforms_desc[r].devices_desc[t].ocl_name) != NULL)
@@ -137,10 +137,8 @@ void acc_collect_ocl_devices() {
         continue;
       }
 
-      /// \todo check that devices are sorted by type.
-
       acc_runtime.opencl_data->devices[i] = devices;
-      devices += acc_runtime.opencl_data->num_devices[i] * sizeof(cl_device_id);
+      devices += acc_runtime.opencl_data->num_devices[i];
     }
     else {
       acc_runtime.opencl_data->devices[i] = NULL;
@@ -250,14 +248,14 @@ void acc_init_ocl_devices() {
  
     // First device
 
-    unsigned t = acc_get_device_desc(acc_runtime.opencl_data->devices[i][0], r);
+    unsigned t = acc_get_device_desc(&(acc_runtime.opencl_data->devices[i][0]), r);
 
     // Remaining devices, assumes that they are sorted by type then name.
 
     for (j = 1; j < acc_runtime.opencl_data->num_devices[i]; j++) {
       unsigned prev_t = t;
 
-      t = acc_get_device_desc(acc_runtime.opencl_data->devices[i][0], r);
+      t = acc_get_device_desc(&(acc_runtime.opencl_data->devices[i][j]), r);
 
       // When the device model change
       if (t != prev_t) {

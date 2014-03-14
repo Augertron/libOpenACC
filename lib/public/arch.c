@@ -63,7 +63,7 @@ device_desc_t devices_desc [11] = {
 platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS] = {
   { "NVIDIA CUDA",     acc_device_nvidia, 4, &(devices_desc[0]) },
   { "AMD",             acc_device_amd,    0, NULL               }, /// \todo find actual platform name for AMD
-  { "Intel(R) OpenCL", acc_device_intel,  6, &(devices_desc[4]) },
+  { "Intel(R) OpenCL", acc_device_intel,  7, &(devices_desc[4]) },
   { "Altera",          acc_device_altera, 0, NULL               }  /// \todo find actual platform name for Altera
 };
 
