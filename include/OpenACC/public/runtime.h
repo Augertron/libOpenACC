@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+struct acc_region_t_;
+
 /*!
  *  \brief Initializes all devices of a given type
  *
@@ -29,6 +31,13 @@ void acc_init(acc_device_t dev);
  *  \param num the device number
  */
 void acc_init_(acc_device_t dev, int num);
+
+/*!
+ *  \brief Initializes all device listed for a region
+ *
+ *  \param region pointer to an instance of a region
+ */
+void acc_init_region_(struct acc_region_t_ * region);
 
 /*!
  *  \brief Shutdown all devices of a given type

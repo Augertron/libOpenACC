@@ -1,6 +1,7 @@
 
 #include "OpenACC/openacc.h"
 #include "OpenACC/private/runtime.h"
+#include "OpenACC/private/region.h"
 #include "OpenACC/private/debug.h"
 
 #include "OpenACC/internal/compiler.h"
@@ -27,10 +28,8 @@ void acc_init(acc_device_t dev) {
     acc_init_(dev, i);
 }
 
-void acc_init_(acc_device_t dev, int num) {
+void acc_init__(unsigned device_idx) { 
   acc_init_once();
-
-  unsigned device_idx = acc_get_device_idx(dev, num);
 
   if (acc_runtime.opencl_data->devices_data[device_idx] == NULL) {
     cl_int status;
@@ -46,7 +45,7 @@ void acc_init_(acc_device_t dev, int num) {
 
     device_data->context = clCreateContext(NULL, 1, device, NULL, NULL, &status);
     if (status != CL_SUCCESS || device_data->context == NULL) {
-       printf("[error]   clCreateContext : %s, %u return %u : failed\n", acc_device_name[dev], num, status);
+       printf("[error]   clCreateContext : %s, %u return %u : failed\n", "", 0/** \todo acc_device_name[dev], num*/, status);
 
        free(device_data);
        device_data = NULL;
@@ -79,6 +78,20 @@ void acc_init_(acc_device_t dev, int num) {
       exit(-1); /// \todo error code
     }
   }
+}
+
+void acc_init_(acc_device_t dev, int num) {
+  acc_init_once();
+
+  unsigned device_idx = acc_get_device_idx(dev, num);
+
+  acc_init__(device_idx);
+}
+
+void acc_init_region_(struct acc_region_t_ * region) {
+  unsigned idx;
+  for (idx = 0; idx < region->num_devices; idx++)
+    acc_init__(region->devices[idx].device_idx);
 }
 
 void acc_shutdown(acc_device_t dev) {

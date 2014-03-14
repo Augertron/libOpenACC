@@ -69,6 +69,7 @@ d_void * acc_copyin_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++)
     acc_copyin_(region->devices[idx].device_idx, host_ptr, n);
@@ -82,6 +83,7 @@ d_void * acc_present_or_copyin_(size_t device_idx, h_void * host_ptr, size_t n) 
 }
 
 void acc_present_or_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++)
     acc_present_or_copyin_(region->devices[idx].device_idx, host_ptr, n);
@@ -102,6 +104,7 @@ d_void * acc_create_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++)
     acc_create_(region->devices[idx].device_idx, host_ptr, n);
@@ -115,6 +118,7 @@ d_void * acc_present_or_create_(size_t device_idx, h_void * host_ptr, size_t n) 
 }
 
 void acc_present_or_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++)
     acc_present_or_create_(region->devices[idx].device_idx, host_ptr, n);
@@ -133,6 +137,7 @@ void acc_copyout_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++)
     acc_copyout_(region->devices[idx].device_idx, host_ptr, n);
@@ -146,6 +151,7 @@ d_void * acc_present_or_copyout_(size_t device_idx, h_void * host_ptr, size_t n)
 }
 
 void acc_present_or_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++)
     acc_present_or_copyout_(region->devices[idx].device_idx, host_ptr, n);
