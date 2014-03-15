@@ -87,17 +87,14 @@ static void init_loop_triplet(
   // Set/Check gang tile's number of iteration
   if (loop_triplet[e_gang].nbr_it == 0)
     loop_triplet[e_gang].nbr_it = context->num_gang;
-  assert(loop_triplet[e_gang].nbr_it == context->num_gang);
 
   // Set/Check worker tile's number of iteration
   if (loop_triplet[e_worker].nbr_it == 0)
     loop_triplet[e_worker].nbr_it = context->num_worker;
-  assert(loop_triplet[e_worker].nbr_it == context->num_worker);
 
   // Set/Check vector tile's number of iteration
   if (loop_triplet[e_vector].nbr_it == 0)
     loop_triplet[e_vector].nbr_it = context->vector_length;
-  assert(loop_triplet[e_vector].nbr_it == context->vector_length);
 
   // Set length of first tile to length of the original loop
   loop_triplet[0].length = orig_loop->upper - orig_loop->lower;

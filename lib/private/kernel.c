@@ -86,6 +86,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     assert(kernel->data_ptrs[i] != NULL);
     for (i = 0; i < kernel->desc->num_datas; i++) {
       d_void * data_ptr = acc_deviceptr_(device_idx, kernel->data_ptrs[i]);
+      assert(data_ptr != NULL);
       status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(data_ptr));
       if (status != CL_SUCCESS) {
         const char * status_str = acc_ocl_status_to_char(status);
