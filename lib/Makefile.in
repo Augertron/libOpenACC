@@ -1,5 +1,6 @@
 
 OPENCL_INC_PATH=@opencl_inc_path@
+SQLITE_INC_PATH=@sqlite_inc_path@
 
 OPENACC_PUBLIC_LIB = \
   public/arch.o \
@@ -33,10 +34,11 @@ OPENACC_UTILS_LIB = \
   utils/containers/associative.o \
   utils/containers/set.o \
   utils/containers/map.o \
-  utils/containers/bimap.o
+  utils/containers/bimap.o \
+  utils/profiling.o
 
 CC=gcc
-CFLAGS=-g -I../include/ -I$(OPENCL_INC_PATH) -fPIC
+CFLAGS=-g -I../include/ -I$(OPENCL_INC_PATH) -I$(SQLITE_INC_PATH) -fPIC
 OPTS=
 LD=gcc
 LDFLAGS+=-Wl,--no-as-needed 

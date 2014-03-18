@@ -215,6 +215,7 @@ int acc_is_present_(size_t device_idx, h_void * host_ptr, size_t n) {;
 
 void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_t bytes) {
 
+  /// \todo [profiling]
   cl_int status = clEnqueueWriteBuffer(
     /* cl_command_queue command_queue  */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer                   */ (cl_mem)dest,
@@ -235,6 +236,7 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
 
 void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, size_t bytes) {
 
+  /// \todo [profiling]
   cl_int status = clEnqueueReadBuffer (
     /* cl_command_queue command_queue */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer */ (cl_mem)src,

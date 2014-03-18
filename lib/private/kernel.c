@@ -127,6 +127,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     // Launch the kernel
     size_t global_work_size[1] = { region->devices[dev_idx].num_gang * region->devices[dev_idx].num_worker };
     size_t local_work_size[1] = { region->devices[dev_idx].num_worker };
+    /// \todo [profiling]
     status = clEnqueueNDRangeKernel(
       acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
       ocl_kernel,

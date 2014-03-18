@@ -8,6 +8,8 @@
 #include "OpenACC/public/arch.h"
 #include "OpenACC/private/runtime.h"
 
+#include "OpenACC/utils/profiling.h"
+
 #include <assert.h>
 
 void acc_init_once() {
@@ -40,5 +42,9 @@ void acc_init_once() {
     data_environment = acc_build_data_environment(NULL);
     set_flag(f_data_env);
   }
+
+  if (!check_flag(f_profiling))
+    init_profiling();
+  assert(check_flag(f_profiling));
 }
 
