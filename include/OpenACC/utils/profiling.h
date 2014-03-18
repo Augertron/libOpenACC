@@ -3,8 +3,11 @@
 #define __LIBOPENACC_PROFILING_H__
 
 #include "sqlite3.h"
+#include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-extern char * profiling_db_file;
+extern sqlite3 * profiling_db_file;
 
 void init_profiling();
 
