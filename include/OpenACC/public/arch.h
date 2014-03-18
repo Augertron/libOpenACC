@@ -27,6 +27,7 @@ typedef enum acc_device_e {
       acc_device_M2070,
       acc_device_K20Xm,
       acc_device_1000M,
+      acc_device_4000,
       acc_device_GTX_460,
   acc_device_amd,               ///< AMD devices \todo more type ?
   acc_device_intel,             ///< Intel devices
@@ -84,7 +85,7 @@ typedef const struct platform_desc_t_ platform_desc_t;
 extern platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS];
 
 /// List of supported devices
-extern device_desc_t devices_desc[11];
+extern device_desc_t devices_desc[12];
 
 #ifdef __cplusplus
 }
