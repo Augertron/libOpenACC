@@ -31,11 +31,16 @@ struct loop_triplet_t {
 acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_t device_idx) {
   acc_context_t result = (acc_context_t)malloc(sizeof(struct acc_context_t_) + kernel->desc->num_loops * sizeof(struct acc_kernel_loop_t_));
 
-  unsigned i;
+  assert(kernel->desc->splitted_loop == NULL ||
+          (    kernel->desc->splitted_loop->mode == e_contiguous
+            && kernel->desc->splitted_loop->nbr_dev == region->num_devices
+            && kernel->desc->splitted_loop->portions != NULL ) );
 
-  for (i = 0; i < region->num_devices; i++)
+  unsigned i, j;
+  for (i = 0; i < region->num_devices; i++) {
     if (region->devices[i].device_idx == device_idx)
       break;
+  }
   assert(i < region->num_devices);
   result->num_gang      = region->devices[i].num_gang;
   result->num_worker    = region->devices[i].num_worker;
@@ -43,10 +48,40 @@ acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_
 
   result->num_loop = kernel->desc->num_loops;
 
-  for (i = 0; i < kernel->desc->num_loops; i++) {
-    memcpy(&(result->loops[i].original), kernel->loops[i], sizeof(struct acc_loop_desc_t_));
-    if (result->loops[i].original.nbr_it == 0)
-      result->loops[i].original.nbr_it = (result->loops[i].original.upper - result->loops[i].original.lower) / result->loops[i].original.stride;
+  for (j = 0; j < kernel->desc->num_loops; j++) {
+    memcpy(&(result->loops[j].original), kernel->loops[j], sizeof(struct acc_loop_desc_t_));
+    if (result->loops[j].original.nbr_it == 0)
+      result->loops[j].original.nbr_it = (result->loops[j].original.upper - result->loops[j].original.lower) / result->loops[j].original.stride;
+  }
+
+  if (kernel->desc->splitted_loop != NULL) {
+    unsigned loop_id = kernel->desc->splitted_loop->loop_id;
+
+    printf("Splitting loop %u on %s\n", loop_id, acc_device_name[region->desc->devices[i].kind]);
+
+    unsigned long length = result->loops[loop_id].original.upper - result->loops[loop_id].original.lower;
+
+    printf("   length = %d\n", length);
+
+    unsigned long splitted_loop_sum_portions = 0;
+    unsigned long splitted_loop_start_portion = 0;
+    for (j = 0; j < region->num_devices; j++) {
+      splitted_loop_sum_portions += kernel->desc->splitted_loop->portions[j];
+      if (j < i)
+        splitted_loop_start_portion += kernel->desc->splitted_loop->portions[j];
+    }
+
+    printf("   %d portions\n", splitted_loop_sum_portions);
+    printf("   %d executed by previous devices.\n", splitted_loop_start_portion);
+    printf("   %d for this device.\n", kernel->desc->splitted_loop->portions[i]);
+
+    long prev_portion = (length * splitted_loop_start_portion) / splitted_loop_sum_portions;
+    long portion = (length * kernel->desc->splitted_loop->portions[i]) / splitted_loop_sum_portions;
+
+    result->loops[loop_id].original.lower += prev_portion;
+    result->loops[loop_id].original.upper  = result->loops[loop_id].original.lower + portion;
+
+    printf("   iterations %d to %d\n", result->loops[loop_id].original.lower, result->loops[loop_id].original.upper);
   }
 
   return result; 

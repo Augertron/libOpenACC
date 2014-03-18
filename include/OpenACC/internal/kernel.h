@@ -89,7 +89,7 @@ struct acc_kernel_desc_t_ {
   acc_kernel_version_t * versions;
 
   /// splitted loop, no splitted loop if NULL
-  acc_loop_splitter_t * splitted_loop;
+  acc_loop_splitter_t splitted_loop;
 };
 
 /*! \func acc_create_context
