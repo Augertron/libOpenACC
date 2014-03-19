@@ -274,7 +274,7 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
   cl_int status = clEnqueueWriteBuffer(
     /* cl_command_queue command_queue  */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer                   */ (cl_mem)dest,
-    /* cl_bool blocking_write          */ CL_TRUE,
+    /* cl_bool blocking_write          */ CL_FALSE,
     /* size_t offset                   */ 0,
     /* size_t cb                       */ bytes,
     /* const void *ptr                 */ src,
@@ -294,7 +294,7 @@ void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, siz
   cl_int status = clEnqueueReadBuffer (
     /* cl_command_queue command_queue */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer */ (cl_mem)src,
-    /* cl_bool blocking_read */ CL_TRUE,
+    /* cl_bool blocking_read */ CL_FALSE,
     /* size_t offset */ 0,
     /* size_t cb */ bytes,
     /* void *ptr */ dest,
