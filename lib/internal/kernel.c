@@ -37,10 +37,9 @@ acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_
             && kernel->desc->splitted_loop->portions != NULL ) );
 
   unsigned i, j;
-  for (i = 0; i < region->num_devices; i++) {
+  for (i = 0; i < region->num_devices; i++)
     if (region->devices[i].device_idx == device_idx)
       break;
-  }
   assert(i < region->num_devices);
   result->num_gang      = region->devices[i].num_gang;
   result->num_worker    = region->devices[i].num_worker;
@@ -57,31 +56,31 @@ acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_
   if (kernel->desc->splitted_loop != NULL) {
     unsigned loop_id = kernel->desc->splitted_loop->loop_id;
 
-    printf("Splitting loop %u on %s\n", loop_id, acc_device_name[region->desc->devices[i].kind]);
+//  printf("Splitting loop %u on %s\n", loop_id, acc_device_name[region->desc->devices[i].kind]);
 
     unsigned long length = result->loops[loop_id].original.upper - result->loops[loop_id].original.lower;
 
-    printf("   length = %d\n", length);
+//  printf("   length = %d\n", length);
 
-    unsigned long splitted_loop_sum_portions = 0;
-    unsigned long splitted_loop_start_portion = 0;
+    unsigned sum_portions = 0;
+    unsigned start_portion = 0;
     for (j = 0; j < region->num_devices; j++) {
-      splitted_loop_sum_portions += kernel->desc->splitted_loop->portions[j];
+      sum_portions += kernel->desc->splitted_loop->portions[j];
       if (j < i)
-        splitted_loop_start_portion += kernel->desc->splitted_loop->portions[j];
+        start_portion += kernel->desc->splitted_loop->portions[j];
     }
 
-    printf("   %d portions\n", splitted_loop_sum_portions);
-    printf("   %d executed by previous devices.\n", splitted_loop_start_portion);
-    printf("   %d for this device.\n", kernel->desc->splitted_loop->portions[i]);
+//  printf("   %d portions\n", sum_portions);
+//  printf("   %d executed by previous devices.\n", start_portion);
+//  printf("   %d for this device.\n", kernel->desc->splitted_loop->portions[i]);
 
-    long prev_portion = (length * splitted_loop_start_portion) / splitted_loop_sum_portions;
-    long portion = (length * kernel->desc->splitted_loop->portions[i]) / splitted_loop_sum_portions;
+    long prev_portion = (length * start_portion) / sum_portions;
+    long portion = (length * kernel->desc->splitted_loop->portions[i]) / sum_portions;
 
     result->loops[loop_id].original.lower += prev_portion;
     result->loops[loop_id].original.upper  = result->loops[loop_id].original.lower + portion;
 
-    printf("   iterations %d to %d\n", result->loops[loop_id].original.lower, result->loops[loop_id].original.upper);
+//  printf("   iterations %d to %d\n", result->loops[loop_id].original.lower, result->loops[loop_id].original.upper);
   }
 
   return result; 

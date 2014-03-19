@@ -27,9 +27,9 @@ struct acc_data_distribution_t_ {
   acc_splitting_mode_e mode;
 
   unsigned nbr_dev;
-  unsigned long * portions;
+  unsigned * portions;
 
-  unsigned long chunk;
+  unsigned chunk;
 };
 
 struct acc_region_desc_t_ {
@@ -49,8 +49,8 @@ struct acc_region_desc_t_ {
     size_t num;
   } * devices;
 
-  size_t num_distributed_datas;
-  struct acc_data_distribution_t_ * data_distributions;
+  size_t num_distributed_data;
+  struct acc_data_distribution_t_ * distributed_data;
 };
 
 /**

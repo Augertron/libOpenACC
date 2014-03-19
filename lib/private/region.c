@@ -23,7 +23,7 @@ struct acc_region_t_ * acc_build_region(acc_region_desc_t region) {
 
   result->desc = region;
   result->num_devices = num_devices;
-  result->distributed_datas = (h_void **)malloc(region->num_distributed_datas * sizeof(h_void *));
+  result->distributed_data = (h_void **)malloc(region->num_distributed_data * sizeof(h_void *));
 
   if (region->devices == NULL) {
     assert(num_devices == 1);

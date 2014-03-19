@@ -57,9 +57,9 @@ struct acc_loop_splitter_t_ {
   acc_splitting_mode_e mode;
 
   unsigned nbr_dev;
-  unsigned long * portions;
+  unsigned * portions;
 
-  unsigned long chunk;
+  unsigned chunk;
 };
 typedef struct acc_loop_splitter_t_ * acc_loop_splitter_t;
 
