@@ -25,7 +25,10 @@ struct acc_region_t_ {
   /// Pointer to region descriptor
   struct acc_region_desc_t_ * desc;
 
-  h_void ** distributed_data;
+  struct {
+    h_void * ptr;
+    size_t size;
+  } * distributed_data;
 
   unsigned num_devices;
 

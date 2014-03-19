@@ -32,6 +32,7 @@ struct acc_kernel_t_ {
 
   /// data arguments, pointers to device memory
   d_void ** data_ptrs;
+  size_t  * data_size;
 
   /// Loops descriptor for dynamically defined bounds and strides
   acc_loop_desc_t * loops;

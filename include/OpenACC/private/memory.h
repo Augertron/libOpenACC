@@ -19,6 +19,12 @@ extern "C" {
 
 struct acc_region_t_;
 
+///////////////////////////////////////////////////////////////////////
+
+void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx, h_void ** host_ptr, size_t * n);
+
+///////////////////////////////////////////////////////////////////////
+
 d_void * acc_malloc_(size_t device_idx, size_t);
 
 void acc_free_(size_t device_idx, d_void *);

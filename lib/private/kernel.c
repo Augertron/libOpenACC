@@ -6,6 +6,7 @@
 #include "OpenACC/private/debug.h"
 
 #include "OpenACC/private/runtime.h"
+#include "OpenACC/private/memory.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,6 +28,7 @@ acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
   result->param_ptrs  = (  void **)malloc(kernel->num_params  * sizeof(  void *));
   result->scalar_ptrs = (  void **)malloc(kernel->num_scalars * sizeof(  void *));
   result->data_ptrs   = (d_void **)malloc(kernel->num_datas   * sizeof(d_void *));
+  result->data_size   = ( size_t *)malloc(kernel->num_datas   * sizeof(  size_t));
 
   result->loops = (acc_loop_desc_t *)malloc(kernel->num_loops * sizeof(struct acc_loop_desc_t_ *));
   unsigned i;
@@ -37,6 +39,7 @@ acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
 }
 
 void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
+  printf("[info]  acc_enqueue_kernel\n");
   unsigned dev_idx;
   for (dev_idx = 0; dev_idx < region->num_devices; dev_idx++) {
     assert(region->devices[dev_idx].num_gang > 0);
@@ -54,7 +57,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
 
     cl_int status;
     cl_uint idx = 0;
-    unsigned i;
+    unsigned i, j, k, l;
 
     // Set params kernel arguments 
     for (i = 0; i < kernel->desc->num_params; i++) {
@@ -83,11 +86,17 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     }
 
     // Set data kernel argument
-    assert(kernel->data_ptrs[i] != NULL);
     for (i = 0; i < kernel->desc->num_datas; i++) {
-      d_void * data_ptr = acc_deviceptr_(device_idx, kernel->data_ptrs[i]);
-      assert(data_ptr != NULL);
-      status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(data_ptr));
+      assert(kernel->data_ptrs[i] != NULL);
+
+      h_void * h_data_ptr = kernel->data_ptrs[i];
+      size_t n = kernel->data_size[i];
+
+      acc_distributed_data(region, device_idx, &h_data_ptr, &n);
+
+      d_void * d_data_ptr = acc_deviceptr_(device_idx, h_data_ptr);
+      assert(d_data_ptr != NULL);
+      status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(d_data_ptr));
       if (status != CL_SUCCESS) {
         const char * status_str = acc_ocl_status_to_char(status);
         printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (data #%u).\n",
@@ -96,6 +105,51 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
         exit(-1); /// \todo error code
       }
       idx++;
+
+      // if data is distributed need to provide the offset
+      for (j = 0; j < region->desc->num_distributed_data; j++)
+        if (kernel->data_ptrs[i] == region->distributed_data[j].ptr)
+          break;
+      if (j < region->desc->num_distributed_data) {
+        printf("[info]    region[%u].kernel[%u] on device #%u  data #%u is distributed.\n",
+                    region->desc->id, kernel->desc->id, device_idx, i
+                );
+
+        assert( region->desc->distributed_data[j].mode == e_contiguous &&
+                region->desc->distributed_data[j].nbr_dev == region->num_devices &&
+                region->desc->distributed_data[j].portions != NULL
+              );
+
+        for (k = 0; k < region->num_devices; k++)
+          if (region->devices[k].device_idx == device_idx)
+            break;
+        assert(k < region->num_devices);
+
+        unsigned sum_portions = 0;
+        unsigned prev_portion = 0;
+        for (l = 0; l < region->num_devices; l++) {
+          sum_portions += region->desc->distributed_data[j].portions[l];
+          if (l < k)
+            prev_portion += region->desc->distributed_data[j].portions[l];
+        };
+
+        int offset = (region->distributed_data[j].size * prev_portion) / sum_portions;
+
+
+        printf("[info]        sum_portions = %d\n", sum_portions);
+        printf("[info]        prev_portion = %d\n", prev_portion);
+        printf("[info]        offset       = %d\n", offset);
+
+        status = clSetKernelArg(ocl_kernel, idx, sizeof(int), &offset);
+        if (status != CL_SUCCESS) {
+          const char * status_str = acc_ocl_status_to_char(status);
+          printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u: offset for distributed data %u.\n",
+                    status_str, region->desc->id, kernel->desc->id, idx, i
+                );
+          exit(-1); /// \todo error code
+        }
+        idx++;
+      }
     }
 
     // Allocate/copy context in constant memory \todo alloc only copy before launch with event wait

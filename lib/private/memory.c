@@ -25,37 +25,46 @@ extern "C" {
 #endif
 
 void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx, h_void ** host_ptr, size_t * n) {
-  size_t i, j;
+  size_t i, j, k;
   for (i = 0; i < region->desc->num_distributed_data; i++)
-    if (region->distributed_data[i] == host_ptr)
+    if (region->distributed_data[i].ptr == *host_ptr)
       break;
   if (i == region->desc->num_distributed_data) return;
 
-  struct acc_data_distribution_t_ * data_distribution = &(region->desc->distributed_data[i]);
-
-  assert( data_distribution->mode == e_contiguous &&
-          data_distribution->nbr_dev == region->num_devices &&
-          data_distribution->portions != NULL
+  assert( region->desc->distributed_data[i].mode == e_contiguous &&
+          region->desc->distributed_data[i].nbr_dev == region->num_devices &&
+          region->desc->distributed_data[i].portions != NULL
         );
 
-  for (i = 0; i < region->num_devices; i++)
-    if (region->devices[i].device_idx == device_idx)
+  for (j = 0; j < region->num_devices; j++)
+    if (region->devices[j].device_idx == device_idx)
       break;
-  assert(i < region->num_devices);
+  assert(j < region->num_devices);
 
   unsigned sum_portions = 0;
   unsigned prev_portion = 0;
-  for (j = 0; j < region->num_devices; j++) {
-    sum_portions += data_distribution->portions[j];
-    if (j < i)
-      prev_portion += data_distribution->portions[j];
+  for (k = 0; k < region->num_devices; k++) {
+    sum_portions += region->desc->distributed_data[i].portions[k];
+    if (k < j)
+      prev_portion += region->desc->distributed_data[i].portions[k];
   }
 
-  *host_ptr += (*n * prev_portion                  ) / sum_portions;
-  *n         = (*n * data_distribution->portions[i]) / sum_portions;
+  printf("[info]    region[%u] on device #%u distributed data.\n", region->desc->id, device_idx);
+  printf("[info]        host_ptr     = %X\n", *host_ptr);
+  printf("[info]        n            = %d\n", *n);
+  printf("[info]        sum_portions = %d\n", sum_portions);
+  printf("[info]        prev_portion = %d\n", prev_portion);
+
+  *host_ptr += (*n * prev_portion) / sum_portions;
+  *n         = (*n * region->desc->distributed_data[i].portions[j]) / sum_portions;
+
+  printf("[info]        host_ptr     = %X\n", *host_ptr);
+  printf("[info]        n            = %d\n", *n);
 }
 
 d_void * acc_malloc_(size_t device_idx, size_t n) {
+  printf("[info]  acc_malloc_(size_t device_idx = %u, size_t n = %d)\n", device_idx, n);
+
   cl_int status;
 	
   cl_mem buffer = clCreateBuffer(
@@ -71,7 +80,7 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
     exit(-1); /// \todo error code
   }
 
-//printf("acc_malloc(n = %u) = %x\n", n, buffer);
+  printf("[info]      return %X\n", buffer);
 
   return (d_void *)buffer;
 }
@@ -101,6 +110,7 @@ d_void * acc_copyin_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  printf("[info]  acc_copyin_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -119,6 +129,7 @@ d_void * acc_present_or_copyin_(size_t device_idx, h_void * host_ptr, size_t n) 
 }
 
 void acc_present_or_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  printf("[info]  acc_present_or_copyin_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -144,6 +155,7 @@ d_void * acc_create_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  printf("[info]  acc_create_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -162,6 +174,7 @@ d_void * acc_present_or_create_(size_t device_idx, h_void * host_ptr, size_t n) 
 }
 
 void acc_present_or_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  printf("[info]  acc_present_or_create_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -185,6 +198,7 @@ void acc_copyout_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  printf("[info]  acc_copyout_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -203,6 +217,7 @@ d_void * acc_present_or_copyout_(size_t device_idx, h_void * host_ptr, size_t n)
 }
 
 void acc_present_or_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+  printf("[info]  acc_present_or_copyout_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
