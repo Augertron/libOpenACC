@@ -19,6 +19,12 @@
 #include <string.h>
 #include <assert.h>
 
+extern cl_event cxEvents[];
+extern int EventIdx;
+extern int NumEventReleased;
+extern void CledInsertIntoEvent (cl_command_queue command_queue, 
+		const char *FuncName);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -216,6 +222,10 @@ int acc_is_present_(size_t device_idx, h_void * host_ptr, size_t n) {;
 void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_t bytes) {
 
   /// \todo [profiling]
+  char FuncName[128];
+  sprintf(FuncName, "%s", __func__);
+  CledInsertIntoEvent (acc_runtime.opencl_data->devices_data[device_idx]->command_queue, FuncName);
+
   cl_int status = clEnqueueWriteBuffer(
     /* cl_command_queue command_queue  */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer                   */ (cl_mem)dest,
@@ -225,7 +235,7 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
     /* const void *ptr                 */ src,
     /* cl_uint num_events_in_wait_list */ 0,
     /* const cl_event *event_wait_list */ NULL,
-    /* cl_event *event                 */ NULL
+    /* cl_event *event                 */ cxEvents[++EventIdx]
   );
   if (status != CL_SUCCESS) {
     char * status_str = acc_ocl_status_to_char(status);
@@ -237,6 +247,10 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
 void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, size_t bytes) {
 
   /// \todo [profiling]
+  char FuncName[128];
+  sprintf(FuncName, "%s", __func__);
+  CledInsertIntoEvent (acc_runtime.opencl_data->devices_data[device_idx]->command_queue, FuncName);
+
   cl_int status = clEnqueueReadBuffer (
     /* cl_command_queue command_queue */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer */ (cl_mem)src,
@@ -246,7 +260,7 @@ void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, siz
     /* void *ptr */ dest,
     /* cl_uint num_events_in_wait_list */ 0,
     /* const cl_event *event_wait_list */ NULL,
-    /* cl_event *event */ NULL
+    /* cl_event *event */ cxEvents[++EventIdx]
   );
   if (status != CL_SUCCESS) {
     char * status_str = acc_ocl_status_to_char(status);
