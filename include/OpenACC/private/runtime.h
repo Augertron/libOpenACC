@@ -63,10 +63,10 @@ enum flags_e {
   f_acc_devices   = 0x0004,
 
   f_ocl_devices   = 0x0008,
-  f_ocl_sources   = 0x000F,
+  f_ocl_sources   = 0x0010,
 
-  f_mem_manager   = 0x0010,
-  f_data_env      = 0x0020
+  f_mem_manager   = 0x0020,
+  f_data_env      = 0x0040
 };
 
 /// OpenACC runtime global data (singleton)
