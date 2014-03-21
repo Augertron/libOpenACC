@@ -14,6 +14,12 @@
 
 #include <assert.h>
 
+extern cl_event cxEvents[];
+extern int EventIdx;
+extern int NumEventReleased;
+extern void CledInsertIntoEvent (cl_command_queue command_queue, 
+                const char *FuncName);
+
 typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_region_t_ * acc_region_t;
 typedef struct acc_context_t_ * acc_context_t;
@@ -181,6 +187,11 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     // Launch the kernel
     size_t global_work_size[1] = { region->devices[dev_idx].num_gang * region->devices[dev_idx].num_worker };
     size_t local_work_size[1] = { region->devices[dev_idx].num_worker };
+    /// \todo [profiling]
+  char FuncName[128];
+  sprintf(FuncName, "%s", __func__);
+  CledInsertIntoEvent (acc_runtime.opencl_data->devices_data[device_idx]->command_queue, FuncName);
+
     status = clEnqueueNDRangeKernel(
       acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
       ocl_kernel,
@@ -190,7 +201,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       /* const size_t * local_work_size    = */ local_work_size,
       /* cl_uint num_events_in_wait_list   = */ 0,
       /* const cl_event * event_wait_list  = */ NULL,
-      /* cl_event * event                  = */ NULL
+      /* cl_event * event                  = */ &cxEvents[EventIdx++]
     );
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);

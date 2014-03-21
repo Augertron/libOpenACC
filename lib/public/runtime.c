@@ -5,6 +5,7 @@
 #include "OpenACC/private/debug.h"
 
 #include "OpenACC/internal/compiler.h"
+#include "OpenACC/utils/profiling.h"
 
 #include <stdio.h>
 
@@ -62,7 +63,7 @@ void acc_init__(unsigned device_idx) {
     for (i = 0; i < compiler_data.num_regions; i++)
       device_data->programs[i] = NULL;
 
-    device_data->command_queue = clCreateCommandQueue(device_data->context, *device, 0, &status);
+    device_data->command_queue = clCreateCommandQueue(device_data->context, *device, CL_QUEUE_PROFILING_ENABLE, &status);
     if (status != CL_SUCCESS || device_data->command_queue == NULL) {
       char * status_str;
       switch (status) {
@@ -100,7 +101,6 @@ void acc_shutdown(acc_device_t dev) {
   size_t num_devices = acc_get_num_devices(dev);
 
   assert(num_devices > 0);
-
   unsigned i;
   for (i = 0; i < num_devices; i++)
     acc_shutdown_(dev, i);
