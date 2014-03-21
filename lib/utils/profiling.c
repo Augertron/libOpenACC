@@ -1002,6 +1002,7 @@ CledReleaseAllEvents (void)
           print_error (__FILE__,__LINE__,"SQL error");
         }
     }
+    EventIdx=0;
 }
 
 
