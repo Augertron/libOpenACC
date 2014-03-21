@@ -79,6 +79,7 @@ acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_
 
     result->loops[loop_id].original.lower += prev_portion;
     result->loops[loop_id].original.upper  = result->loops[loop_id].original.lower + portion;
+    result->loops[loop_id].original.nbr_it = (result->loops[loop_id].original.upper - result->loops[loop_id].original.lower) / result->loops[loop_id].original.stride;
 
 //  printf("   iterations %d to %d\n", result->loops[loop_id].original.lower, result->loops[loop_id].original.upper);
   }
