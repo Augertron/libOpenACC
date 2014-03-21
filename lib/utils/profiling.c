@@ -920,10 +920,10 @@ GetDeviceIdFromCmdQueue (cl_command_queue command_queue)
   int i = 0;
   int num_platforms = acc_runtime.opencl_data->num_platforms;
   int num_devices = acc_runtime.opencl_data->num_devices[num_platforms];
-    
+
   for (i; i < num_devices; i++)
     {   
-      if (acc_runtime.opencl_data->devices_data[i]->command_queue == command_queue)
+      if (acc_runtime.opencl_data->devices_data[i] != NULL && acc_runtime.opencl_data->devices_data[i]->command_queue == command_queue)
         {
           Id = i;
           break;
