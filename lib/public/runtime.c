@@ -5,6 +5,7 @@
 #include "OpenACC/private/debug.h"
 
 #include "OpenACC/internal/compiler.h"
+#include "OpenACC/utils/profiling.h"
 
 #include <stdio.h>
 
@@ -100,7 +101,6 @@ void acc_shutdown(acc_device_t dev) {
   size_t num_devices = acc_get_num_devices(dev);
 
   assert(num_devices > 0);
-
   unsigned i;
   for (i = 0; i < num_devices; i++)
     acc_shutdown_(dev, i);

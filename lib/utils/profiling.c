@@ -12,6 +12,7 @@
 
 sqlite3 * profiling_db_file;
 char * profiling_db_file_name;
+char * profiling_event_table_name;
 int DbErr;
 char *DbErrMsg;
 char Dbstr[8192];
@@ -23,12 +24,13 @@ int NumEventReleased;
 
 void init_profiling() {
   //Init some parameters
-  EventIdx = -1;
+  EventIdx = 0;
   NumEventReleased = 0;
 
 
   //Step1: Give a name to profiling_db_file and using it to create a database file
-  char db_file_name[256];
+  char db_file_name[128];
+  char event_table_name[128];
   char hostname[64];
   char username[64];
 
@@ -44,6 +46,11 @@ void init_profiling() {
   time( &rawtime );
   info = localtime( &rawtime );
 
+  char randnum_str[5];
+  srand(time(NULL));
+  int randnum = rand()%9999;
+  sprintf(randnum_str, "%04d",randnum);
+
   gethostname (hostname, 64);
   getlogin_r (username, 64);
 
@@ -55,19 +62,26 @@ void init_profiling() {
   sprintf(second, "%02d",info->tm_sec);
 
   strcpy (db_file_name, username);
-  strcat (db_file_name, "@");
+  strcat (db_file_name, "_");
   strcat (db_file_name, hostname);
-  strcat (db_file_name, "YYYYMMDDHHMMSS");
-  strcat (db_file_name, year);
-  strcat (db_file_name, month);
-  strcat (db_file_name, day);
-  strcat (db_file_name, hour);
-  strcat (db_file_name, minute);
-  strcat (db_file_name, second);
   strcat (db_file_name, ".sl3");  
 
+  //strcat (db_file_name, "YYYYMMDDHHMMSS");
+  strcpy (event_table_name, "Event");		//5
+  strcat (event_table_name, year);		//4
+  strcat (event_table_name, month);		//2
+  strcat (event_table_name, day);		//2
+  strcat (event_table_name, hour);		//2
+  strcat (event_table_name, minute);		//2
+  strcat (event_table_name, second);		//2
+  strcat (event_table_name, randnum_str);	//4
+  event_table_name[23]='\0';
+
   profiling_db_file_name = &db_file_name[0];
-  print_log("profiling_db_file: %s\n",profiling_db_file_name);
+  profiling_event_table_name = &event_table_name[0];
+
+  printf("profiling_db_file: %s\n",profiling_db_file_name);
+  printf("profiling_event_table_name:_%s_\n",profiling_event_table_name);
 
 
   FILE *file;
@@ -172,32 +186,35 @@ void init_profiling() {
       print_log ("Table Event created successfully\n");
     }
 
-  //Step3: fill out Platform and Device tables
-  DeviceQuery();
-
-  sprintf (Dbstr, "INSERT INTO Event VALUES (\
-                            '%d',\
-                            '%d',\
-                            '%s',\
-                            '%.3f');",\
-                                1,\
-                                2,\
-                                "Testing",\
-                                1.23456);
+  sprintf (Dbstr, "CREATE TABLE %s(  \
+             ID INT, \
+             DEVICEID INT, \
+             FUNCTIONNAME CHAR(128), \
+             TIME REAL \
+             );",profiling_event_table_name);
 
   DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
   if (DbErr != SQLITE_OK)
-    {   
+    {
       print_error (__FILE__,__LINE__,DbErrMsg);
       sqlite3_free (DbErrMsg);
-      print_error (__FILE__,__LINE__,"SQL error\n");
+    }
+  else
+    {
+      print_log ("Table %s created successfully\n",profiling_event_table_name);
     }
 
+
+
+
+  //Step3: fill out Platform and Device tables
+  DeviceQuery();
 
 }//r \todo [profiling] init_profiling()
 
 void exit_profiling() {
-  //assert(profiling_db_file != NULL);
+  assert(profiling_db_file != NULL);
+  CledReleaseAllEvents ();
 
   /// \todo [profiling] exit_profiling()
 }
@@ -937,3 +954,71 @@ GetDeviceIdFromCmdQueue (cl_command_queue command_queue)
       print_error (__FILE__,__LINE__,"GetDeviceIdFromCmdQueue error\n");
     } 
 }
+#if 0
+double GetEventTime(cl_event & event)
+{
+  cl_ulong start, end;
+  cl_int ciErrNum = CL_SUCCESS;
+
+  ciErrNum =
+    clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_END,
+                             sizeof (cl_ulong), &end, NULL);
+  if (ciErrNum != CL_SUCCESS)
+    fatal_CL (ciErrNum, __LINE__);
+
+  ciErrNum =
+    clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_START,
+                             sizeof (cl_ulong), &start, NULL);
+  if (ciErrNum != CL_SUCCESS)
+    fatal_CL (ciErrNum, __LINE__);
+
+  return (double) 1.0e-9 *(end - start);        // convert nanoseconds to seconds on return
+}
+#endif
+
+
+cl_int
+CledReleaseAllEvents (void)
+{
+  int DbErr;
+  char *DbErrMsg;
+  char Dbstr[8192];
+
+  double time;
+  int i;
+  for (i = 0; i < EventIdx; i++)
+    {
+      cl_ulong start, end;
+      cl_int ciErrNum = CL_SUCCESS;
+
+      ciErrNum =
+    	clGetEventProfilingInfo (cxEvents[i], CL_PROFILING_COMMAND_END,
+                             sizeof (cl_ulong), &end, NULL);
+      if (ciErrNum != CL_SUCCESS)
+    	fatal_CL (ciErrNum, __LINE__);
+
+      ciErrNum =
+    	clGetEventProfilingInfo (cxEvents[i], CL_PROFILING_COMMAND_START,
+                             sizeof (cl_ulong), &start, NULL);
+      if (ciErrNum != CL_SUCCESS)
+      	fatal_CL (ciErrNum, __LINE__);
+
+      time = 1.0e-3 *(end - start);        // convert nanoseconds to microseconds
+      printf ("Event%d time: %f us\n", i, time);
+
+      clReleaseEvent (cxEvents[i]);
+      sprintf (Dbstr, "update event set time='%.3f' where id=%d;", time,
+               i);
+
+      DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
+      if (DbErr != SQLITE_OK)
+        {
+          print_error (__FILE__,__LINE__,DbErrMsg);
+          sqlite3_free (DbErrMsg);
+          print_error (__FILE__,__LINE__,"SQL error");
+        }
+    }
+}
+
+
+

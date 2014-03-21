@@ -235,7 +235,7 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
     /* const void *ptr                 */ src,
     /* cl_uint num_events_in_wait_list */ 0,
     /* const cl_event *event_wait_list */ NULL,
-    /* cl_event *event                 */ cxEvents[++EventIdx]
+    /* cl_event *event                 */ &cxEvents[EventIdx++]
   );
   if (status != CL_SUCCESS) {
     char * status_str = acc_ocl_status_to_char(status);
@@ -260,7 +260,7 @@ void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, siz
     /* void *ptr */ dest,
     /* cl_uint num_events_in_wait_list */ 0,
     /* const cl_event *event_wait_list */ NULL,
-    /* cl_event *event */ cxEvents[++EventIdx]
+    /* cl_event *event */ &cxEvents[EventIdx++]
   );
   if (status != CL_SUCCESS) {
     char * status_str = acc_ocl_status_to_char(status);

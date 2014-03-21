@@ -29,6 +29,8 @@ void fatal_CL (cl_int error, int line_no);
 void DeviceQuery (void);
 
 cl_int GetDeviceIdFromCmdQueue (cl_command_queue command_queue);
+cl_int CledReleaseAllEvents (void);
+
 /// \todo [profiling] add profiling function for kernel and data transfert
 
 #endif /* __LIBOPENACC_PROFILING_H__ */

@@ -43,8 +43,10 @@ void acc_init_once() {
     set_flag(f_data_env);
   }
 
-  if (!check_flag(f_profiling))
+  if (!check_flag(f_profiling)){
     init_profiling();
-  //assert(check_flag(f_profiling));	//[ToTristan]: Yue commented this line out temporarily. Please check how to resolve this. 
+    set_flag(f_profiling);
+  }
+  assert(check_flag(f_profiling));	//[ToTristan]: Yue commented this line out temporarily. Please check how to resolve this. 
 }
 

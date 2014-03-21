@@ -147,7 +147,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       /* const size_t * local_work_size    = */ local_work_size,
       /* cl_uint num_events_in_wait_list   = */ 0,
       /* const cl_event * event_wait_list  = */ NULL,
-      /* cl_event * event                  = */ cxEvents[++EventIdx]
+      /* cl_event * event                  = */ &cxEvents[EventIdx++]
     );
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
