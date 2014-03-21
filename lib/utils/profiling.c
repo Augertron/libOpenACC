@@ -30,7 +30,7 @@ void init_profiling() {
 
   //Step1: Give a name to profiling_db_file and using it to create a database file
   char db_file_name[128];
-  char event_table_name[128];
+  static char event_table_name[128];
   char hostname[64];
   char username[64];
 
@@ -80,19 +80,15 @@ void init_profiling() {
   profiling_db_file_name = &db_file_name[0];
   profiling_event_table_name = &event_table_name[0];
 
-  printf("profiling_db_file: %s\n",profiling_db_file_name);
-  printf("profiling_event_table_name:_%s_\n",profiling_event_table_name);
+  print_log("profiling_db_file: %s\n",profiling_db_file_name);
+  print_log("profiling_event_table_name:_%s_\n",profiling_event_table_name);
 
-
+  bool newly_created_db_file = true;
   FILE *file;
   if (file = fopen (profiling_db_file_name, "r"))
     {   
-      if (remove (profiling_db_file_name) != 0)
-        print_error (__FILE__,__LINE__,"Can not delete file");
-      else
-        print_log ("File successfully deleted\n");
+	newly_created_db_file = false;
     }
-
 
   DbErr = sqlite3_open (profiling_db_file_name, &profiling_db_file);
   if (DbErr)
@@ -105,7 +101,8 @@ void init_profiling() {
     }
 
 
-  //Step2: Create Platform, Device and Event tables in the database file. 
+  //Step2: Create Platform, Device tables if database file is newly created
+  if(newly_created_db_file){
   sprintf (Dbstr, "CREATE TABLE Platform(  \
              ID INT, \
              CL_PLATFORM_NAME CHAR(100), \
@@ -167,26 +164,10 @@ void init_profiling() {
     {
       print_log ("Table Device created successfully\n");
     }
+  }
 
-  sprintf (Dbstr, "CREATE TABLE Event(  \
-             ID INT, \
-             DEVICEID INT, \
-             FUNCTIONNAME CHAR(128), \
-             TIME REAL \
-             );");
-
-  DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
-  if (DbErr != SQLITE_OK)
-    {
-      print_error (__FILE__,__LINE__,DbErrMsg);
-      sqlite3_free (DbErrMsg);
-    }
-  else
-    {
-      print_log ("Table Event created successfully\n");
-    }
-
-  sprintf (Dbstr, "CREATE TABLE %s(  \
+  //Step3: Create Event tables in the database file. 
+  sprintf (Dbstr, "CREATE TABLE '%s'(  \
              ID INT, \
              DEVICEID INT, \
              FUNCTIONNAME CHAR(128), \
@@ -208,7 +189,9 @@ void init_profiling() {
 
 
   //Step3: fill out Platform and Device tables
-  DeviceQuery();
+  if(newly_created_db_file){
+    DeviceQuery();
+  }
 
 }//r \todo [profiling] init_profiling()
 
@@ -904,11 +887,12 @@ CledInsertIntoEvent (cl_command_queue command_queue,
   int DbErr;
   char *DbErrMsg;
   char Dbstr[8192];
-  sprintf (Dbstr, "INSERT INTO Event VALUES (\
+  sprintf (Dbstr, "INSERT INTO '%s' VALUES (\
                             '%d',\
                             '%d',\
                             '%s',\
                             '%.3f');",\
+				profiling_event_table_name,\
                                 EventIdx,\
                                 GetDeviceIdFromCmdQueue (command_queue),\
                                 FuncName,\
@@ -1004,10 +988,10 @@ CledReleaseAllEvents (void)
       	fatal_CL (ciErrNum, __LINE__);
 
       time = 1.0e-3 *(end - start);        // convert nanoseconds to microseconds
-      printf ("Event%d time: %f us\n", i, time);
+      print_log ("Event%d time: %f us\n", i, time);
 
       clReleaseEvent (cxEvents[i]);
-      sprintf (Dbstr, "update event set time='%.3f' where id=%d;", time,
+      sprintf (Dbstr, "update '%s' set time='%.3f' where id=%d;", profiling_event_table_name,time,
                i);
 
       DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
