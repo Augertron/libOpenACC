@@ -1,7 +1,6 @@
 
 #include "OpenACC/utils/profiling.h"
 #include "OpenACC/private/runtime.h"
-
 #include "OpenACC/private/debug.h"
 
 #include "sqlite3.h"
@@ -10,47 +9,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <string.h>
 
 #include <assert.h>
 
-#undef ENABLE_WARNINGS
 #undef ENABLE_LOGGING
 
-sqlite3 * profiling_db_file;
-char * profiling_db_file_name;
-char * profiling_event_table_name;
-
-
-
-void PrintDeviceInfo(cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId, bool DbExist);
-
-void DeviceQuery(void);
-
-// Prints a string version of the specified OpenCL error code
-void fatal_CL(cl_int error, int line_no);
+sqlite3 *profiling_db_file;
+char *profiling_event_table_name;
 
 int
-Dbcallback (void *NotUsed, int argc, char **argv, char **azColName)
+acc_profiling_database_callback (void *NotUsed, int argc, char **argv, char **azColName)
 {
   int i;
   for (i = 0; i < argc; i++)
-    {   
+    {
       printf ("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-    }   
+    }
   printf ("\n");
   return 0;
 }
 
-void print_warning (const char *input_string)
-{
-#ifdef ENABLE_WARNINGS
-  printf ("WARNING: %s line %d: %s\n", __FILE__, __LINE__, input_string);
-#endif
-}
-
-void print_log (const char *fmt, ...)
+void
+print_log (const char *fmt, ...)
 {
 #ifdef ENABLE_LOGGING
   va_list args;
@@ -60,14 +41,9 @@ void print_log (const char *fmt, ...)
 #endif
 }
 
-void print_error (const char *file, uint line, const char *input_string)
+void
+acc_profiling_init ()
 {
-  fprintf (stderr, "Error: %s line %d: %s\n", file, line,
-           input_string);
-  exit (-1);
-}
-
-void acc_profiling_init() {
   int DbErr;
   char *DbErrMsg;
   char Dbstr[8192];
@@ -87,85 +63,69 @@ void acc_profiling_init() {
 
   time_t rawtime;
   struct tm *info;
-  time( &rawtime );
-  info = localtime( &rawtime );
+  time (&rawtime);
+  info = localtime (&rawtime);
 
   char randnum_str[5];
-  srand(time(NULL));
-  int randnum = rand()%9999;
-  sprintf(randnum_str, "%04d",randnum);
+  srand (time (NULL));
+  int randnum = rand () % 9999;
+  sprintf (randnum_str, "%04d", randnum);
 
   gethostname (hostname, 64);
   getlogin_r (username, 64);
 
-  sprintf(year, "%4d",info->tm_year+1900);
-  sprintf(month, "%02d",info->tm_mon+1);
-  sprintf(day, "%02d",info->tm_mday);
-  sprintf(hour, "%02d",info->tm_hour);
-  sprintf(minute, "%02d",info->tm_min);
-  sprintf(second, "%02d",info->tm_sec);
-
+  sprintf (year, "%4d", info->tm_year + 1900);
+  sprintf (month, "%02d", info->tm_mon + 1);
+  sprintf (day, "%02d", info->tm_mday);
+  sprintf (hour, "%02d", info->tm_hour);
+  sprintf (minute, "%02d", info->tm_min);
+  sprintf (second, "%02d", info->tm_sec);
+  
   strcpy (db_file_name, username);
   strcat (db_file_name, "_");
   strcat (db_file_name, hostname);
-  strcat (db_file_name, ".sl3");  
+  strcat (db_file_name, ".sl3");
 
-  //strcat (db_file_name, "YYYYMMDDHHMMSS");
-  strcpy (event_table_name, "Event");		//5
-  strcat (event_table_name, year);		//4
-  strcat (event_table_name, month);		//2
-  strcat (event_table_name, day);		//2
-  strcat (event_table_name, hour);		//2
-  strcat (event_table_name, minute);		//2
-  strcat (event_table_name, second);		//2
+  strcpy (event_table_name, "Event");	//5
+  strcat (event_table_name, year);	//4
+  strcat (event_table_name, month);	//2
+  strcat (event_table_name, day);	//2
+  strcat (event_table_name, hour);	//2
+  strcat (event_table_name, minute);	//2
+  strcat (event_table_name, second);	//2
   strcat (event_table_name, randnum_str);	//4
-  event_table_name[23]='\0';
+  event_table_name[23] = '\0';
 
-  profiling_db_file_name = &db_file_name[0];
   profiling_event_table_name = &event_table_name[0];
 
-  print_log("profiling_db_file: %s\n",profiling_db_file_name);
-  print_log("profiling_event_table_name:_%s_\n",profiling_event_table_name);
+  printf ("profiling_db_file: %s\n", db_file_name);
+  printf ("profiling_event_table_name:_%s_\n", profiling_event_table_name);
 
   bool newly_created_db_file = true;
   FILE *file;
-  if (file = fopen (profiling_db_file_name, "r"))
-    {   
-	newly_created_db_file = false;
+  if (file = fopen (db_file_name, "r"))
+    {
+      newly_created_db_file = false;
     }
 
-  DbErr = sqlite3_open (profiling_db_file_name, &profiling_db_file);
-  if (DbErr)
-    {   
-      print_error (__FILE__,__LINE__,"Can not open database");
-    }   
-  else
-    {   
-      print_log ("Opened database successfully\n");
-    }
-
+  DbErr = sqlite3_open (db_file_name, &profiling_db_file);
+  assert (DbErr == SQLITE_OK);
 
   //Step2: Create Platform, Device tables if database file is newly created
-  if(newly_created_db_file){
-  sprintf (Dbstr, "CREATE TABLE Platform(  \
+  if (newly_created_db_file)
+    {
+      sprintf (Dbstr, "CREATE TABLE Platform(  \
              ID INT, \
              CL_PLATFORM_NAME CHAR(100), \
              CL_PLATFORM_VERSION CHAR(100), \
              CL_DEVICE_TYPE_ALL INT \
              );");
 
-  DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
-  if (DbErr != SQLITE_OK)
-    {
-      print_error (__FILE__,__LINE__,DbErrMsg);
-      sqlite3_free (DbErrMsg);
-    }
-  else
-    {
-      print_log ("Table Platform created successfully\n");
-    }
+      DbErr =
+	sqlite3_exec (profiling_db_file, Dbstr, acc_profiling_database_callback, 0, &DbErrMsg);
+      assert (DbErr == SQLITE_OK);
 
-  sprintf (Dbstr, "CREATE TABLE Device(  \
+      sprintf (Dbstr, "CREATE TABLE Device(  \
              DEVICE_ID INT, \
              PLATFORM_ID INT, \
              CL_DEVICE_NAME CHAR(128),\
@@ -198,90 +158,90 @@ void acc_profiling_init() {
              CL_FP_FMA BOOL\
              );");
 
-  DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
-  if (DbErr != SQLITE_OK)
-    {
-      print_error (__FILE__,__LINE__,DbErrMsg);
-      sqlite3_free (DbErrMsg);
-    }
-  else
-    {
-      print_log ("Table Device created successfully\n");
-    }
-  }
+      DbErr =
+	sqlite3_exec (profiling_db_file, Dbstr, acc_profiling_database_callback, 0, &DbErrMsg);
+      assert (DbErr == SQLITE_OK);
 
-  //Step3: Create Event tables in the database file. 
-  sprintf (Dbstr, "CREATE TABLE '%s'(  \
+      //Step3: fill out Platform and Device tables
+      acc_profiling_platform_init ();
+    }				//r \todo [profiling] init_profiling()
+
+      //Step3: Create Event tables in the database file. 
+      sprintf (Dbstr, "CREATE TABLE '%s'(  \
              DEVICE_ID INT, \
              COMMAND_NAME CHAR(128), \
              CL_PROFILING_COMMAND_QUEUED REAL, \
              CL_PROFILING_COMMAND_SUBMIT REAL, \
              CL_PROFILING_COMMAND_START  REAL, \
              CL_PROFILING_COMMAND_END    REAL  \
-             );",profiling_event_table_name);
+             );", profiling_event_table_name);
 
-  DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
-  if (DbErr != SQLITE_OK)
-    {
-      print_error (__FILE__,__LINE__,DbErrMsg);
-      sqlite3_free (DbErrMsg);
-    }
-  else
-    {
-      print_log ("Table %s created successfully\n",profiling_event_table_name);
-    }
+      DbErr =
+	sqlite3_exec (profiling_db_file, Dbstr, acc_profiling_database_callback, 0, &DbErrMsg);
+      assert (DbErr == SQLITE_OK);
 
+}
 
-
-
-  //Step3: fill out Platform and Device tables
-  if(newly_created_db_file){
-    DeviceQuery();
-  }
-
-}//r \todo [profiling] init_profiling()
-
-void acc_profiling_exit() {
-  assert(profiling_db_file != NULL);
-
+void
+acc_profiling_exit ()
+{
+  assert (profiling_db_file != NULL);
   /// \todo [profiling] exit_profiling()
 }
 
-void acc_profiling_ocl_event_callback(cl_event event, cl_int event_command_exec_status, void * user_data) {
-  struct acc_profiling_event_data_t_ * event_data = (struct acc_profiling_event_data_t_ *)user_data;
+void
+acc_profiling_ocl_event_callback (cl_event event,
+				  cl_int event_command_exec_status,
+				  void *user_data)
+{
+  struct acc_profiling_event_data_t_ *event_data =
+    (struct acc_profiling_event_data_t_ *) user_data;
 
   cl_ulong queued, submit, start, end;
 
-  cl_int status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &queued, NULL);
-  if (status != CL_SUCCESS) {
-    const char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
-    exit(-1); /// \todo error code
-  }
+  cl_int status = clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_QUEUED,
+					   sizeof (cl_ulong), &queued,
+					   NULL);
+  if (status != CL_SUCCESS)
+    {
+      const char *status_str = acc_ocl_status_to_char (status);
+      printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
+      exit (-1);		/// \todo error code
+    }
 
-  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &submit, NULL);
-  if (status != CL_SUCCESS) {
-    const char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
-    exit(-1); /// \todo error code
-  }
+  status =
+    clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_SUBMIT,
+			     sizeof (cl_ulong), &submit, NULL);
+  if (status != CL_SUCCESS)
+    {
+      const char *status_str = acc_ocl_status_to_char (status);
+      printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
+      exit (-1);		/// \todo error code
+    }
 
-  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &start, NULL);
-  if (status != CL_SUCCESS) {
-    const char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
-    exit(-1); /// \todo error code
-  }
+  status =
+    clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_START,
+			     sizeof (cl_ulong), &start, NULL);
+  if (status != CL_SUCCESS)
+    {
+      const char *status_str = acc_ocl_status_to_char (status);
+      printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
+      exit (-1);		/// \todo error code
+    }
 
-  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
-  if (status != CL_SUCCESS) {
-    const char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
-    exit(-1); /// \todo error code
-  }
+  status =
+    clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_END,
+			     sizeof (cl_ulong), &end, NULL);
+  if (status != CL_SUCCESS)
+    {
+      const char *status_str = acc_ocl_status_to_char (status);
+      printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
+      exit (-1);		/// \todo error code
+    }
 
-  char * command_name;
-  switch (event_data->kind) {
+  char *command_name;
+  switch (event_data->kind)
+    {
     case e_acc_memcpy_to_device:
       command_name = "acc_memcpy_to_device";
       break;
@@ -291,209 +251,36 @@ void acc_profiling_ocl_event_callback(cl_event event, cl_int event_command_exec_
     case e_acc_kernel_launch:
       command_name = "acc_kernel_launch";
       break;
-  }
+    }
 
   char Dbstr[8192];
-  sprintf(Dbstr, "INSERT INTO '%s' VALUES ( '%d', '%s', '%.3f', '%.3f', '%.3f', '%.3f');",
-                  profiling_event_table_name,
-                  event_data->device_idx,
-                  command_name,
-                  queued * 1.0e-3,
-                  submit * 1.0e-3,
-                  start  * 1.0e-3,
-                  end    * 1.0e-3
-         );
-  
-  char * DbErrMsg;
-  int DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
-  if (DbErr != SQLITE_OK)
-    {   
-      print_error (__FILE__,__LINE__,DbErrMsg);
-      sqlite3_free (DbErrMsg);
-      print_error (__FILE__,__LINE__,"SQL error\n");
-    }   
+  sprintf (Dbstr,
+	   "INSERT INTO '%s' VALUES ( '%d', '%s', '%.3f', '%.3f', '%.3f', '%.3f');",
+	   profiling_event_table_name, event_data->device_idx, command_name,
+	   queued * 1.0e-3, submit * 1.0e-3, start * 1.0e-3, end * 1.0e-3);
 
-  free(event_data);
+  char *DbErrMsg;
+  int DbErr =
+    sqlite3_exec (profiling_db_file, Dbstr, acc_profiling_database_callback, 0, &DbErrMsg);
+  assert (DbErr == SQLITE_OK);
+
+  free (event_data);
 }
 
 // Prints a string version of the specified OpenCL error code
 void
-fatal_CL (cl_int error, int line_no)
+acc_profiling_ocl_error (cl_int error, int line_no)
 {
-/// \todo use: const char * acc_ocl_status_to_char(cl_int status) instead of this one (add missing values) [private/debug.c]
-  printf ("Error at line %d: ", line_no);
-
-  // Print 
-  switch (error)
-    {
-    case CL_SUCCESS:
-      printf ("CL_SUCCESS\n");
-      break;
-    case CL_DEVICE_NOT_FOUND:
-      printf ("CL_DEVICE_NOT_FOUND\n");
-      break;
-    case CL_DEVICE_NOT_AVAILABLE:
-      printf ("CL_DEVICE_NOT_AVAILABLE\n");
-      break;
-    case CL_COMPILER_NOT_AVAILABLE:
-      printf ("CL_COMPILER_NOT_AVAILABLE\n");
-      break;
-    case CL_MEM_OBJECT_ALLOCATION_FAILURE:
-      printf ("CL_MEM_OBJECT_ALLOCATION_FAILURE\n");
-      break;
-    case CL_OUT_OF_RESOURCES:
-      printf ("CL_OUT_OF_RESOURCES\n");
-      break;
-    case CL_OUT_OF_HOST_MEMORY:
-      printf ("CL_OUT_OF_HOST_MEMORY\n");
-      break;
-    case CL_PROFILING_INFO_NOT_AVAILABLE:
-      printf ("CL_PROFILING_INFO_NOT_AVAILABLE\n");
-      break;
-    case CL_MEM_COPY_OVERLAP:
-      printf ("CL_MEM_COPY_OVERLAP\n");
-      break;
-    case CL_IMAGE_FORMAT_MISMATCH:
-      printf ("CL_IMAGE_FORMAT_MISMATCH\n");
-      break;
-    case CL_IMAGE_FORMAT_NOT_SUPPORTED:
-      printf ("CL_IMAGE_FORMAT_NOT_SUPPORTED\n");
-      break;
-    case CL_BUILD_PROGRAM_FAILURE:
-      printf ("CL_BUILD_PROGRAM_FAILURE\n");
-      break;
-    case CL_MAP_FAILURE:
-      printf ("CL_MAP_FAILURE\n");
-      break;
-    case CL_INVALID_VALUE:
-      printf ("CL_INVALID_VALUE\n");
-      break;
-    case CL_INVALID_DEVICE_TYPE:
-      printf ("CL_INVALID_DEVICE_TYPE\n");
-      break;
-    case CL_INVALID_PLATFORM:
-      printf ("CL_INVALID_PLATFORM\n");
-      break;
-    case CL_INVALID_DEVICE:
-      printf ("CL_INVALID_DEVICE\n");
-      break;
-    case CL_INVALID_CONTEXT:
-      printf ("CL_INVALID_CONTEXT\n");
-      break;
-    case CL_INVALID_QUEUE_PROPERTIES:
-      printf ("CL_INVALID_QUEUE_PROPERTIES\n");
-      break;
-    case CL_INVALID_COMMAND_QUEUE:
-      printf ("CL_INVALID_COMMAND_QUEUE\n");
-      break;
-    case CL_INVALID_HOST_PTR:
-      printf ("CL_INVALID_HOST_PTR\n");
-      break;
-    case CL_INVALID_MEM_OBJECT:
-      printf ("CL_INVALID_MEM_OBJECT\n");
-      break;
-    case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:
-      printf ("CL_INVALID_IMAGE_FORMAT_DESCRIPTOR\n");
-      break;
-    case CL_INVALID_IMAGE_SIZE:
-      printf ("CL_INVALID_IMAGE_SIZE\n");
-      break;
-    case CL_INVALID_SAMPLER:
-      printf ("CL_INVALID_SAMPLER\n");
-      break;
-    case CL_INVALID_BINARY:
-      printf ("CL_INVALID_BINARY\n");
-      break;
-    case CL_INVALID_BUILD_OPTIONS:
-      printf ("CL_INVALID_BUILD_OPTIONS\n");
-      break;
-    case CL_INVALID_PROGRAM:
-      printf ("CL_INVALID_PROGRAM\n");
-      break;
-    case CL_INVALID_PROGRAM_EXECUTABLE:
-      printf ("CL_INVALID_PROGRAM_EXECUTABLE\n");
-      break;
-    case CL_INVALID_KERNEL_NAME:
-      printf ("CL_INVALID_KERNEL_NAME\n");
-      break;
-    case CL_INVALID_KERNEL_DEFINITION:
-      printf ("CL_INVALID_KERNEL_DEFINITION\n");
-      break;
-    case CL_INVALID_KERNEL:
-      printf ("CL_INVALID_KERNEL\n");
-      break;
-    case CL_INVALID_ARG_INDEX:
-      printf ("CL_INVALID_ARG_INDEX\n");
-      break;
-    case CL_INVALID_ARG_VALUE:
-      printf ("CL_INVALID_ARG_VALUE\n");
-      break;
-    case CL_INVALID_ARG_SIZE:
-      printf ("CL_INVALID_ARG_SIZE\n");
-      break;
-    case CL_INVALID_KERNEL_ARGS:
-      printf ("CL_INVALID_KERNEL_ARGS\n");
-      break;
-    case CL_INVALID_WORK_DIMENSION:
-      printf ("CL_INVALID_WORK_DIMENSION\n");
-      break;
-    case CL_INVALID_WORK_GROUP_SIZE:
-      printf ("CL_INVALID_WORK_GROUP_SIZE\n");
-      break;
-    case CL_INVALID_WORK_ITEM_SIZE:
-      printf ("CL_INVALID_WORK_ITEM_SIZE\n");
-      break;
-    case CL_INVALID_GLOBAL_OFFSET:
-      printf ("CL_INVALID_GLOBAL_OFFSET\n");
-      break;
-    case CL_INVALID_EVENT_WAIT_LIST:
-      printf ("CL_INVALID_EVENT_WAIT_LIST\n");
-      break;
-    case CL_INVALID_EVENT:
-      printf ("CL_INVALID_EVENT\n");
-      break;
-    case CL_INVALID_OPERATION:
-      printf ("CL_INVALID_OPERATION\n");
-      break;
-    case CL_INVALID_GL_OBJECT:
-      printf ("CL_INVALID_GL_OBJECT\n");
-      break;
-    case CL_INVALID_BUFFER_SIZE:
-      printf ("CL_INVALID_BUFFER_SIZE\n");
-      break;
-    case CL_INVALID_MIP_LEVEL:
-      printf ("CL_INVALID_MIP_LEVEL\n");
-      break;
-    case CL_INVALID_GLOBAL_WORK_SIZE:
-      printf ("CL_INVALID_GLOBAL_WORK_SIZE\n");
-      break;
-
-#ifdef CL_VERSION_1_1
-    case CL_MISALIGNED_SUB_BUFFER_OFFSET:
-      printf ("CL_MISALIGNED_SUB_BUFFER_OFFSET\n");
-      break;
-    case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST:
-      printf ("CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST\n");
-      break;
-    case CL_INVALID_PROPERTY:
-      printf ("CL_INVALID_PROPERTY\n");
-      break;
-#endif
-
-    default:
-      printf ("Invalid OpenCL error code\n");
-    }
-
+  printf ("Fatal at line %d\t%s\n", line_no, acc_ocl_status_to_char (error));
   exit (error);
 }
 
 void
-DeviceQuery (void)
+acc_profiling_platform_init(void)
 {
   int DbErr;
   char *DbErrMsg;
   char Dbstr[8192];
-  bool DbExist = false;
 
   //Create database file
   cl_bool cl_queue_out_of_order_exec_mode_enable = false;
@@ -514,14 +301,14 @@ DeviceQuery (void)
   // Get the number of platforms
   ciErrNum = clGetPlatformIDs (0, NULL, &num_platforms);
   if (ciErrNum != CL_SUCCESS)
-    fatal_CL (ciErrNum, __LINE__);
+    acc_profiling_ocl_error (ciErrNum, __LINE__);
 
   // Get the list of platforms
   cl_platform_id *platforms =
     (cl_platform_id *) malloc (sizeof (cl_platform_id) * num_platforms);
   ciErrNum = clGetPlatformIDs (num_platforms, platforms, NULL);
   if (ciErrNum != CL_SUCCESS)
-    fatal_CL (ciErrNum, __LINE__);
+    acc_profiling_ocl_error (ciErrNum, __LINE__);
 
   print_log ("There are %d platforms\n\n", num_platforms);
   cl_platform_id platform;
@@ -540,17 +327,17 @@ DeviceQuery (void)
 	("-----------------------------------Platform%d:-----------------------------------\n",
 	 PlatformId);
       ciErrNum =
-	clGetPlatformInfo (platform, CL_PLATFORM_NAME, sizeof (PlatformName),
-			   PlatformName, NULL);
+	clGetPlatformInfo (platform, CL_PLATFORM_NAME,
+			   sizeof (PlatformName), PlatformName, NULL);
       if (ciErrNum != CL_SUCCESS)
-	fatal_CL (ciErrNum, __LINE__);
+	acc_profiling_ocl_error (ciErrNum, __LINE__);
       print_log (" CL_PLATFORM_NAME: \t%s\n", PlatformName);
 
       ciErrNum =
 	clGetPlatformInfo (platform, CL_PLATFORM_VERSION,
 			   sizeof (PlatformVersion), PlatformVersion, NULL);
       if (ciErrNum != CL_SUCCESS)
-	fatal_CL (ciErrNum, __LINE__);
+	acc_profiling_ocl_error (ciErrNum, __LINE__);
       print_log (" CL_PLATFORM_VERSION: \t%s\n", PlatformVersion);
 
       cl_uint ciDeviceCount;
@@ -562,73 +349,42 @@ DeviceQuery (void)
 
       // check for 0 devices found or errors...
 
-      if (ciDeviceCount == 0)
-	{
-	  print_error (__FILE__, __LINE__,
-		       "No devices found supporting OpenCL");
-	}
-      else if (ciErrNum != CL_SUCCESS)
-	{
-	  print_error (__FILE__, __LINE__, "clGetDeviceIDs call");
-	}
-      else
-	{
-	  if (DbExist == false)
-	    {
-	      //Store into SQLite3 database Platform
-	      sprintf (Dbstr, "INSERT INTO Platform VALUES (\
+      assert (ciDeviceCount > 0);
+      assert (ciErrNum == CL_SUCCESS);
+	    //Store into SQLite3 database Platform
+	    sprintf (Dbstr, "INSERT INTO Platform VALUES (\
                             '%d',\
                             '%s',\
                             '%s',\
                             '%d');", i, PlatformName, PlatformVersion, ciDeviceCount);
-	      DbErr =
-		sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0,
-			      &DbErrMsg);
-	      if (DbErr != SQLITE_OK)
-		{
-		  print_error (__FILE__, __LINE__, DbErrMsg);
-		  sqlite3_free (DbErrMsg);
-		}
-	      else
-		{
-		  print_log ("Table Platform inserted successfully\n");
-		}
-	    }
-	  // Get and log the OpenCL device ID's
-	  print_log (" %u devices found supporting OpenCL:\n", ciDeviceCount);
-	  if ((devices =
-	       (cl_device_id *) malloc (sizeof (cl_device_id) *
-					ciDeviceCount)) == NULL)
-	    {
-	      print_error (__FILE__, __LINE__,
-			   "Failed to allocate memory for devices");
-	    }
-	  ciErrNum =
-	    clGetDeviceIDs (platform, CL_DEVICE_TYPE_ALL, ciDeviceCount,
-			    devices, &ciDeviceCount);
-	  if (ciErrNum == CL_SUCCESS)
-	    {
-	      //Create a context for the devices
-	      cl_context cxGPUContext =
-		clCreateContext (0, ciDeviceCount, devices, NULL, NULL,
-				 &ciErrNum);
-	      if (ciErrNum != CL_SUCCESS)
-		{
-		  print_error (__FILE__, __LINE__, "clCreateContext");
-		}
-	      else
-		{
-		  // show info for each device in the context
-		  uint i;
-		  for (i = 0; i < ciDeviceCount; ++i)
-		    {
-		      PrintDeviceInfo
-			(devices[i], GlobalDeviceId, PlatformId, DbExist);
-		      GlobalDeviceId++;
-		    }
-		}
-	    }
-	}
+	    DbErr =
+	      sqlite3_exec (profiling_db_file, Dbstr, acc_profiling_database_callback, 0,
+			    &DbErrMsg);
+	    assert (DbErr == SQLITE_OK);
+	// Get and log the OpenCL device ID's
+	print_log (" %u devices found supporting OpenCL:\n", ciDeviceCount);
+	devices =
+	  (cl_device_id *) malloc (sizeof (cl_device_id) * ciDeviceCount);
+	assert (devices != NULL);
+
+	ciErrNum =
+	  clGetDeviceIDs (platform, CL_DEVICE_TYPE_ALL, ciDeviceCount,
+			  devices, &ciDeviceCount);
+	if (ciErrNum != CL_SUCCESS)
+	  acc_profiling_ocl_error (ciErrNum, __LINE__);
+	//Create a context for the devices
+	cl_context cxGPUContext =
+	  clCreateContext (0, ciDeviceCount, devices, NULL, NULL,
+			   &ciErrNum);
+	if (ciErrNum != CL_SUCCESS)
+	  acc_profiling_ocl_error (ciErrNum, __LINE__);
+	// show info for each device in the context
+	uint i;
+	for (i = 0; i < ciDeviceCount; ++i)
+	  {
+	    acc_profiling_device_init (devices[i], GlobalDeviceId, PlatformId);
+	    GlobalDeviceId++;
+	  }
       print_log ("\n\n");
     }
   //----------------------Platform check---------------------------
@@ -636,8 +392,7 @@ DeviceQuery (void)
 
 
 void
-PrintDeviceInfo (cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId,
-		 bool DbExist)
+acc_profiling_device_init(cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId)
 {
   int DbErr;
   char *DbErrMsg;
@@ -747,8 +502,8 @@ PrintDeviceInfo (cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId,
 
   // CL_DEVICE_MAX_WORK_ITEM_SIZES
   size_t workitem_size[3];
-  clGetDeviceInfo (dev, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof (workitem_size),
-		   &workitem_size, NULL);
+  clGetDeviceInfo (dev, CL_DEVICE_MAX_WORK_ITEM_SIZES,
+		   sizeof (workitem_size), &workitem_size, NULL);
   print_log ("\tCL_DEVICE_MAX_WORK_ITEM_SIZES:\t\t%u / %u / %u \n",
 	     (int) workitem_size[0], (int) workitem_size[1],
 	     (int) workitem_size[2]);
@@ -829,8 +584,8 @@ PrintDeviceInfo (cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId,
 
   // CL_DEVICE_QUEUE_PROPERTIES
   cl_command_queue_properties queue_properties;
-  clGetDeviceInfo (dev, CL_DEVICE_QUEUE_PROPERTIES, sizeof (queue_properties),
-		   &queue_properties, NULL);
+  clGetDeviceInfo (dev, CL_DEVICE_QUEUE_PROPERTIES,
+		   sizeof (queue_properties), &queue_properties, NULL);
   if (queue_properties & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE)
     {
       print_log ("\tCL_DEVICE_QUEUE_PROPERTIES:\t\t%s\n",
@@ -846,8 +601,8 @@ PrintDeviceInfo (cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId,
 
   // CL_DEVICE_IMAGE_SUPPORT
   clGetDeviceInfo (dev, CL_DEVICE_IMAGE_SUPPORT,
-		   sizeof (cl_device_image_support), &cl_device_image_support,
-		   NULL);
+		   sizeof (cl_device_image_support),
+		   &cl_device_image_support, NULL);
   print_log ("\tCL_DEVICE_IMAGE_SUPPORT:\t\t%u\n", cl_device_image_support);
 
   // CL_DEVICE_MAX_READ_IMAGE_ARGS
@@ -902,8 +657,6 @@ PrintDeviceInfo (cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId,
       cl_fp_fma = true;
     };
 
-  if (DbExist == false)
-    {
       //Store into SQLite3 database Platform
       sprintf (Dbstr, "INSERT INTO Device VALUES (\
                         '%d',\
@@ -938,16 +691,6 @@ PrintDeviceInfo (cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId,
                         '%d');", DeviceId, PlatformId, cl_device_name, cl_device_vendor, cl_driver_version, cl_device_version, CL_device_type, cl_device_max_compute_units, cl_device_max_work_item_dimensions, cl_device_max_work_item_sizes, cl_device_max_work_group_size, cl_device_max_clock_frequency, cl_device_address_bits, cl_device_max_mem_alloc_size, cl_device_global_mem_size, cl_device_error_correction_support, CL_device_local_mem_type, cl_device_local_mem_size, cl_device_max_constant_buffer_size, cl_queue_out_of_order_exec_mode_enable, cl_queue_profiling_enable, cl_device_image_support, cl_device_max_read_image_args, cl_device_max_write_image_args, cl_fp_denorm, cl_fp_inf_nan, cl_fp_round_to_nearest, cl_fp_round_to_zero, cl_fp_round_to_inf, cl_fp_fma);
 
       DbErr =
-	sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
-      if (DbErr != SQLITE_OK)
-	{
-	  print_error (__FILE__, __LINE__, DbErrMsg);
-	  sqlite3_free (DbErrMsg);
-	}
-      else
-	{
-	  print_log ("Table Device inserted successfully\n");
-	}
-    }				//if(DbExist==false)
+	sqlite3_exec (profiling_db_file, Dbstr, acc_profiling_database_callback, 0, &DbErrMsg);
+      assert (DbErr == SQLITE_OK);
 }
-
