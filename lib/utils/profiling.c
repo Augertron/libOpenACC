@@ -1,32 +1,76 @@
 
 #include "OpenACC/utils/profiling.h"
 #include "OpenACC/private/runtime.h"
+
+#include "OpenACC/private/debug.h"
+
+#include "sqlite3.h"
+
+#include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <string.h>
+
 #include <assert.h>
-//#define undef
 
 #undef ENABLE_WARNINGS
 #undef ENABLE_LOGGING
 
-
-
-
 sqlite3 * profiling_db_file;
 char * profiling_db_file_name;
 char * profiling_event_table_name;
-int DbErr;
-char *DbErrMsg;
-char Dbstr[8192];
-
-cl_event cxEvents[32];
-int EventIdx;
-int NumEventReleased;
 
 
-void init_profiling() {
-  //Init some parameters
-  EventIdx = 0;
-  NumEventReleased = 0;
 
+void PrintDeviceInfo(cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId, bool DbExist);
+
+void DeviceQuery(void);
+
+// Prints a string version of the specified OpenCL error code
+void fatal_CL(cl_int error, int line_no);
+
+int
+Dbcallback (void *NotUsed, int argc, char **argv, char **azColName)
+{
+  int i;
+  for (i = 0; i < argc; i++)
+    {   
+      printf ("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    }   
+  printf ("\n");
+  return 0;
+}
+
+void print_warning (const char *input_string)
+{
+#ifdef ENABLE_WARNINGS
+  printf ("WARNING: %s line %d: %s\n", __FILE__, __LINE__, input_string);
+#endif
+}
+
+void print_log (const char *fmt, ...)
+{
+#ifdef ENABLE_LOGGING
+  va_list args;
+  va_start (args, fmt);
+  vprintf (fmt, args);
+  va_end (args);
+#endif
+}
+
+void print_error (const char *file, uint line, const char *input_string)
+{
+  fprintf (stderr, "Error: %s line %d: %s\n", file, line,
+           input_string);
+  exit (-1);
+}
+
+void acc_profiling_init() {
+  int DbErr;
+  char *DbErrMsg;
+  char Dbstr[8192];
 
   //Step1: Give a name to profiling_db_file and using it to create a database file
   char db_file_name[128];
@@ -168,10 +212,12 @@ void init_profiling() {
 
   //Step3: Create Event tables in the database file. 
   sprintf (Dbstr, "CREATE TABLE '%s'(  \
-             ID INT, \
-             DEVICEID INT, \
-             FUNCTIONNAME CHAR(128), \
-             TIME REAL \
+             DEVICE_ID INT, \
+             COMMAND_NAME CHAR(128), \
+             CL_PROFILING_COMMAND_QUEUED REAL, \
+             CL_PROFILING_COMMAND_SUBMIT REAL, \
+             CL_PROFILING_COMMAND_START  REAL, \
+             CL_PROFILING_COMMAND_END    REAL  \
              );",profiling_event_table_name);
 
   DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
@@ -195,21 +241,86 @@ void init_profiling() {
 
 }//r \todo [profiling] init_profiling()
 
-void exit_profiling() {
+void acc_profiling_exit() {
   assert(profiling_db_file != NULL);
-  CledReleaseAllEvents ();
 
   /// \todo [profiling] exit_profiling()
 }
 
-/// \todo [profiling] add profiling function for kernel and data transfert
+void acc_profiling_ocl_event_callback(cl_event event, cl_int event_command_exec_status, void * user_data) {
+  struct acc_profiling_event_data_t_ * event_data = (struct acc_profiling_event_data_t_ *)user_data;
 
+  cl_ulong queued, submit, start, end;
 
+  cl_int status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &queued, NULL);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
+    exit(-1); /// \todo error code
+  }
+
+  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &submit, NULL);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
+    exit(-1); /// \todo error code
+  }
+
+  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &start, NULL);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
+    exit(-1); /// \todo error code
+  }
+
+  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end, NULL);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
+    exit(-1); /// \todo error code
+  }
+
+  char * command_name;
+  switch (event_data->kind) {
+    case e_acc_memcpy_to_device:
+      command_name = "acc_memcpy_to_device";
+      break;
+    case e_acc_memcpy_from_device:
+      command_name = "acc_memcpy_from_device";
+      break;
+    case e_acc_kernel_launch:
+      command_name = "acc_kernel_launch";
+      break;
+  }
+
+  char Dbstr[8192];
+  sprintf(Dbstr, "INSERT INTO '%s' VALUES ( '%d', '%s', '%.3f', '%.3f', '%.3f', '%.3f');",
+                  profiling_event_table_name,
+                  event_data->device_idx,
+                  command_name,
+                  queued * 1.0e-3,
+                  submit * 1.0e-3,
+                  start  * 1.0e-3,
+                  end    * 1.0e-3
+         );
+  
+  char * DbErrMsg;
+  int DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
+  if (DbErr != SQLITE_OK)
+    {   
+      print_error (__FILE__,__LINE__,DbErrMsg);
+      sqlite3_free (DbErrMsg);
+      print_error (__FILE__,__LINE__,"SQL error\n");
+    }   
+
+  free(event_data);
+}
 
 // Prints a string version of the specified OpenCL error code
 void
 fatal_CL (cl_int error, int line_no)
 {
+/// \todo use: const char * acc_ocl_status_to_char(cl_int status) instead of this one (add missing values) [private/debug.c]
   printf ("Error at line %d: ", line_no);
 
   // Print 
@@ -839,171 +950,4 @@ PrintDeviceInfo (cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId,
 	}
     }				//if(DbExist==false)
 }
-
-
-
-
-  void print_warning (const char *input_string)
-  {
-#ifdef ENABLE_WARNINGS
-    printf ("WARNING: %s line %d: %s\n", __FILE__, __LINE__, input_string);
-#endif
-  }
-
-  void print_log (const char *fmt, ...)
-  {
-#ifdef ENABLE_LOGGING
-    va_list args;
-    va_start (args, fmt);
-    vprintf (fmt, args);
-    va_end (args);
-#endif
-  }
-
-  void print_error (const char *file, uint line, const char *input_string)
-  {
-    fprintf (stderr, "Error: %s line %d: %s\n", file, line,
-             input_string);
-    exit (-1);
-  }
-
-int
-Dbcallback (void *NotUsed, int argc, char **argv, char **azColName)
-{
-  int i;
-  for (i = 0; i < argc; i++)
-    {   
-      printf ("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-    }   
-  printf ("\n");
-  return 0;
-}
-
-
-void
-CledInsertIntoEvent (cl_command_queue command_queue,
-                     const char *FuncName)
-{
-  int DbErr;
-  char *DbErrMsg;
-  char Dbstr[8192];
-  sprintf (Dbstr, "INSERT INTO '%s' VALUES (\
-                            '%d',\
-                            '%d',\
-                            '%s',\
-                            '%.3f');",\
-				profiling_event_table_name,\
-                                EventIdx,\
-                                GetDeviceIdFromCmdQueue (command_queue),\
-                                FuncName,\
-                                0.0);
-
-  DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
-  if (DbErr != SQLITE_OK)
-    {   
-      print_error (__FILE__,__LINE__,DbErrMsg);
-      sqlite3_free (DbErrMsg);
-      print_error (__FILE__,__LINE__,"SQL error\n");
-    }   
-
-
-  print_log\
-    ("Event %d,\tDevice %d,\tFunction %s,\tTime %lld\n",
-     EventIdx, GetDeviceIdFromCmdQueue (command_queue), FuncName, 0); 
-}
-
-
-cl_int
-GetDeviceIdFromCmdQueue (cl_command_queue command_queue)
-{
-  int Id = -1; 
-  int i = 0;
-  int num_platforms = acc_runtime.opencl_data->num_platforms;
-  int num_devices = acc_runtime.opencl_data->num_devices[num_platforms];
-
-  for (i; i < num_devices; i++)
-    {   
-      if (acc_runtime.opencl_data->devices_data[i] != NULL && acc_runtime.opencl_data->devices_data[i]->command_queue == command_queue)
-        {
-          Id = i;
-          break;
-        }
-    }   
-  if (Id != -1) 
-    {   
-      return Id; 
-    }   
-  else
-    {   
-      print_error (__FILE__,__LINE__,"GetDeviceIdFromCmdQueue error\n");
-    } 
-}
-#if 0
-double GetEventTime(cl_event & event)
-{
-  cl_ulong start, end;
-  cl_int ciErrNum = CL_SUCCESS;
-
-  ciErrNum =
-    clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_END,
-                             sizeof (cl_ulong), &end, NULL);
-  if (ciErrNum != CL_SUCCESS)
-    fatal_CL (ciErrNum, __LINE__);
-
-  ciErrNum =
-    clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_START,
-                             sizeof (cl_ulong), &start, NULL);
-  if (ciErrNum != CL_SUCCESS)
-    fatal_CL (ciErrNum, __LINE__);
-
-  return (double) 1.0e-9 *(end - start);        // convert nanoseconds to seconds on return
-}
-#endif
-
-
-cl_int
-CledReleaseAllEvents (void)
-{
-  int DbErr;
-  char *DbErrMsg;
-  char Dbstr[8192];
-
-  double time;
-  int i;
-  for (i = 0; i < EventIdx; i++)
-    {
-      cl_ulong start, end;
-      cl_int ciErrNum = CL_SUCCESS;
-
-      ciErrNum =
-    	clGetEventProfilingInfo (cxEvents[i], CL_PROFILING_COMMAND_END,
-                             sizeof (cl_ulong), &end, NULL);
-      if (ciErrNum != CL_SUCCESS)
-    	fatal_CL (ciErrNum, __LINE__);
-
-      ciErrNum =
-    	clGetEventProfilingInfo (cxEvents[i], CL_PROFILING_COMMAND_START,
-                             sizeof (cl_ulong), &start, NULL);
-      if (ciErrNum != CL_SUCCESS)
-      	fatal_CL (ciErrNum, __LINE__);
-
-      time = 1.0e-3 *(end - start);        // convert nanoseconds to microseconds
-      print_log ("Event%d time: %f us\n", i, time);
-
-      clReleaseEvent (cxEvents[i]);
-      sprintf (Dbstr, "update '%s' set time='%.3f' where id=%d;", profiling_event_table_name,time,
-               i);
-
-      DbErr = sqlite3_exec (profiling_db_file, Dbstr, Dbcallback, 0, &DbErrMsg);
-      if (DbErr != SQLITE_OK)
-        {
-          print_error (__FILE__,__LINE__,DbErrMsg);
-          sqlite3_free (DbErrMsg);
-          print_error (__FILE__,__LINE__,"SQL error");
-        }
-    }
-    EventIdx=0;
-}
-
-
 

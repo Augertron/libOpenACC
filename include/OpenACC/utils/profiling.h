@@ -2,36 +2,35 @@
 #ifndef __LIBOPENACC_PROFILING_H__
 #define __LIBOPENACC_PROFILING_H__
 
-#include "sqlite3.h"
-#include <time.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <CL/cl.h>
-#include <stdbool.h>
+#include "OpenACC/openacc.h"
 
-extern sqlite3 * profiling_db_file;
+struct acc_profiling_event_data_t_ {
+  enum acc_profiling_event_kind_e {
+    e_acc_memcpy_to_device,
+    e_acc_memcpy_from_device,
+    e_acc_kernel_launch
+  } kind;
 
-void init_profiling();
+  size_t device_idx;
 
-void exit_profiling();
+  union {
+    struct {
+      size_t region_id;
+      size_t kernel_id;
+    } kernel_launch;
+    struct {
+      h_void * host_ptr;
+      d_void * dev_ptr;
+      size_t size;
+    } memcpy;
+  } data;
+};
 
-void print_warning (const char *input_string);
-void print_log (const char *fmt, ...);
-void print_error (const char *file, uint line, const char *input_string);
+void acc_profiling_ocl_event_callback(cl_event event, cl_int event_command_exec_status, void * user_data);
 
-int Dbcallback (void *NotUsed, int argc, char **argv, char **azColName);
+void acc_profiling_init();
 
-void PrintDeviceInfo (cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId,
-                 	bool DbExist);
-void CledInsertIntoEvent (cl_command_queue command_queue, const char *FuncName);
-void fatal_CL (cl_int error, int line_no);
-void DeviceQuery (void);
-
-cl_int GetDeviceIdFromCmdQueue (cl_command_queue command_queue);
-cl_int CledReleaseAllEvents (void);
-
-/// \todo [profiling] add profiling function for kernel and data transfert
+void acc_profiling_exit();
 
 #endif /* __LIBOPENACC_PROFILING_H__ */
 

@@ -16,15 +16,11 @@
 #include "OpenACC/internal/mem-manager.h"
 #include "OpenACC/internal/region.h"
 
+#include "OpenACC/utils/profiling.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-
-extern cl_event cxEvents[];
-extern int EventIdx;
-extern int NumEventReleased;
-extern void CledInsertIntoEvent (cl_command_queue command_queue, 
-		const char *FuncName);
 
 #ifdef __cplusplus
 extern "C" {
@@ -291,11 +287,7 @@ int acc_is_present_(size_t device_idx, h_void * host_ptr, size_t n) {;
 ////////////////////////////////////////////////////////////////////////
 
 void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_t bytes) {
-
-  /// \todo [profiling]
-  char FuncName[128];
-  sprintf(FuncName, "%s", __func__);
-  CledInsertIntoEvent (acc_runtime.opencl_data->devices_data[device_idx]->command_queue, FuncName);
+  cl_event event;
 
   cl_int status = clEnqueueWriteBuffer(
     /* cl_command_queue command_queue  */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
@@ -306,21 +298,28 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
     /* const void *ptr                 */ src,
     /* cl_uint num_events_in_wait_list */ 0,
     /* const cl_event *event_wait_list */ NULL,
-    /* cl_event *event                 */ &cxEvents[EventIdx++]
+    /* cl_event *event                 */ &event
   );
   if (status != CL_SUCCESS) {
     char * status_str = acc_ocl_status_to_char(status);
     printf("[fatal]   clEnqueueWriteBuffer return %s for host ptr = %X to device ptr = %X of size %u.\n", status_str, (unsigned int)src, (unsigned int)dest, (unsigned int)bytes);
     exit(-1); /// \todo error code
   }
+
+  struct acc_profiling_event_data_t_ * event_data = (struct acc_profiling_event_data_t_ *)malloc(sizeof(struct acc_profiling_event_data_t_));
+    event_data->kind = e_acc_memcpy_to_device;
+    event_data->device_idx = device_idx;
+    /// \todo fill extra data
+  status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_ocl_event_callback, event_data);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clSetEventCallback return %s.\n", status_str);
+    exit(-1); /// \todo error code
+  }
 }
 
 void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, size_t bytes) {
-
-  /// \todo [profiling]
-  char FuncName[128];
-  sprintf(FuncName, "%s", __func__);
-  CledInsertIntoEvent (acc_runtime.opencl_data->devices_data[device_idx]->command_queue, FuncName);
+  cl_event event;
 
   cl_int status = clEnqueueReadBuffer (
     /* cl_command_queue command_queue */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
@@ -331,11 +330,22 @@ void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, siz
     /* void *ptr */ dest,
     /* cl_uint num_events_in_wait_list */ 0,
     /* const cl_event *event_wait_list */ NULL,
-    /* cl_event *event */ &cxEvents[EventIdx++]
+    /* cl_event *event */ &event
   );
   if (status != CL_SUCCESS) {
     char * status_str = acc_ocl_status_to_char(status);
     printf("[fatal] clEnqueueReadBuffer return %s for device ptr = %X to host ptr = %X of size %u.\n", status_str, (unsigned int)src, (unsigned int)dest, (unsigned int)bytes);
+    exit(-1); /// \todo error code
+  }
+
+  struct acc_profiling_event_data_t_ * event_data = (struct acc_profiling_event_data_t_ *)malloc(sizeof(struct acc_profiling_event_data_t_));
+    event_data->kind = e_acc_memcpy_from_device;
+    event_data->device_idx = device_idx;
+    /// \todo fill extra data
+  status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_ocl_event_callback, event_data);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clSetEventCallback return %s.\n", status_str);
     exit(-1); /// \todo error code
   }
 }

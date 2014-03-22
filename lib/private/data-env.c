@@ -20,7 +20,6 @@ void acc_push_data_environment() {
 }
 
 void acc_pop_data_environment() {
-  exit_profiling();
   size_t device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
   assert(acc_runtime.opencl_data->devices_data[device_idx]->command_queue != NULL);

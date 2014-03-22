@@ -8,17 +8,13 @@
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/private/memory.h"
 
+#include "OpenACC/utils/profiling.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <assert.h>
-
-extern cl_event cxEvents[];
-extern int EventIdx;
-extern int NumEventReleased;
-extern void CledInsertIntoEvent (cl_command_queue command_queue, 
-                const char *FuncName);
 
 typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_region_t_ * acc_region_t;
@@ -187,10 +183,8 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     // Launch the kernel
     size_t global_work_size[1] = { region->devices[dev_idx].num_gang * region->devices[dev_idx].num_worker };
     size_t local_work_size[1] = { region->devices[dev_idx].num_worker };
-    /// \todo [profiling]
-  char FuncName[128];
-  sprintf(FuncName, "%s", __func__);
-  CledInsertIntoEvent (acc_runtime.opencl_data->devices_data[device_idx]->command_queue, FuncName);
+
+    cl_event event;
 
     status = clEnqueueNDRangeKernel(
       acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
@@ -201,13 +195,24 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       /* const size_t * local_work_size    = */ local_work_size,
       /* cl_uint num_events_in_wait_list   = */ 0,
       /* const cl_event * event_wait_list  = */ NULL,
-      /* cl_event * event                  = */ &cxEvents[EventIdx++]
+      /* cl_event * event                  = */ &event
     );
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
       printf("[fatal]   clEnqueueNDRangeKernel return %s for region[%u].kernel[%u].\n",
                 status_str, region->desc->id, kernel->desc->id
             );
+      exit(-1); /// \todo error code
+    }
+
+    struct acc_profiling_event_data_t_ * event_data = (struct acc_profiling_event_data_t_ *)malloc(sizeof(struct acc_profiling_event_data_t_));
+      event_data->kind = e_acc_kernel_launch;
+      event_data->device_idx = device_idx;
+      /// \todo fill extra data
+    status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_ocl_event_callback, event_data);
+    if (status != CL_SUCCESS) {
+      const char * status_str = acc_ocl_status_to_char(status);
+      printf("[fatal]   clSetEventCallback return %s.\n", status_str);
       exit(-1); /// \todo error code
     }
   }
