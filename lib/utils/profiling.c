@@ -23,6 +23,13 @@ char * profiling_db_file_name;
 char * profiling_event_table_name;
 
 
+char * acc_profiling_get_db_file_name() {
+  return profiling_db_file_name;
+}
+
+char * acc_profiling_get_event_table_name() {
+  return profiling_event_table_name;
+}
 
 void PrintDeviceInfo(cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId, bool DbExist);
 
@@ -72,11 +79,35 @@ void acc_profiling_init() {
   char *DbErrMsg;
   char Dbstr[8192];
 
-  //Step1: Give a name to profiling_db_file and using it to create a database file
-  char db_file_name[128];
-  static char event_table_name[128];
-  char hostname[64];
-  char username[64];
+  // Build DB file name (get filename from environment or build $USER_$HOSTNAME.sl3)
+
+  char * env_prof_db = getenv("ACC_PROFILING_DB");
+  if (env_prof_db != NULL && env_prof_db[0] != "/0") {
+    assert(strlen(env_prof_db) < 140);
+    profiling_db_file_name = (char *)malloc((strlen(env_prof_db) + 1) * sizeof(char));
+    strcpy (profiling_db_file_name, env_prof_db);
+  }
+  else {
+    char hostname[64];
+      gethostname (hostname, 64);
+    char username[64];
+      getlogin_r (username, 64);
+
+    size_t length = strlen(username) + strlen(hostname) + 5;
+    profiling_db_file_name = (char *)malloc((length + 1) * sizeof(char));
+    strcpy (profiling_db_file_name, username);
+    strcat (profiling_db_file_name, "_");
+    strcat (profiling_db_file_name, hostname);
+    strcat (profiling_db_file_name, ".sl3");
+    profiling_db_file_name[length] = '\0';
+  }
+
+  // Build Event table's name
+
+  time_t rawtime;
+  struct tm *info;
+  time( &rawtime );
+  info = localtime( &rawtime );
 
   char year[5];
   char month[3];
@@ -85,19 +116,6 @@ void acc_profiling_init() {
   char minute[3];
   char second[3];
 
-  time_t rawtime;
-  struct tm *info;
-  time( &rawtime );
-  info = localtime( &rawtime );
-
-  char randnum_str[5];
-  srand(time(NULL));
-  int randnum = rand()%9999;
-  sprintf(randnum_str, "%04d",randnum);
-
-  gethostname (hostname, 64);
-  getlogin_r (username, 64);
-
   sprintf(year, "%4d",info->tm_year+1900);
   sprintf(month, "%02d",info->tm_mon+1);
   sprintf(day, "%02d",info->tm_mday);
@@ -105,27 +123,30 @@ void acc_profiling_init() {
   sprintf(minute, "%02d",info->tm_min);
   sprintf(second, "%02d",info->tm_sec);
 
-  strcpy (db_file_name, username);
-  strcat (db_file_name, "_");
-  strcat (db_file_name, hostname);
-  strcat (db_file_name, ".sl3");  
+  // Using fine grain time to init srand
+  struct timeval time; 
+  gettimeofday(&time,NULL);
+  srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
 
-  //strcat (db_file_name, "YYYYMMDDHHMMSS");
-  strcpy (event_table_name, "Event");		//5
-  strcat (event_table_name, year);		//4
-  strcat (event_table_name, month);		//2
-  strcat (event_table_name, day);		//2
-  strcat (event_table_name, hour);		//2
-  strcat (event_table_name, minute);		//2
-  strcat (event_table_name, second);		//2
-  strcat (event_table_name, randnum_str);	//4
-  event_table_name[23]='\0';
+  int randnum = rand()%9999;
+  char randnum_str[5];
+  sprintf(randnum_str, "%04d",randnum);
 
-  profiling_db_file_name = &db_file_name[0];
-  profiling_event_table_name = &event_table_name[0];
+  profiling_event_table_name = (char *)malloc(24 * sizeof(char));
+  strcpy (profiling_event_table_name, "Event");		//5
+  strcat (profiling_event_table_name, year);		//4
+  strcat (profiling_event_table_name, month);		//2
+  strcat (profiling_event_table_name, day);		//2
+  strcat (profiling_event_table_name, hour);		//2
+  strcat (profiling_event_table_name, minute);		//2
+  strcat (profiling_event_table_name, second);		//2
+  strcat (profiling_event_table_name, randnum_str);	//4
+  profiling_event_table_name[23]='\0';
 
   print_log("profiling_db_file: %s\n",profiling_db_file_name);
   print_log("profiling_event_table_name:_%s_\n",profiling_event_table_name);
+
+  // Look for existing DB file
 
   bool newly_created_db_file = true;
   FILE *file;
@@ -133,6 +154,8 @@ void acc_profiling_init() {
     {   
 	newly_created_db_file = false;
     }
+
+  // Open DB with SQLITE
 
   DbErr = sqlite3_open (profiling_db_file_name, &profiling_db_file);
   if (DbErr)
@@ -239,11 +262,10 @@ void acc_profiling_init() {
     DeviceQuery();
   }
 
-}//r \todo [profiling] init_profiling()
+}
 
 void acc_profiling_exit() {
-  assert(profiling_db_file != NULL);
-
+  if (profiling_db_file_name != NULL) free(profiling_db_file_name);
   /// \todo [profiling] exit_profiling()
 }
 

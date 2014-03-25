@@ -32,5 +32,9 @@ void acc_profiling_init();
 
 void acc_profiling_exit();
 
+char * acc_profiling_get_db_file_name();
+
+char * acc_profiling_get_event_table_name();
+
 #endif /* __LIBOPENACC_PROFILING_H__ */
 

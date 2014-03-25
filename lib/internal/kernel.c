@@ -49,8 +49,7 @@ acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_
 
   for (j = 0; j < kernel->desc->num_loops; j++) {
     memcpy(&(result->loops[j].original), kernel->loops[j], sizeof(struct acc_loop_desc_t_));
-    if (result->loops[j].original.nbr_it == 0)
-      result->loops[j].original.nbr_it = (result->loops[j].original.upper - result->loops[j].original.lower) / result->loops[j].original.stride;
+    result->loops[j].original.nbr_it = (result->loops[j].original.upper - result->loops[j].original.lower) / result->loops[j].original.stride;
   }
 
   if (kernel->desc->splitted_loop != NULL) {
@@ -319,6 +318,22 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   assert(best_matching_loops != NULL);
 
   memcpy(context->loops, best_matching_loops, context->num_loop * sizeof(struct acc_kernel_loop_t_));
+
+  {
+    size_t i, j;
+    printf("Context for region[%d].kernel[%d] on device #%d:\n", region->desc->id, kernel->desc->id, device_idx);
+    for (i = 0; i < context->num_loop; i++) {
+      printf("  Loop[%d]:\n", i);
+      printf("    context->loops[%d].original.lower  = %d\n", i, context->loops[i].original.lower);
+      printf("    context->loops[%d].original.upper  = %d\n", i, context->loops[i].original.upper);
+      printf("    context->loops[%d].original.stride = %d\n", i, context->loops[i].original.stride);
+      printf("    context->loops[%d].original.nbr_it = %d\n", i, context->loops[i].original.nbr_it);
+      for (j = 0; j < 7; j++) {
+        printf("    context->loops[%d].tiles[%d].stride = %d\n", i, j, context->loops[i].tiles[j].stride);
+        printf("    context->loops[%d].tiles[%d].length = %d\n", i, j, context->loops[i].tiles[j].length);
+      }
+    }
+  }
 
   // Build the kernel name 
   char * version_suffix = kernel->desc->versions[best_matching_version]->suffix;

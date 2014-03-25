@@ -34,8 +34,13 @@ acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
 
   result->loops = (acc_loop_desc_t *)malloc(kernel->num_loops * sizeof(struct acc_loop_desc_t_ *));
   unsigned i;
-  for (i = 0; i < kernel->num_loops; i++)
+  for (i = 0; i < kernel->num_loops; i++) {
     result->loops[i] = (acc_loop_desc_t)malloc(sizeof(struct acc_loop_desc_t_));
+    result->loops[i]->lower = 0;
+    result->loops[i]->upper = 0;
+    result->loops[i]->stride = 0;
+    result->loops[i]->nbr_it = 0;
+  }
 
   return result;
 }

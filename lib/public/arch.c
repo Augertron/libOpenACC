@@ -17,7 +17,7 @@ const char * acc_device_env_name [acc_device_last] = {
   "K20XM",
   "QUADRO-1000M",
   "QUADRO-4000",
-  "GTX-460"
+  "GTX-460",
   "AMD",
   "INTEL",
   "I5-670",

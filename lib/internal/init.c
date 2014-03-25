@@ -30,9 +30,10 @@ void acc_init_defaults() {
   char * env_dev_type = getenv("ACC_DEVICE_TYPE");
   if (env_dev_type != NULL && env_dev_type[0] != "/0") {
     size_t dev_idx;
-    for (dev_idx = 0; dev_idx < acc_device_last; dev_idx++)
+    for (dev_idx = 0; dev_idx < acc_device_last; dev_idx++) {
       if (strcmp(acc_device_env_name[dev_idx], env_dev_type) == 0)
         break;
+    }
     if (dev_idx < acc_device_last)
       acc_runtime.curr_device_type = dev_idx;
   }
