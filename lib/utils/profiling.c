@@ -274,21 +274,21 @@ void acc_profiling_ocl_event_callback(cl_event event, cl_int event_command_exec_
 
   cl_ulong queued, submit, start, end;
 
-  cl_int status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &queued, NULL);
+  cl_int status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &queued, NULL);
   if (status != CL_SUCCESS) {
     const char * status_str = acc_ocl_status_to_char(status);
     printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
     exit(-1); /// \todo error code
   }
 
-  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &submit, NULL);
+  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_SUBMIT, sizeof(cl_ulong), &submit, NULL);
   if (status != CL_SUCCESS) {
     const char * status_str = acc_ocl_status_to_char(status);
     printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
     exit(-1); /// \todo error code
   }
 
-  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &start, NULL);
+  status = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start, NULL);
   if (status != CL_SUCCESS) {
     const char * status_str = acc_ocl_status_to_char(status);
     printf("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
