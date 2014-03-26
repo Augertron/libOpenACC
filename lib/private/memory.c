@@ -306,16 +306,7 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
     exit(-1); /// \todo error code
   }
 
-  struct acc_profiling_event_data_t_ * event_data = (struct acc_profiling_event_data_t_ *)malloc(sizeof(struct acc_profiling_event_data_t_));
-    event_data->kind = e_acc_memcpy_to_device;
-    event_data->device_idx = device_idx;
-    /// \todo fill extra data
-  status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_ocl_event_callback, event_data);
-  if (status != CL_SUCCESS) {
-    const char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clSetEventCallback return %s.\n", status_str);
-    exit(-1); /// \todo error code
-  }
+  acc_profiling_register_memcpy_to_device(event, device_idx, dest, src, bytes);
 }
 
 void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, size_t bytes) {
@@ -338,16 +329,7 @@ void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, siz
     exit(-1); /// \todo error code
   }
 
-  struct acc_profiling_event_data_t_ * event_data = (struct acc_profiling_event_data_t_ *)malloc(sizeof(struct acc_profiling_event_data_t_));
-    event_data->kind = e_acc_memcpy_from_device;
-    event_data->device_idx = device_idx;
-    /// \todo fill extra data
-  status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_ocl_event_callback, event_data);
-  if (status != CL_SUCCESS) {
-    const char * status_str = acc_ocl_status_to_char(status);
-    printf("[fatal]   clSetEventCallback return %s.\n", status_str);
-    exit(-1); /// \todo error code
-  }
+  acc_profiling_register_memcpy_from_device(event, device_idx, dest, src, bytes);
 }
 
 #ifdef __cplusplus

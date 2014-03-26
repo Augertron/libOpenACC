@@ -1,7 +1,10 @@
 
 #include "OpenACC/utils/profiling.h"
+
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/private/debug.h"
+
+#include "OpenACC/utils/containers/map.h"
 
 #include "sqlite3.h"
 
@@ -10,6 +13,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,9 +26,11 @@
 struct acc_profiler_t_ {
   char * db_file_name;
 
-  int run_id;
+  size_t run_id;
 
   sqlite3 * db_file;
+
+  map_t events;
 };
 typedef struct acc_profiler_t_ * acc_profiler_t;
 
@@ -47,6 +53,20 @@ print_log (const char *fmt, ...)
 #endif
 }
 
+struct acc_event_data_t {
+  size_t device_idx;
+  char * command_name;
+  size_t command_id;
+};
+
+const char * acc_command_memcpy_to_device = "memcpy_to_device";
+const char * acc_command_memcpy_from_device = "memcpy_from_device";
+const char * acc_command_kernel_launch = "kernel_launch";
+
+static int cl_event_cmp(const cl_event * e0, const cl_event * e1) {
+  return *e0 < *e1;
+}
+
 static int inc_line_cnt(int * cnt, int argc, char **argv, char **azColName) {
   (*cnt)++;
   return 0;
@@ -60,7 +80,7 @@ void acc_profiling_set_experiment(char * user_fields) {
   assert (status == SQLITE_OK);
 
   if (cnt == 0) {
-    query = (char*)malloc((strlen(user_fields) + 25) * sizeof(char));
+    query = (char*)malloc((strlen(user_fields) + 24) * sizeof(char));
     sprintf(query, "CREATE TABLE Runs ( %s );", user_fields);
     status = sqlite3_exec (acc_profiler->db_file, query, NULL, NULL, &err_msg);
     assert (status == SQLITE_OK);
@@ -70,7 +90,7 @@ void acc_profiling_set_experiment(char * user_fields) {
 
 void acc_profiling_new_run(char * user_data) {
   char * err_msg;
-  char * query = (char*)malloc((strlen(user_data) + 29) * sizeof(char));
+  char * query = (char*)malloc((strlen(user_data) + 30) * sizeof(char));
   sprintf(query, "INSERT INTO Runs VALUES ( %s );", user_data);
   int status = sqlite3_exec (acc_profiler->db_file, query, NULL, NULL, &err_msg);
   assert (status == SQLITE_OK);
@@ -105,7 +125,7 @@ void acc_profiling_init_db() {
 /// Build DB file name (get filename from environment or build $USER_$HOSTNAME.sl3)
 void acc_profiling_get_db_file_names() {
   char * env_prof_db = getenv("ACC_PROFILING_DB");
-  if (env_prof_db != NULL && env_prof_db[0] != "/0") {
+  if (env_prof_db != NULL && env_prof_db[0] != '\0') {
     assert(strlen(env_prof_db) < 140);
     acc_profiler->db_file_name = (char *)malloc((strlen(env_prof_db) + 1) * sizeof(char));
     strcpy (acc_profiler->db_file_name, env_prof_db);
@@ -137,33 +157,35 @@ acc_profiling_init ()
   acc_profiler->run_id = -1;
 
   acc_profiling_init_db();
+
+  acc_profiler->events = map_alloc(42, sizeof(cl_event), sizeof(struct acc_event_data_t *), &cl_event_cmp);
 }
 
 void
 acc_profiling_exit ()
 {
   if (acc_profiler != NULL) {
+    size_t i;
+    for (i = 0; i < acc_profiler->events->count; i++) {
+      acc_profiling_release_event(
+        *(cl_event *)(acc_profiler->events->datas + i * (sizeof(cl_event) + sizeof(struct acc_event_data_t *))),
+        *(struct acc_event_data_t **)(acc_profiler->events->datas + i * (sizeof(cl_event) + sizeof(struct acc_event_data_t *)) + sizeof(cl_event))
+      );
+    }
+
     if (acc_profiler->db_file_name != NULL)
       free(acc_profiler->db_file_name);
     if (acc_profiler->db_file != NULL) {
       /// \todo close DB 
     }
+
     free(acc_profiler);
   }
 }
 
-void
-acc_profiling_ocl_event_callback (cl_event event,
-				  cl_int event_command_exec_status,
-				  void *user_data)
-{
-  struct acc_profiling_event_data_t_ *event_data =
-    (struct acc_profiling_event_data_t_ *) user_data;
-
-  cl_ulong queued, submit, start, end;
-
+void acc_profiling_get_profile_from_event(cl_event event, cl_ulong * queued, cl_ulong * submit, cl_ulong * start, cl_ulong * end) {
   cl_int status = clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_QUEUED,
-					   sizeof (cl_ulong), &queued,
+					   sizeof (cl_ulong), queued,
 					   NULL);
   if (status != CL_SUCCESS)
     {
@@ -174,7 +196,7 @@ acc_profiling_ocl_event_callback (cl_event event,
 
   status =
     clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_SUBMIT,
-			     sizeof (cl_ulong), &submit, NULL);
+			     sizeof (cl_ulong), submit, NULL);
   if (status != CL_SUCCESS)
     {
       const char *status_str = acc_ocl_status_to_char (status);
@@ -184,7 +206,7 @@ acc_profiling_ocl_event_callback (cl_event event,
 
   status =
     clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_START,
-			     sizeof (cl_ulong), &start, NULL);
+			     sizeof (cl_ulong), start, NULL);
   if (status != CL_SUCCESS)
     {
       const char *status_str = acc_ocl_status_to_char (status);
@@ -194,41 +216,91 @@ acc_profiling_ocl_event_callback (cl_event event,
 
   status =
     clGetEventProfilingInfo (event, CL_PROFILING_COMMAND_END,
-			     sizeof (cl_ulong), &end, NULL);
+			     sizeof (cl_ulong), end, NULL);
   if (status != CL_SUCCESS)
     {
       const char *status_str = acc_ocl_status_to_char (status);
       printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
       exit (-1);		/// \todo error code
     }
+}
 
+void acc_profiling_release_event(cl_event event, struct acc_event_data_t * event_data) {
+  cl_ulong queued, submit, start, end;
 
-  char *command_name;
-  switch (event_data->kind)
-    {
-    case e_acc_memcpy_to_device:
-      command_name = "acc_memcpy_to_device";
-      break;
-    case e_acc_memcpy_from_device:
-      command_name = "acc_memcpy_from_device";
-      break;
-    case e_acc_kernel_launch:
-      command_name = "acc_kernel_launch";
-      break;
-    }
+  printf("[info]    acc_profiling_release_event\n");
+
+  acc_profiling_get_profile_from_event(event, &queued, &submit, &start, &end);
 
   char Dbstr[8192];
   sprintf (Dbstr,
-	   "INSERT INTO Events VALUES ( '%d', '%d', '%s', '-1', '%.3f', '%.3f', '%.3f', '%.3f');",
-	   acc_profiler->run_id, event_data->device_idx, command_name,
-	   queued * 1.0e-3, submit * 1.0e-3, start * 1.0e-3, end * 1.0e-3);
+	   "INSERT INTO Events VALUES ( '%zd', '%zd', '%s', '%zd', '%lu', '%lu', '%lu', '%lu');",
+	   acc_profiler->run_id, event_data->device_idx, event_data->command_name, event_data->command_id,
+           queued, submit, start, end);
 
   char *DbErrMsg;
   int DbErr =
     sqlite3_exec (acc_profiler->db_file, Dbstr, NULL, 0, &DbErrMsg);
   assert (DbErr == SQLITE_OK);
 
-  free (event_data);
+  free(event_data);
+}
+
+void acc_profiling_register_memcpy_to_device(cl_event event, size_t device_idx, h_void * host_ptr, d_void * dev_ptr, size_t size) {
+  struct acc_event_data_t * event_data = (struct acc_event_data_t*)malloc(sizeof(struct acc_event_data_t));
+    event_data->device_idx = device_idx;
+    event_data->command_name = acc_command_memcpy_to_device;
+    event_data->command_id = -1;
+  map_insert(acc_profiler->events, &event, &event_data);
+
+  /// \todo save command
+  printf("[info]    acc_profiling_register_memcpy_to_device\n");
+/*
+  cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clSetEventCallback return %s.\n", status_str);
+    exit(-1); /// \todo error code
+  }
+*/
+}
+
+void acc_profiling_register_memcpy_from_device(cl_event event, size_t device_idx, h_void * host_ptr, d_void * dev_ptr, size_t size) {
+  struct acc_event_data_t * event_data = (struct acc_event_data_t*)malloc(sizeof(struct acc_event_data_t));
+    event_data->device_idx = device_idx;
+    event_data->command_name = acc_command_memcpy_from_device;
+    event_data->command_id = -1;
+  map_insert(acc_profiler->events, &event, &event_data);
+
+  /// \todo save command
+  printf("[info]    acc_profiling_register_memcpy_from_device\n");
+/*
+  cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clSetEventCallback return %s.\n", status_str);
+    exit(-1); /// \todo error code
+  }
+*/
+}
+
+void acc_profiling_register_kernel_launch(cl_event event, size_t device_idx, size_t region_id, size_t kernel_id) {
+  struct acc_event_data_t * event_data = (struct acc_event_data_t*)malloc(sizeof(struct acc_event_data_t));
+    event_data->device_idx = device_idx;
+    event_data->command_name = acc_command_kernel_launch;
+    event_data->command_id = -1;
+  map_insert(acc_profiler->events, &event, &event_data);
+
+  /// \todo save command
+  printf("[info]    acc_profiling_register_kernel_launch\n");
+/*
+  cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);
+  if (status != CL_SUCCESS) {
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clSetEventCallback return %s.\n", status_str);
+    exit(-1); /// \todo error code
+  }
+*/
 }
 
 // Prints a string version of the specified OpenCL error code
@@ -250,10 +322,10 @@ void acc_profiling_create_event_table() {
                     DEVICE_ID INT, \
                     COMMAND_NAME CHAR(128), \
                     COMMAND_ID INT, \
-                    CL_PROFILING_COMMAND_QUEUED REAL, \
-                    CL_PROFILING_COMMAND_SUBMIT REAL, \
-                    CL_PROFILING_COMMAND_START  REAL, \
-                    CL_PROFILING_COMMAND_END    REAL  \
+                    CL_PROFILING_COMMAND_QUEUED BIGINT, \
+                    CL_PROFILING_COMMAND_SUBMIT BIGINT, \
+                    CL_PROFILING_COMMAND_START  BIGINT, \
+                    CL_PROFILING_COMMAND_END    BIGINT  \
                   );");
 
   DbErr = sqlite3_exec (acc_profiler->db_file, Dbstr, NULL, 0, &DbErrMsg);

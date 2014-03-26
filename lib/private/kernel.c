@@ -210,16 +210,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       exit(-1); /// \todo error code
     }
 
-    struct acc_profiling_event_data_t_ * event_data = (struct acc_profiling_event_data_t_ *)malloc(sizeof(struct acc_profiling_event_data_t_));
-      event_data->kind = e_acc_kernel_launch;
-      event_data->device_idx = device_idx;
-      /// \todo fill extra data
-    status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_ocl_event_callback, event_data);
-    if (status != CL_SUCCESS) {
-      const char * status_str = acc_ocl_status_to_char(status);
-      printf("[fatal]   clSetEventCallback return %s.\n", status_str);
-      exit(-1); /// \todo error code
-    }
+    acc_profiling_register_kernel_launch(event, device_idx, region->desc->id, kernel->desc->id);
   }
 }
 
