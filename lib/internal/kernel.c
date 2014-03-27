@@ -9,7 +9,7 @@
 
 #include "OpenACC/internal/loop.h"
 
-#include "OpenACC/private/runtime.h"
+#include "OpenACC/internal/runtime.h"
 #include "OpenACC/private/debug.h"
 
 #include <stdlib.h>
@@ -86,8 +86,9 @@ acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_
   return result; 
 }
 
-static int version_match(acc_kernel_version_t version, acc_context_t context) {
-  return ( version->num_gang      == 0 || version->num_gang      == context->num_gang      )
+static int version_match(acc_kernel_version_t version, acc_context_t context, size_t device_idx) {
+  return acc_device_idx_check_type(device_idx, version->device_affinity)
+      && ( version->num_gang      == 0 || version->num_gang      == context->num_gang      )
       && ( version->num_worker    == 0 || version->num_worker    == context->num_worker    )
       && ( version->vector_length == 0 || version->vector_length == context->vector_length );
 }
@@ -238,7 +239,7 @@ void acc_select_kernel_version(
   unsigned version_idx;
   for (version_idx = 0; version_idx < kernel->desc->num_versions; version_idx++) {
 
-    if (version_match(kernel->desc->versions[version_idx], context)) {
+    if (version_match(kernel->desc->versions[version_idx], context, device_idx)) {
 
       assert(kernel->desc->versions[version_idx]->loops != NULL);
 

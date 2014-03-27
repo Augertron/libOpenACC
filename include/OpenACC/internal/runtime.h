@@ -18,6 +18,10 @@
 extern "C" {
 #endif
 
+acc_device_t acc_get_device_type_by_device_idx(size_t device_idx);
+
+int acc_device_idx_check_type(size_t device_idx, acc_device_t dev);
+
 #ifdef __cplusplus
 }
 #endif
