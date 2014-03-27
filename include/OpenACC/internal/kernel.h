@@ -12,6 +12,7 @@
 #ifndef LIBOPENACC_INTERNAL_KERNEL
 #define LIBOPENACC_INTERNAL_KERNEL 20131031
 
+#include "OpenACC/openacc.h"
 #include "OpenACC/private/kernel.h"
 #include "OpenACC/internal/loop.h"
 #include "OpenACC/device/host-context.h"
@@ -40,6 +41,9 @@ struct acc_kernel_version_t_ {
 
   /// suffix added to the name of the kernel 
   char * suffix;
+
+  /// Device affinity, version will only be used on this device (default: acc_device_any)
+  acc_device_t device_affinity;
 };
 typedef struct acc_kernel_version_t_ * acc_kernel_version_t;
 
