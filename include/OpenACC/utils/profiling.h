@@ -4,6 +4,21 @@
 
 #include "OpenACC/openacc.h"
 
+#include "sqlite3.h"
+#include "OpenACC/utils/containers/map.h"
+
+struct acc_profiler_t_ {
+  char * db_file_name;
+
+  size_t run_id;
+
+  sqlite3 * db_file;
+
+  map_t events;
+};
+typedef struct acc_profiler_t_ * acc_profiler_t;
+extern acc_profiler_t acc_profiler;
+
 /// Initialize OpenACC profiler
 void acc_profiling_init();
 

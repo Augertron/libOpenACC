@@ -4,10 +4,6 @@
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/private/debug.h"
 
-#include "OpenACC/utils/containers/map.h"
-
-#include "sqlite3.h"
-
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,17 +18,6 @@
 #include <assert.h>
 
 #undef ENABLE_LOGGING
-
-struct acc_profiler_t_ {
-  char * db_file_name;
-
-  size_t run_id;
-
-  sqlite3 * db_file;
-
-  map_t events;
-};
-typedef struct acc_profiler_t_ * acc_profiler_t;
 
 acc_profiler_t acc_profiler = NULL;
 
