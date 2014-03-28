@@ -20,7 +20,7 @@ acc_device_t acc_get_device_type_by_device_idx(size_t device_idx) {
 
   assert(dev != acc_device_any && dev != acc_device_last);
 
-  return dev-1;
+  return dev;
 }
 
 int acc_device_idx_check_type(size_t device_idx, acc_device_t dev) {

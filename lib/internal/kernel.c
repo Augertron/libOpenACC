@@ -251,7 +251,7 @@ void acc_select_kernel_version(
         struct loop_triplet_t loop_triplet[7];
 
         struct acc_loop_t_ * vers_loop = &(kernel->desc->versions[version_idx]->loops[loop_idx]);
-        acc_loop_desc_t orig_loop = kernel->loops[loop_idx];
+        acc_loop_desc_t orig_loop = &(context->loops[loop_idx].original);
 
         init_loop_triplet(loop_triplet, vers_loop, context, orig_loop);
 
