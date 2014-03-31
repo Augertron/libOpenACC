@@ -48,6 +48,7 @@ struct acc_kernel_version_t_ {
 typedef struct acc_kernel_version_t_ * acc_kernel_version_t;
 
 typedef enum acc_splitting_mode_e_ {
+  e_all,
   e_contiguous,
   e_chunk
 } acc_splitting_mode_e;
@@ -94,6 +95,9 @@ struct acc_kernel_desc_t_ {
 
   /// splitted loop, no splitted loop if NULL
   acc_loop_splitter_t splitted_loop;
+
+  /// If not NULL: versions to use with the different devices (as listed by acc_region_desc_t::devices)
+  size_t * version_by_devices; 
 };
 
 /*! \func acc_create_context

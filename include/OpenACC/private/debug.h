@@ -12,10 +12,16 @@
 #define OPENACC_PRIVATE_DEBUG 20131031
 
 #include "OpenACC/public/arch.h"
+#include "OpenACC/private/kernel.h"
+#include "OpenACC/private/region.h"
+#include "OpenACC/device/host-context.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/// Dump the content of context build to launch a given kernel on a given device
+void acc_debug_dump_context(struct acc_region_t_ * region, struct acc_kernel_t_ * kernel, struct acc_context_t_ * context, size_t device_idx);
 
 /*!
  * \brief Debug: dump OpenACC runtime information

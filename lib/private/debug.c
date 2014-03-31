@@ -2,10 +2,28 @@
 #include "OpenACC/public/arch.h"
 #include "OpenACC/private/debug.h"
 #include "OpenACC/private/runtime.h"
+#include "OpenACC/internal/kernel.h"
+#include "OpenACC/internal/region.h"
 
 #include <stdio.h>
 
 #include <assert.h>
+
+void acc_debug_dump_context(struct acc_region_t_ * region, struct acc_kernel_t_ * kernel, struct acc_context_t_ * context, size_t device_idx) {
+  size_t i, j;
+  printf("Context for region[%d].kernel[%d] on device #%d:\n", region->desc->id, kernel->desc->id, device_idx);
+  for (i = 0; i < context->num_loop; i++) {
+    printf("  Loop[%d]:\n", i);
+    printf("    context->loops[%d].original.lower  = %d\n", i, context->loops[i].original.lower);
+    printf("    context->loops[%d].original.upper  = %d\n", i, context->loops[i].original.upper);
+    printf("    context->loops[%d].original.stride = %d\n", i, context->loops[i].original.stride);
+    printf("    context->loops[%d].original.nbr_it = %d\n", i, context->loops[i].original.nbr_it);
+    for (j = 0; j < 7; j++) {
+      printf("       context->loops[%d].tiles[%d].stride = %d\n", i, j, context->loops[i].tiles[j].stride);
+      printf("       context->loops[%d].tiles[%d].length = %d\n", i, j, context->loops[i].tiles[j].length);
+    }
+  }
+}
 
 void acc_dbg_dump_runtime() {
   acc_init_once();

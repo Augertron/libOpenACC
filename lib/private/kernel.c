@@ -59,6 +59,9 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     // Create a default context
     acc_context_t context = acc_create_context(region, kernel, device_idx);
 
+    // If nothing have to be done on this device the context is NULL.
+    if (context == NULL) continue;
+
     // Look for a matching ‭version of the kernel, fill the context according to the selected version
     cl_kernel ocl_kernel = acc_build_ocl_kernel(region, kernel, context, device_idx);
 
@@ -117,7 +120,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       for (j = 0; j < region->desc->num_distributed_data; j++)
         if (kernel->data_ptrs[i] == region->distributed_data[j].ptr)
           break;
-      if (j < region->desc->num_distributed_data) {
+      if (j < region->desc->num_distributed_data && region->desc->distributed_data[j].mode != e_all) {
         printf("[info]    region[%u].kernel[%u] on device #%u  data #%u is distributed.\n",
                     region->desc->id, kernel->desc->id, device_idx, i
                 );

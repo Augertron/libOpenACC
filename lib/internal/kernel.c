@@ -41,6 +41,7 @@ acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_
     if (region->devices[i].device_idx == device_idx)
       break;
   assert(i < region->num_devices);
+
   result->num_gang      = region->devices[i].num_gang;
   result->num_worker    = region->devices[i].num_worker;
   result->vector_length = region->devices[i].vector_length;
@@ -53,6 +54,12 @@ acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_
   }
 
   if (kernel->desc->splitted_loop != NULL) {
+    if (kernel->desc->splitted_loop->portions[i] == 0) {
+      // Nothing to be done on this device
+      free(result);
+      return NULL;
+    }
+
     unsigned loop_id = kernel->desc->splitted_loop->loop_id;
 
 //  printf("Splitting loop %u on %s\n", loop_id, acc_device_name[region->desc->devices[i].kind]);
@@ -226,92 +233,125 @@ size_t set_ctx_loop(struct acc_kernel_loop_t_ * ctx_loop, struct loop_triplet_t 
   return tile;
 }
 
+void acc_eval_kernel_version(
+  acc_region_t region,
+  acc_kernel_t kernel,
+  acc_context_t context,
+  size_t device_idx,
+  size_t version_idx,
+  size_t * best_matching_version,
+  unsigned * best_matching_score,
+  struct acc_kernel_loop_t_ ** best_matching_loops
+) {
+  if (!version_match(kernel->desc->versions[version_idx], context, device_idx)) return;
+
+  assert(kernel->desc->versions[version_idx]->loops != NULL);
+
+  struct acc_kernel_loop_t_ * ctx_loops = (struct acc_kernel_loop_t_ *)malloc(context->num_loop * sizeof(struct acc_kernel_loop_t_));
+  memcpy(ctx_loops, context->loops, context->num_loop * sizeof(struct acc_kernel_loop_t_));
+
+  unsigned loop_idx;
+  for (loop_idx = 0; loop_idx < context->num_loop; loop_idx++) {
+    struct loop_triplet_t loop_triplet[7];
+
+    struct acc_loop_t_ * vers_loop = &(kernel->desc->versions[version_idx]->loops[loop_idx]);
+    acc_loop_desc_t orig_loop = &(context->loops[loop_idx].original);
+
+    init_loop_triplet(loop_triplet, vers_loop, context, orig_loop);
+
+    unsigned num_dynamic = num_dynamic_tiles(vers_loop);
+    if (num_dynamic == 0) {
+      solve_no_dynamic(loop_triplet);
+      if (set_ctx_loop(&(ctx_loops[loop_idx]), loop_triplet) < 7)
+        break;
+    }
+    else if (num_dynamic == 1) {
+      solve_one_dynamic(loop_triplet);
+      if (set_ctx_loop(&(ctx_loops[loop_idx]), loop_triplet) < 7)
+        break;
+    }
+    else if (num_dynamic == 2) {
+      assert(0); /// \todo pick one then the other and try static values
+    }
+    else assert(!"NIY! More than ONE dynamic filling tile...");
+  }
+  if (loop_idx < kernel->desc->num_loops) {
+    free(ctx_loops);
+    return;
+  }
+
+  // Compute the score for version[version_idx]
+  unsigned score = 0;
+
+  for (loop_idx = 0; loop_idx < context->num_loop; loop_idx++) {
+    struct acc_loop_t_ * loop = &(kernel->desc->versions[version_idx]->loops[loop_idx]);
+
+    if (kernel->desc->versions[version_idx]->num_gang      == context->num_gang     ) score++;
+    if (kernel->desc->versions[version_idx]->num_worker    == context->num_worker   ) score++;
+    if (kernel->desc->versions[version_idx]->vector_length == context->vector_length) score++;
+
+    size_t tile;
+
+    for (tile = 0; tile < 7; tile++)
+      if (loop->num_iterations[tile] != 0)
+        score++;
+  }
+
+  if (score >= *best_matching_score) {
+    *best_matching_score = score;
+
+    *best_matching_version = version_idx;
+
+    if (*best_matching_loops != NULL)
+      free(*best_matching_loops);
+    *best_matching_loops = ctx_loops;
+  }
+  else {
+    free(ctx_loops);
+  }
+}
+
 void acc_select_kernel_version(
   acc_region_t region,
   acc_kernel_t kernel,
   acc_context_t context,
   size_t device_idx,
-  unsigned * best_matching_version,
+  size_t * best_matching_version,
   struct acc_kernel_loop_t_ ** best_matching_loops
 ) {
   unsigned best_matching_score = 0;
-
-  unsigned version_idx;
-  for (version_idx = 0; version_idx < kernel->desc->num_versions; version_idx++) {
-
-    if (version_match(kernel->desc->versions[version_idx], context, device_idx)) {
-
-      assert(kernel->desc->versions[version_idx]->loops != NULL);
-
-      struct acc_kernel_loop_t_ * ctx_loops = (struct acc_kernel_loop_t_ *)malloc(context->num_loop * sizeof(struct acc_kernel_loop_t_));
-      memcpy(ctx_loops, context->loops, context->num_loop * sizeof(struct acc_kernel_loop_t_));
-
-      unsigned loop_idx;
-      for (loop_idx = 0; loop_idx < context->num_loop; loop_idx++) {
-        struct loop_triplet_t loop_triplet[7];
-
-        struct acc_loop_t_ * vers_loop = &(kernel->desc->versions[version_idx]->loops[loop_idx]);
-        acc_loop_desc_t orig_loop = &(context->loops[loop_idx].original);
-
-        init_loop_triplet(loop_triplet, vers_loop, context, orig_loop);
-
-        unsigned num_dynamic = num_dynamic_tiles(vers_loop);
-        if (num_dynamic == 0) {
-          solve_no_dynamic(loop_triplet);
-          if (set_ctx_loop(&(ctx_loops[loop_idx]), loop_triplet) < 7)
-            break;
-        }
-        else if (num_dynamic == 1) {
-          solve_one_dynamic(loop_triplet);
-          if (set_ctx_loop(&(ctx_loops[loop_idx]), loop_triplet) < 7)
-            break;
-        }
-        else if (num_dynamic == 2) {
-          assert(0); /// \todo pick one then the other and try static values
-        }
-        else assert(!"NIY! More than ONE dynamic filling tile...");
-      }
-      if (loop_idx < kernel->desc->num_loops) {
-        free(ctx_loops);
-        continue;
-      }
-
-      // Compute the score for version[version_idx]
-
-      unsigned score = 0;
-
-      for (loop_idx = 0; loop_idx < context->num_loop; loop_idx++) {
-        struct acc_loop_t_ * loop = &(kernel->desc->versions[version_idx]->loops[loop_idx]);
-
-        if (kernel->desc->versions[version_idx]->num_gang      == context->num_gang     ) score++;
-        if (kernel->desc->versions[version_idx]->num_worker    == context->num_worker   ) score++;
-        if (kernel->desc->versions[version_idx]->vector_length == context->vector_length) score++;
-
-        size_t tile;
-
-        for (tile = 0; tile < 7; tile++)
-          if (loop->num_iterations[tile] != 0)
-            score++;
-      }
-
-      if (score >= best_matching_score) {
-        best_matching_score = score;
-
-        *best_matching_version = version_idx;
-
-        if (*best_matching_loops != NULL)
-          free(*best_matching_loops);
-        *best_matching_loops = ctx_loops;
-      }
-      else {
-        free(ctx_loops);
-      }
-    }
+  if (kernel->desc->version_by_devices != NULL) {
+    unsigned i;
+    for (i = 0; i < region->num_devices; i++)
+      if (region->devices[i].device_idx == device_idx)
+        break;
+    assert(i < region->num_devices);
+    size_t version_idx = kernel->desc->version_by_devices[i];
+    assert(version_idx != -1);
+    acc_eval_kernel_version(
+      region, kernel, context,
+      device_idx, version_idx,
+      best_matching_version,
+      &best_matching_score,
+      best_matching_loops
+    );
+    assert(*best_matching_version != -1);
+  }
+  else {
+    unsigned version_idx;
+    for (version_idx = 0; version_idx < kernel->desc->num_versions; version_idx++)
+      acc_eval_kernel_version(
+        region, kernel, context,
+        device_idx, version_idx,
+        best_matching_version,
+        &best_matching_score,
+        best_matching_loops
+      );
   }
 }
 
 struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_context_t context, size_t device_idx) {
-  unsigned best_matching_version = 0;
+  size_t best_matching_version = -1;
   struct acc_kernel_loop_t_ * best_matching_loops = NULL;
 
   acc_select_kernel_version(region, kernel, context, device_idx, &best_matching_version, &best_matching_loops);
@@ -320,21 +360,7 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
 
   memcpy(context->loops, best_matching_loops, context->num_loop * sizeof(struct acc_kernel_loop_t_));
 
-  {
-    size_t i, j;
-    printf("Context for region[%d].kernel[%d] on device #%d:\n", region->desc->id, kernel->desc->id, device_idx);
-    for (i = 0; i < context->num_loop; i++) {
-      printf("  Loop[%d]:\n", i);
-      printf("    context->loops[%d].original.lower  = %d\n", i, context->loops[i].original.lower);
-      printf("    context->loops[%d].original.upper  = %d\n", i, context->loops[i].original.upper);
-      printf("    context->loops[%d].original.stride = %d\n", i, context->loops[i].original.stride);
-      printf("    context->loops[%d].original.nbr_it = %d\n", i, context->loops[i].original.nbr_it);
-      for (j = 0; j < 7; j++) {
-        printf("    context->loops[%d].tiles[%d].stride = %d\n", i, j, context->loops[i].tiles[j].stride);
-        printf("    context->loops[%d].tiles[%d].length = %d\n", i, j, context->loops[i].tiles[j].length);
-      }
-    }
-  }
+  acc_debug_dump_context(region, kernel, context, device_idx);
 
   // Build the kernel name 
   char * version_suffix = kernel->desc->versions[best_matching_version]->suffix;

@@ -26,39 +26,56 @@
 extern "C" {
 #endif
 
-void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx, h_void ** host_ptr, size_t * n) {
-  size_t i, j, k;
-  for (i = 0; i < region->desc->num_distributed_data; i++)
-    if (region->distributed_data[i].ptr == *host_ptr)
+void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx_, h_void ** host_ptr, size_t * n) {
+  // Search corresponding "distributed data" entry in region descriptor
+  size_t data_idx;
+  for (data_idx = 0; data_idx < region->desc->num_distributed_data; data_idx++)
+    if (region->distributed_data[data_idx].ptr == *host_ptr)
       break;
-  if (i == region->desc->num_distributed_data) return;
+  if (data_idx == region->desc->num_distributed_data) return; // No entry found: NOP (data goes entirely to all devices)
 
-  assert( region->desc->distributed_data[i].mode == e_contiguous &&
-          region->desc->distributed_data[i].nbr_dev == region->num_devices &&
-          region->desc->distributed_data[i].portions != NULL
+  // Check that found "distributed data" entry is valid
+  assert( region->desc->distributed_data[data_idx].nbr_dev == region->num_devices &&
+          region->desc->distributed_data[data_idx].portions != NULL
         );
 
-  for (j = 0; j < region->num_devices; j++)
-    if (region->devices[j].device_idx == device_idx)
+  // Search corresponding "device" entry in region descriptor 
+  size_t device_idx;
+  for (device_idx = 0; device_idx < region->num_devices; device_idx++)
+    if (region->devices[device_idx].device_idx == device_idx_)
       break;
-  assert(j < region->num_devices);
+  assert(device_idx < region->num_devices);
 
-  unsigned sum_portions = 0;
-  unsigned prev_portion = 0;
-  for (k = 0; k < region->num_devices; k++) {
-    sum_portions += region->desc->distributed_data[i].portions[k];
-    if (k < j)
-      prev_portion += region->desc->distributed_data[i].portions[k];
+  // If distributed data is "e_all" it means it is fully transfered to all device
+  if (region->desc->distributed_data[data_idx].mode == e_all) {
+    // Unless the portion associated to the current device is empty (avoid sending data to unused device)
+    if (region->desc->distributed_data[data_idx].portions[device_idx] == 0)
+      *n = 0;
+    return;
   }
 
-  printf("[info]    region[%u] on device #%u distributed data.\n", region->desc->id, device_idx);
+  // Only support contiguous distribution mode at this point (chunk mode to be implemented)
+  assert(region->desc->distributed_data[data_idx].mode == e_contiguous);
+
+  // Compute sum of all portions and offset of this device portion (prev_portion)
+  unsigned sum_portions = 0;
+  unsigned prev_portion = 0;
+  size_t k;
+  for (k = 0; k < region->num_devices; k++) {
+    sum_portions += region->desc->distributed_data[data_idx].portions[k];
+    if (k < device_idx)
+      prev_portion += region->desc->distributed_data[data_idx].portions[k];
+  }
+
+  printf("[info]    region[%u] on device #%u distributed data.\n", region->desc->id, device_idx_);
   printf("[info]        host_ptr     = %X\n", *host_ptr);
   printf("[info]        n            = %d\n", *n);
   printf("[info]        sum_portions = %d\n", sum_portions);
   printf("[info]        prev_portion = %d\n", prev_portion);
 
+  // Update host_ptr and n to cover the desired portion
   *host_ptr += (*n * prev_portion) / sum_portions;
-  *n         = (*n * region->desc->distributed_data[i].portions[j]) / sum_portions;
+  *n         = (*n * region->desc->distributed_data[data_idx].portions[device_idx]) / sum_portions;
 
   printf("[info]        host_ptr     = %X\n", *host_ptr);
   printf("[info]        n            = %d\n", *n);
@@ -119,7 +136,8 @@ void acc_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
-    acc_copyin_(region->devices[idx].device_idx, host_ptr, n);
+    if (n_ > 0)
+      acc_copyin_(region->devices[idx].device_idx, host_ptr, n);
   }
 }
 
@@ -138,7 +156,8 @@ void acc_present_or_copyin_regions_(struct acc_region_t_ * region, h_void * host
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
-    acc_present_or_copyin_(region->devices[idx].device_idx, host_ptr_, n_);
+    if (n_ > 0)
+      acc_present_or_copyin_(region->devices[idx].device_idx, host_ptr_, n_);
   }
 }
 
@@ -164,7 +183,8 @@ void acc_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
-    acc_create_(region->devices[idx].device_idx, host_ptr_, n_);
+    if (n_ > 0)
+      acc_create_(region->devices[idx].device_idx, host_ptr_, n_);
   }
 }
 
@@ -183,7 +203,8 @@ void acc_present_or_create_regions_(struct acc_region_t_ * region, h_void * host
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
-    acc_present_or_create_(region->devices[idx].device_idx, host_ptr_, n_);
+    if (n_ > 0)
+      acc_present_or_create_(region->devices[idx].device_idx, host_ptr_, n_);
   }
 }
 
@@ -207,7 +228,8 @@ void acc_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
-    acc_copyout_(region->devices[idx].device_idx, host_ptr_, n_);
+    if (n_ > 0)
+      acc_copyout_(region->devices[idx].device_idx, host_ptr_, n_);
   }
 }
 
@@ -226,7 +248,8 @@ void acc_present_or_copyout_regions_(struct acc_region_t_ * region, h_void * hos
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
-    acc_present_or_copyout_(region->devices[idx].device_idx, host_ptr_, n_);
+    if (n_ > 0)
+      acc_present_or_copyout_(region->devices[idx].device_idx, host_ptr_, n_);
   }
 }
 
