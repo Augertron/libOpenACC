@@ -18,6 +18,10 @@
 
 #include <assert.h>
 
+#ifndef PRINT_INFO
+# define PRINT_INFO 0
+#endif
+
 typedef struct acc_region_t_ * acc_region_t;
 typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_context_t_ * acc_context_t;
@@ -153,7 +157,7 @@ void solve_no_dynamic(struct loop_triplet_t * loop_triplet) {
 
   loop_triplet[6].length = loop_triplet[6].nbr_it * loop_triplet[6].stride;
 
-  for (tile = 5; tile > 0; tile++) {
+  for (tile = 5; tile > 0; tile--) {
     assert(loop_triplet[tile].nbr_it != 0);
 
     loop_triplet[tile].stride = loop_triplet[tile+1].length;
@@ -360,7 +364,9 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
 
   memcpy(context->loops, best_matching_loops, context->num_loop * sizeof(struct acc_kernel_loop_t_));
 
+#if PRINT_INFO
   acc_debug_dump_context(region, kernel, context, device_idx);
+#endif
 
   // Build the kernel name 
   char * version_suffix = kernel->desc->versions[best_matching_version]->suffix;

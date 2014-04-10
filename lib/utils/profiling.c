@@ -19,6 +19,10 @@
 
 #undef ENABLE_LOGGING
 
+#ifdef PRINT_INFO
+# define PRINT_INFO 0
+#endif
+
 acc_profiler_t acc_profiler = NULL;
 
 void acc_profiling_platform_init();
@@ -42,6 +46,7 @@ struct acc_event_data_t {
   size_t device_idx;
   char * command_name;
   size_t command_id;
+  size_t run_id;
 };
 
 const char * acc_command_memcpy_to_device = "memcpy_to_device";
@@ -213,14 +218,16 @@ void acc_profiling_get_profile_from_event(cl_event event, cl_ulong * queued, cl_
 void acc_profiling_release_event(cl_event event, struct acc_event_data_t * event_data) {
   cl_ulong queued, submit, start, end;
 
+#if PRINT_INFO
   printf("[info]    acc_profiling_release_event\n");
+#endif
 
   acc_profiling_get_profile_from_event(event, &queued, &submit, &start, &end);
 
   char Dbstr[8192];
   sprintf (Dbstr,
 	   "INSERT INTO Events VALUES ( '%zd', '%zd', '%s', '%zd', '%lu', '%lu', '%lu', '%lu');",
-	   acc_profiler->run_id, event_data->device_idx, event_data->command_name, event_data->command_id,
+	   event_data->run_id, event_data->device_idx, event_data->command_name, event_data->command_id,
            queued, submit, start, end);
 
   char *DbErrMsg;
@@ -236,10 +243,13 @@ void acc_profiling_register_memcpy_to_device(cl_event event, size_t device_idx, 
     event_data->device_idx = device_idx;
     event_data->command_name = acc_command_memcpy_to_device;
     event_data->command_id = -1;
+    event_data->run_id = acc_profiler->run_id;
   map_insert(acc_profiler->events, &event, &event_data);
 
   /// \todo save command
+#if PRINT_INFO
   printf("[info]    acc_profiling_register_memcpy_to_device\n");
+#endif
 /*
   cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);
   if (status != CL_SUCCESS) {
@@ -255,10 +265,13 @@ void acc_profiling_register_memcpy_from_device(cl_event event, size_t device_idx
     event_data->device_idx = device_idx;
     event_data->command_name = acc_command_memcpy_from_device;
     event_data->command_id = -1;
+    event_data->run_id = acc_profiler->run_id;
   map_insert(acc_profiler->events, &event, &event_data);
 
   /// \todo save command
+#if PRINT_INFO
   printf("[info]    acc_profiling_register_memcpy_from_device\n");
+#endif
 /*
   cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);
   if (status != CL_SUCCESS) {
@@ -274,10 +287,13 @@ void acc_profiling_register_kernel_launch(cl_event event, size_t device_idx, siz
     event_data->device_idx = device_idx;
     event_data->command_name = acc_command_kernel_launch;
     event_data->command_id = -1;
+    event_data->run_id = acc_profiler->run_id;
   map_insert(acc_profiler->events, &event, &event_data);
 
   /// \todo save command
+#if PRINT_INFO
   printf("[info]    acc_profiling_register_kernel_launch\n");
+#endif
 /*
   cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);
   if (status != CL_SUCCESS) {

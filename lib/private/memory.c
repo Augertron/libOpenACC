@@ -22,6 +22,10 @@
 #include <string.h>
 #include <assert.h>
 
+#ifndef PRINT_INFO
+# define PRINT_INFO 0
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,23 +70,27 @@ void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx_, h_v
     if (k < device_idx)
       prev_portion += region->desc->distributed_data[data_idx].portions[k];
   }
-
+#if PRINT_INFO
   printf("[info]    region[%u] on device #%u distributed data.\n", region->desc->id, device_idx_);
   printf("[info]        host_ptr     = %X\n", *host_ptr);
   printf("[info]        n            = %d\n", *n);
   printf("[info]        sum_portions = %d\n", sum_portions);
   printf("[info]        prev_portion = %d\n", prev_portion);
-
+#endif
   // Update host_ptr and n to cover the desired portion
   *host_ptr += (*n * prev_portion) / sum_portions;
   *n         = (*n * region->desc->distributed_data[data_idx].portions[device_idx]) / sum_portions;
 
+#if PRINT_INFO
   printf("[info]        host_ptr     = %X\n", *host_ptr);
   printf("[info]        n            = %d\n", *n);
+#endif
 }
 
 d_void * acc_malloc_(size_t device_idx, size_t n) {
+#if PRINT_INFO
   printf("[info]  acc_malloc_(size_t device_idx = %u, size_t n = %d)\n", device_idx, n);
+#endif
 
   cl_int status;
 	
@@ -99,7 +107,9 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
     exit(-1); /// \todo error code
   }
 
+#if PRINT_INFO
   printf("[info]      return %X\n", buffer);
+#endif
 
   return (d_void *)buffer;
 }
@@ -129,7 +139,9 @@ d_void * acc_copyin_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+#if PRINT_INFO
   printf("[info]  acc_copyin_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#endif
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -149,7 +161,9 @@ d_void * acc_present_or_copyin_(size_t device_idx, h_void * host_ptr, size_t n) 
 }
 
 void acc_present_or_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+#if PRINT_INFO
   printf("[info]  acc_present_or_copyin_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#endif
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -176,7 +190,9 @@ d_void * acc_create_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+#if PRINT_INFO
   printf("[info]  acc_create_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#endif
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -196,7 +212,9 @@ d_void * acc_present_or_create_(size_t device_idx, h_void * host_ptr, size_t n) 
 }
 
 void acc_present_or_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+#if PRINT_INFO
   printf("[info]  acc_present_or_create_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#endif
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -221,7 +239,9 @@ void acc_copyout_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+#if PRINT_INFO
   printf("[info]  acc_copyout_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#endif
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -241,7 +261,9 @@ d_void * acc_present_or_copyout_(size_t device_idx, h_void * host_ptr, size_t n)
 }
 
 void acc_present_or_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+#if PRINT_INFO
   printf("[info]  acc_present_or_copyout_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#endif
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {

@@ -16,6 +16,10 @@
 # define PRINT_BUILD_LOG 1 
 #endif
 
+#ifndef PRINT_INFO
+# define PRINT_INFO 0
+#endif
+
 void acc_get_region_defaults(struct acc_region_t_ * region) {
   unsigned i;
   for (i = 0; i < region->num_devices; i++) {

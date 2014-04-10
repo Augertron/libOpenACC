@@ -16,6 +16,10 @@
 
 #include <assert.h>
 
+#ifndef PRINT_INFO
+# define PRINT_INFO 0
+#endif
+
 typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_region_t_ * acc_region_t;
 typedef struct acc_context_t_ * acc_context_t;
@@ -46,7 +50,10 @@ acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
 }
 
 void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
+#if PRINT_INFO
   printf("[info]  acc_enqueue_kernel\n");
+#endif
+
   unsigned dev_idx;
   for (dev_idx = 0; dev_idx < region->num_devices; dev_idx++) {
     assert(region->devices[dev_idx].num_gang > 0);
@@ -121,10 +128,11 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
         if (kernel->data_ptrs[i] == region->distributed_data[j].ptr)
           break;
       if (j < region->desc->num_distributed_data && region->desc->distributed_data[j].mode != e_all) {
+#if PRINT_INFO
         printf("[info]    region[%u].kernel[%u] on device #%u  data #%u is distributed.\n",
                     region->desc->id, kernel->desc->id, device_idx, i
                 );
-
+#endif
         assert( region->desc->distributed_data[j].mode == e_contiguous &&
                 region->desc->distributed_data[j].nbr_dev == region->num_devices &&
                 region->desc->distributed_data[j].portions != NULL
@@ -145,10 +153,11 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
 
         int offset = (region->distributed_data[j].size * prev_portion) / sum_portions;
 
-
+#if PRINT_INFO
         printf("[info]        sum_portions = %d\n", sum_portions);
         printf("[info]        prev_portion = %d\n", prev_portion);
         printf("[info]        offset       = %d\n", offset);
+#endif
 
         status = clSetKernelArg(ocl_kernel, idx, sizeof(int), &offset);
         if (status != CL_SUCCESS) {
