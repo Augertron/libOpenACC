@@ -62,6 +62,8 @@ static int inc_line_cnt(int * cnt, int argc, char **argv, char **azColName) {
   return 0;
 }
 
+void acc_profiling_release_event(cl_event event, struct acc_event_data_t * event_data);
+
 void acc_profiling_set_experiment(char * user_fields) {
   char * err_msg;
   char * query = "SELECT * FROM sqlite_master WHERE name ='Runs' and type='table';";

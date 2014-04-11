@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <assert.h>
 
+#ifndef PRINT_INFO
+# define PRINT_INFO 0
+#endif
 typedef struct associative_t_ * associative_t;
 
 inline const key_type * associative_get_key_by_index(struct associative_t_ * container, size_t idx) {
@@ -34,8 +37,10 @@ size_t associative_lookup_(
   size_t start,
   size_t n
 ) {
-//  printf("associative_lookup_(container = %x, key = %x, start = %u, n = %u) with container->count = %u\n",
-//         container, *((void**)key), start, n, container->count);
+#if PRINT_INFO
+  printf("[info]    associative_lookup_(container = %x, key = %x, start = %zd, n = %zd) with container->count = %u\n",
+         container, *((void**)key), start, n, container->count);
+#endif
 
   assert(n > 0);
 
@@ -62,7 +67,9 @@ size_t associative_lookup_(
   else {
     size_t pivot = n/2;
 
-//    printf("associative_lookup_(...) : pivot = %u\n", pivot);
+#if PRINT_INFO
+    printf("[info]      associative_lookup_(...) : pivot = %zd\n", pivot);
+#endif
 
     const key_type * key_ = associative_get_key_by_index(container, start + pivot);
     if ((*container->key_less)(key, key_))                                          // key < key[start + pivot]
@@ -81,7 +88,9 @@ void associative_remove_(
   struct associative_t_ * container,
   size_t idx
 ) {
-//  printf("associative_remove_(container = %x, idx = %u) with container->count = %u\n", container, idx, container->count);
+#if PRINT_INFO
+  printf("[info]    associative_remove_(container = %x, idx = %zd) with container->count = %u\n", container, idx, container->count);
+#endif
 
   void * storage_start = associative_get_storage_by_index(container, idx);
   void * storage_stop  = storage_start + container->storage_size;
@@ -105,30 +114,49 @@ void associative_insert_(
   const key_type * key,
   const data_type * data
 ) {
-//  printf("associative_lookup_(container = %x, idx = %u, key = %x) with container->count = %u\n",
-//         container, idx, *((void**)key), container->count);
+#if PRINT_INFO
+  printf("[info]    associative_insert_(container = %x, idx = %zd, key = %x, data = ...) with container->count = %u\n",
+         container, idx, *((void**)key), container->count);
+#endif
 
   // Check that we have enougth space
   if (container->count == container->size) {
-    container->datas = realloc(container->datas, 2 * container->size);
+    container->datas = realloc(container->datas, 2 * container->size * container->storage_size);
     assert(container->datas != NULL);
     container->size = 2 * container->size;
   }
 
-  void * storage_start = idx == -1 ? container->datas : associative_get_storage_by_index(container, idx+1);
-  void * storage_stop  = storage_start + container->storage_size;
-
   void * container_end = container->datas + container->count * container->storage_size;
+  if (idx == -1) {
+    memmove(container->datas + container->storage_size, container->datas, container->count * container->storage_size);
 
-  ptrdiff_t tail_size = container_end - storage_start;
+    memcpy(container->datas, key, container->key_size);
 
-  memmove(storage_stop, storage_start, tail_size);
+    if (container->data_size > 0)
+      memcpy(container->datas + container->key_size, data, container->data_size);
+  }
+  else if (idx == container->count) {
+#if PRINT_INFO
+    printf("[info]      associative_lookup_(...) : idx == container->count\n");
+    memcpy(container_end, key, container->key_size);
+#endif
 
-  memcpy(storage_start, key, container->key_size);
+    if (container->data_size > 0)
+      memcpy(container_end + container->key_size, data, container->data_size);
+  }
+  else {
+    void * storage_start = associative_get_storage_by_index(container, idx+1);
+    void * storage_stop  = storage_start + container->storage_size;
 
-  if (container->data_size > 0)
-    memcpy(storage_start + container->key_size, data, container->data_size);
+    ptrdiff_t tail_size = container_end - storage_start;
 
+    memmove(storage_stop, storage_start, tail_size);
+
+    memcpy(storage_start, key, container->key_size);
+
+    if (container->data_size > 0)
+      memcpy(storage_start + container->key_size, data, container->data_size);
+  }
   container->count++;
 }
 
@@ -171,7 +199,7 @@ const data_type * associative_lookup(
 
   size_t idx = associative_lookup_(container, key, 0, container->count);
 
-  if (idx < 0) return NULL; // Not found
+  if (idx < 0 || idx >= container->count) return NULL; // Not found
 
   key_type * found_key = associative_get_key_by_index(container, idx);
   if ( (*container->key_less)(found_key, key) || (*container->key_less)(key, found_key) ) return NULL; // Not found
@@ -186,7 +214,7 @@ void associative_remove(
   size_t idx = -1;
   if (container->count > 0) idx = associative_lookup_(container, key, 0, container->count);
 
-  if (idx == -1) return; // Not found
+  if (idx < 0 || idx >= container->count) return; // Not found
 
   key_type * found_key = associative_get_key_by_index(container, idx);
   if ( (*container->key_less)(found_key, key) || (*container->key_less)(key, found_key) ) return; // Not found
@@ -201,7 +229,7 @@ void associative_insert(
 ) {
   size_t idx = -1;
   if (container->count > 0) idx = associative_lookup_(container, key, 0, container->count);
-  if (idx != -1) {
+  if (idx >= 0 && idx < container->count) {
     key_type * found_key = associative_get_key_by_index(container, idx);
     if ( !(*container->key_less)(found_key, key) && !(*container->key_less)(key, found_key) ) return; // Key already exist
   }

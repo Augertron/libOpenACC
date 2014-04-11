@@ -7,6 +7,10 @@
 #include "sqlite3.h"
 #include "OpenACC/utils/containers/map.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct acc_profiler_t_ {
   char * db_file_name;
 
@@ -39,6 +43,10 @@ void acc_profiling_register_memcpy_from_device(cl_event event, size_t device_idx
 
 /// Called to register a callback on 'kernel launch' event
 void acc_profiling_register_kernel_launch(cl_event event, size_t device_idx, size_t region_id, size_t kernel_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* __LIBOPENACC_PROFILING_H__ */
