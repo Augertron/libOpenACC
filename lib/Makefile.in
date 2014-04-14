@@ -39,7 +39,9 @@ OPENACC_UTILS_LIB = \
 
 CC=gcc
 CFLAGS=-g -I../include/ -I$(OPENCL_INC_PATH) -I$(SQLITE_INC_PATH) -fPIC
-OPTS=
+
+OPTS=-DPRINT_BUILD_LOG=0 -DPRINT_INFO=0
+
 LD=gcc
 LDFLAGS+=-Wl,--no-as-needed 
 

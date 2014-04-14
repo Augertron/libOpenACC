@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #ifndef PRINT_BUILD_LOG
-# define PRINT_BUILD_LOG 1 
+# define PRINT_BUILD_LOG 0 
 #endif
 
 #ifndef PRINT_INFO
