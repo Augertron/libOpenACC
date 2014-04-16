@@ -84,8 +84,6 @@ const char * acc_ocl_status_to_char(cl_int status) {
       case CL_IMAGE_FORMAT_NOT_SUPPORTED:                return (char *)"CL_IMAGE_FORMAT_NOT_SUPPORTED";
       case CL_BUILD_PROGRAM_FAILURE:                     return (char *)"CL_BUILD_PROGRAM_FAILURE";
       case CL_MAP_FAILURE:                               return (char *)"CL_MAP_FAILURE";
-      case CL_MISALIGNED_SUB_BUFFER_OFFSET:              return (char *)"CL_MISALIGNED_SUB_BUFFER_OFFSET";
-      case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST: return (char *)"CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
       case CL_INVALID_VALUE:                             return (char *)"CL_INVALID_VALUE";
       case CL_INVALID_DEVICE_TYPE:                       return (char *)"CL_INVALID_DEVICE_TYPE";
       case CL_INVALID_PLATFORM:                          return (char *)"CL_INVALID_PLATFORM";
@@ -120,7 +118,11 @@ const char * acc_ocl_status_to_char(cl_int status) {
       case CL_INVALID_BUFFER_SIZE:                       return (char *)"CL_INVALID_BUFFER_SIZE";
       case CL_INVALID_MIP_LEVEL:                         return (char *)"CL_INVALID_MIP_LEVEL";
       case CL_INVALID_GLOBAL_WORK_SIZE:                  return (char *)"CL_INVALID_GLOBAL_WORK_SIZE";
+#ifdef CL_VERSION_1_1
+      case CL_MISALIGNED_SUB_BUFFER_OFFSET:              return (char *)"CL_MISALIGNED_SUB_BUFFER_OFFSET";
+      case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST: return (char *)"CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
       case CL_INVALID_PROPERTY:                          return (char *)"CL_INVALID_PROPERTY";
+#endif
       default:                                           return (char *)"CL_UNKNOWN_ERROR_CODE";
     }
   return (char *)"CL_UNKNOWN_ERROR_CODE";
