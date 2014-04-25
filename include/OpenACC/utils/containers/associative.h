@@ -58,6 +58,8 @@ void associative_insert(
   const data_type * data
 );
 
+void associative_clear(struct associative_t_ * container);
+
 void associative_free(struct associative_t_ * container);
 
 #ifdef __cplusplus

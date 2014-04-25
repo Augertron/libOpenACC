@@ -237,6 +237,10 @@ void associative_insert(
   associative_insert_(container, idx, key, data);
 }
 
+void associative_clear(struct associative_t_ * container) {
+  container->count = 0;
+}
+
 void associative_free(struct associative_t_ * container) {
   free(container->datas);
   free(container);

@@ -19,7 +19,9 @@ void map_remove(map_t map, const key_type * key);
 
 const void * map_lookup(map_t map, const key_type * key);
 
-void map_free (map_t map);
+void map_clear(map_t map);
+
+void map_free(map_t map);
 
 #ifdef __cplusplus
 }

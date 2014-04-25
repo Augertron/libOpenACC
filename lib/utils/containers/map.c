@@ -22,6 +22,10 @@ const void * map_lookup(map_t map, const key_type * key) {
   return associative_lookup(map, key);
 }
 
+void map_clear(map_t map) {
+  associative_clear(map);
+}
+
 void map_free(map_t map) {
   associative_free(map);
 }

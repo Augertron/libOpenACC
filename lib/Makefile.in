@@ -35,12 +35,16 @@ OPENACC_UTILS_LIB = \
   utils/containers/set.o \
   utils/containers/map.o \
   utils/containers/bimap.o \
-  utils/profiling.o
+  utils/profiling.o \
+  utils/tuning.o \
+  utils/sqlite.o
 
 CC=gcc
 CFLAGS=-g -I../include/ -I$(OPENCL_INC_PATH) -I$(SQLITE_INC_PATH) -fPIC
 
-OPTS=-DPRINT_BUILD_LOG=0 -DPRINT_INFO=0
+PRINT_INFO?=0
+
+OPTS=-DPRINT_BUILD_LOG=$(PRINT_BUILD_LOG) -DPRINT_INFO=$(PRINT_INFO)
 
 LD=gcc
 LDFLAGS+=-Wl,--no-as-needed 

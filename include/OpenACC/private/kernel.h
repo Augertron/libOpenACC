@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 typedef struct acc_loop_desc_t_ * acc_loop_desc_t;
+struct acc_region_t_;
 
 struct acc_kernel_t_ {
   /// Pointer to kernel descriptor

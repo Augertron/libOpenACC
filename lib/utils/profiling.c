@@ -4,6 +4,8 @@
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/private/debug.h"
 
+#include "OpenACC/utils/sqlite.h"
+
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,7 +21,7 @@
 
 #undef ENABLE_LOGGING
 
-#ifdef PRINT_INFO
+#ifndef PRINT_INFO
 # define PRINT_INFO 0
 #endif
 
@@ -57,27 +59,10 @@ static int cl_event_cmp(const cl_event * e0, const cl_event * e1) {
   return *e0 < *e1;
 }
 
-static int inc_line_cnt(int * cnt, int argc, char **argv, char **azColName) {
-  (*cnt)++;
-  return 0;
-}
-
 void acc_profiling_release_event(cl_event event, struct acc_event_data_t * event_data);
 
-void acc_profiling_set_experiment(char * user_fields) {
-  char * err_msg;
-  char * query = "SELECT * FROM sqlite_master WHERE name ='Runs' and type='table';";
-  int cnt = 0;
-  int status = sqlite3_exec (acc_profiler->db_file, query, &inc_line_cnt, &cnt, &err_msg);
-  assert (status == SQLITE_OK);
-
-  if (cnt == 0) {
-    query = (char*)malloc((strlen(user_fields) + 24) * sizeof(char));
-    sprintf(query, "CREATE TABLE Runs ( %s );", user_fields);
-    status = sqlite3_exec (acc_profiler->db_file, query, NULL, NULL, &err_msg);
-    assert (status == SQLITE_OK);
-    free(query);
-  }
+int acc_profiling_set_experiment(char * user_fields) {
+  return acc_sqlite_create_table(acc_profiler->db_file, "Runs", user_fields);
 }
 
 void acc_profiling_new_run(char * user_data) {
@@ -90,32 +75,33 @@ void acc_profiling_new_run(char * user_data) {
   acc_profiler->run_id = sqlite3_last_insert_rowid(acc_profiler->db_file);
 }
 
-void acc_profiling_create_event_table();
-void acc_profiling_create_platform_table();
-void acc_profiling_create_device_table();
-
 void acc_profiling_init_db() {
-  // Check if DB file already exist
-  struct stat buffer;   
-  int file_existed = stat(acc_profiler->db_file_name, &buffer) == 0;
+  acc_profiler->db_file = acc_sqlite_open_db(acc_profiler->db_file_name, 0);
 
-  // Open DB file
-  int DbErr = sqlite3_open (acc_profiler->db_file_name, &acc_profiler->db_file);
-  assert (DbErr == SQLITE_OK);
+  acc_sqlite_create_table(acc_profiler->db_file, "Platforms",
+                     "ID INT, CL_PLATFORM_NAME CHAR(100),  CL_PLATFORM_VERSION CHAR(100),  CL_DEVICE_TYPE_ALL INT");
 
-  if (!file_existed)
-    {
-      acc_profiling_create_platform_table();
-      acc_profiling_create_device_table();
+  acc_sqlite_create_table(acc_profiler->db_file, "Devices",
+                     "DEVICE_ID INT, PLATFORM_ID INT, CL_DEVICE_NAME CHAR(128), CL_DEVICE_VENDOR CHAR(128), CL_DRIVER_VERSION CHAR(128), CL_DEVICE_VERSION CHAR(128),\
+                      CL_DEVICE_TYPE CHAR(32), CL_DEVICE_MAX_COMPUTE_UNITS INT, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS INT, CL_DEVICE_MAX_WORK_ITEM_SIZES CHAR(64),\
+                      CL_DEVICE_MAX_WORK_GROUP_SIZE INT, CL_DEVICE_MAX_CLOCK_FREQUENCY INT, CL_DEVICE_ADDRESS_BITS INT, CL_DEVICE_MAX_MEM_ALLOC_SIZE INT,\
+                      CL_DEVICE_GLOBAL_MEM_SIZE INT , CL_DEVICE_ERROR_CORRECTION_SUPPORT BOOL, CL_DEVICE_LOCAL_MEM_TYPE CHAR(32), CL_DEVICE_LOCAL_MEM_SIZE INT,\
+                      CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE INT, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE BOOL, CL_QUEUE_PROFILING_ENABLE BOOL, CL_DEVICE_IMAGE_SUPPORT BOOL,\
+                      CL_DEVICE_MAX_READ_IMAGE_ARGS INT, CL_DEVICE_MAX_WRITE_IMAGE_ARGS INT, CL_FP_DENORM BOOL, CL_FP_INF_NAN BOOL, CL_FP_ROUND_TO_NEAREST BOOL,\
+                      CL_FP_ROUND_TO_ZERO BOOL, CL_FP_ROUND_TO_INF BOOL, CL_FP_FMA BOOL");
 
-      acc_profiling_platform_init();
+  acc_sqlite_create_table(acc_profiler->db_file, "Events",
+                     "RUN_ID INT, DEVICE_ID INT, COMMAND_NAME CHAR(128), COMMAND_ID INT, \
+                      CL_PROFILING_COMMAND_QUEUED BIGINT, CL_PROFILING_COMMAND_SUBMIT BIGINT, \
+                      CL_PROFILING_COMMAND_START  BIGINT, CL_PROFILING_COMMAND_END BIGINT");
 
-      acc_profiling_create_event_table();
-    }
+  acc_profiling_platform_init();
 }
 
 /// Build DB file name (get filename from environment or build $USER_$HOSTNAME.sl3)
 void acc_profiling_get_db_file_names() {
+  if (acc_profiler->db_file_name != NULL) return;
+
   char * env_prof_db = getenv("ACC_PROFILING_DB");
   if (env_prof_db != NULL && env_prof_db[0] != '\0') {
     assert(strlen(env_prof_db) < 140);
@@ -138,41 +124,51 @@ void acc_profiling_get_db_file_names() {
   }
 }
 
+acc_profiler_t acc_profiler_build_profiler() {
+  acc_profiler_t res = malloc(sizeof(struct acc_profiler_t_));
+    res->db_file_name = NULL;
+    res->run_id = -1;
+    res->db_file = NULL;
+    res->events = map_alloc(42, sizeof(cl_event), sizeof(struct acc_event_data_t *), &cl_event_cmp);
+  return res;
+}
+
 void
-acc_profiling_init ()
-{
-  assert(acc_profiler == NULL);
-  acc_profiler = malloc(sizeof(struct acc_profiler_t_));
+acc_profiling_init() {
+  if (acc_profiler == NULL) {
+    acc_profiler = acc_profiler_build_profiler();
+  }
 
   acc_profiling_get_db_file_names();
 
-  acc_profiler->run_id = -1;
-
   acc_profiling_init_db();
-
-  acc_profiler->events = map_alloc(42, sizeof(cl_event), sizeof(struct acc_event_data_t *), &cl_event_cmp);
 }
 
 void
 acc_profiling_exit ()
 {
   if (acc_profiler != NULL) {
-    size_t i;
-    for (i = 0; i < acc_profiler->events->count; i++) {
-      acc_profiling_release_event(
-        *(cl_event *)(acc_profiler->events->datas + i * (sizeof(cl_event) + sizeof(struct acc_event_data_t *))),
-        *(struct acc_event_data_t **)(acc_profiler->events->datas + i * (sizeof(cl_event) + sizeof(struct acc_event_data_t *)) + sizeof(cl_event))
-      );
-    }
+    acc_profiling_release_all_events();
 
     if (acc_profiler->db_file_name != NULL)
       free(acc_profiler->db_file_name);
     if (acc_profiler->db_file != NULL) {
-      /// \todo close DB 
+      sqlite3_close(acc_profiler->db_file);
     }
 
     free(acc_profiler);
   }
+}
+
+void acc_profiling_release_all_events() {
+  assert(acc_profiler != NULL);
+  size_t i;
+  for (i = 0; i < acc_profiler->events->count; i++)
+    acc_profiling_release_event(
+      *(cl_event *)(acc_profiler->events->datas + i * (sizeof(cl_event) + sizeof(struct acc_event_data_t *))),
+      *(struct acc_event_data_t **)(acc_profiler->events->datas + i * (sizeof(cl_event) + sizeof(struct acc_event_data_t *)) + sizeof(cl_event))
+    );
+  map_clear(acc_profiler->events);
 }
 
 void acc_profiling_get_profile_from_event(cl_event event, cl_ulong * queued, cl_ulong * submit, cl_ulong * start, cl_ulong * end) {
@@ -314,85 +310,6 @@ acc_profiling_ocl_error (cl_int error, int line_no)
   exit (error);
 }
 
-// Create Event tables in the database file. 
-void acc_profiling_create_event_table() {
-  int DbErr;
-  char *DbErrMsg;
-  char Dbstr[8192];
-
-  sprintf(Dbstr, "CREATE TABLE Events (  \
-                    RUN_ID INT, \
-                    DEVICE_ID INT, \
-                    COMMAND_NAME CHAR(128), \
-                    COMMAND_ID INT, \
-                    CL_PROFILING_COMMAND_QUEUED BIGINT, \
-                    CL_PROFILING_COMMAND_SUBMIT BIGINT, \
-                    CL_PROFILING_COMMAND_START  BIGINT, \
-                    CL_PROFILING_COMMAND_END    BIGINT  \
-                  );");
-
-  DbErr = sqlite3_exec (acc_profiler->db_file, Dbstr, NULL, 0, &DbErrMsg);
-  assert (DbErr == SQLITE_OK);
-}
-
-void acc_profiling_create_platform_table() {
-  int DbErr;
-  char *DbErrMsg;
-  char Dbstr[8192];
-
-  sprintf (Dbstr, "CREATE TABLE Platform(  \
-                     ID INT, \
-                     CL_PLATFORM_NAME CHAR(100), \
-                     CL_PLATFORM_VERSION CHAR(100), \
-                     CL_DEVICE_TYPE_ALL INT \
-                   );");
-
-  DbErr = sqlite3_exec (acc_profiler->db_file, Dbstr, NULL, 0, &DbErrMsg);
-  assert (DbErr == SQLITE_OK);
-}
-
-void acc_profiling_create_device_table() {
-  int DbErr;
-  char *DbErrMsg;
-  char Dbstr[8192];
-
-  sprintf (Dbstr, "CREATE TABLE Device(  \
-                     DEVICE_ID INT, \
-                     PLATFORM_ID INT, \
-                     CL_DEVICE_NAME CHAR(128),\
-                     CL_DEVICE_VENDOR CHAR(128),\
-                     CL_DRIVER_VERSION CHAR(128),\
-                     CL_DEVICE_VERSION CHAR(128),\
-                     CL_DEVICE_TYPE CHAR(32),\
-                     CL_DEVICE_MAX_COMPUTE_UNITS INT,\
-                     CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS INT,\
-                     CL_DEVICE_MAX_WORK_ITEM_SIZES CHAR(64),\
-                     CL_DEVICE_MAX_WORK_GROUP_SIZE INT,\
-                     CL_DEVICE_MAX_CLOCK_FREQUENCY INT,\
-                     CL_DEVICE_ADDRESS_BITS INT,\
-                     CL_DEVICE_MAX_MEM_ALLOC_SIZE INT,\
-                     CL_DEVICE_GLOBAL_MEM_SIZE INT ,\
-                     CL_DEVICE_ERROR_CORRECTION_SUPPORT BOOL,\
-                     CL_DEVICE_LOCAL_MEM_TYPE CHAR(32),\
-                     CL_DEVICE_LOCAL_MEM_SIZE INT,\
-                     CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE INT,\
-                     CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE BOOL,\
-                     CL_QUEUE_PROFILING_ENABLE BOOL,\
-                     CL_DEVICE_IMAGE_SUPPORT BOOL,\
-                     CL_DEVICE_MAX_READ_IMAGE_ARGS INT,\
-                     CL_DEVICE_MAX_WRITE_IMAGE_ARGS INT,\
-                     CL_FP_DENORM BOOL,\
-                     CL_FP_INF_NAN BOOL,\
-                     CL_FP_ROUND_TO_NEAREST BOOL,\
-                     CL_FP_ROUND_TO_ZERO BOOL,\
-                     CL_FP_ROUND_TO_INF BOOL,\
-                     CL_FP_FMA BOOL\
-                   );");
-
-  DbErr = sqlite3_exec (acc_profiler->db_file, Dbstr, NULL, 0, &DbErrMsg);
-  assert (DbErr == SQLITE_OK);
-}
-
 void
 acc_profiling_platform_init(void)
 {
@@ -470,7 +387,7 @@ acc_profiling_platform_init(void)
       assert (ciDeviceCount > 0);
       assert (ciErrNum == CL_SUCCESS);
 	    //Store into SQLite3 database Platform
-	    sprintf (Dbstr, "INSERT INTO Platform VALUES (\
+	    sprintf (Dbstr, "INSERT INTO Platforms VALUES (\
                             '%d',\
                             '%s',\
                             '%s',\
@@ -776,7 +693,7 @@ acc_profiling_device_init(cl_device_id dev, cl_uint DeviceId, cl_uint PlatformId
     };
 
       //Store into SQLite3 database Platform
-      sprintf (Dbstr, "INSERT INTO Device VALUES (\
+      sprintf (Dbstr, "INSERT INTO Devices VALUES (\
                         '%d',\
                         '%d',\
                         '%s',\

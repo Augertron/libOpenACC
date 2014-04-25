@@ -381,7 +381,8 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   cl_int status;
   struct cl_kernel_ * ocl_kernel = clCreateKernel(program, kernel_name, &status);
   if (status != CL_SUCCESS) {
-    printf("[fatal]   clCreateKernel return %u for %s.\n", status, kernel_name);
+    const char * status_str = acc_ocl_status_to_char(status);
+    printf("[fatal]   clCreateKernel return %s for %s.\n", status_str, kernel_name);
     exit(-1); /// \todo error code
   }
 

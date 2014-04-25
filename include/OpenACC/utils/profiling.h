@@ -23,14 +23,19 @@ struct acc_profiler_t_ {
 typedef struct acc_profiler_t_ * acc_profiler_t;
 extern acc_profiler_t acc_profiler;
 
+/// Build the acc_profiler data-structure
+acc_profiler_t acc_profiler_build_profiler();
+
 /// Initialize OpenACC profiler
 void acc_profiling_init();
 
 /// Exit OpenACC profiler
 void acc_profiling_exit();
 
+void acc_profiling_release_all_events();
+
 /// Create (if needed) 'Runs' table. DB query: "CREATE TABLE Runs ( 'user_field' )"
-void acc_profiling_set_experiment(char * user_fields);
+int acc_profiling_set_experiment(char * user_fields);
 
 /// Create a new entry in 'Runs' table. DB query: "INSERT into Runs ( 'user_data' )". Update acc_profiler->run_id accordingly.
 void acc_profiling_new_run(char * user_data);

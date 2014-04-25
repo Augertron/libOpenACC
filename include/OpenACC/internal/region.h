@@ -33,7 +33,7 @@ struct acc_data_distribution_t_ {
 };
 
 struct acc_region_desc_t_ {
-  unsigned id;
+  size_t id;
 
   char * file;
 

@@ -72,7 +72,7 @@ struct acc_kernel_desc_t_ {
   unsigned id;
 
   /// Kernel name in the OpenCL C code
-  const char * name;
+  char * name;
 
   /// number of scalar arguments
   size_t num_params;
