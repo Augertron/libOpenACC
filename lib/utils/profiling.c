@@ -76,7 +76,7 @@ void acc_profiling_new_run(char * user_data) {
 }
 
 void acc_profiling_init_db() {
-  acc_profiler->db_file = acc_sqlite_open(acc_profiler->db_file_name, 0);
+  acc_profiler->db_file = acc_sqlite_open(acc_profiler->db_file_name, 0, 0);
 
   acc_sqlite_create_table(acc_profiler->db_file, "Platforms",
                      "ID INT, CL_PLATFORM_NAME CHAR(100),  CL_PLATFORM_VERSION CHAR(100),  CL_DEVICE_TYPE_ALL INT");

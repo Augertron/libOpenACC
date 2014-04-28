@@ -805,17 +805,20 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
     }
 
     acc_profiler->run_id = run_id;
+
+    char * err_msg;
+    int status;
+    char * query = malloc(64 * sizeof(char));
+
+    sprintf(query, "UPDATE Runs SET executed = '2' WHERE rowid == '%zd';", run_id);
+    status = sqlite3_exec (acc_profiler->db_file, query, NULL, 0, &err_msg);
+    assert(status == SQLITE_OK);
     
     acc_tuner_exec_kernel(exec_data);
 
-    char * query = malloc(64 * sizeof(char));
-    sprintf(query, "UPDATE Runs SET executed = '2' WHERE rowid == '%zd';", run_id);
-
-    char * err_msg;
-    int status = sqlite3_exec (acc_profiler->db_file, query, NULL, 0, &err_msg);
+    sprintf(query, "UPDATE Runs SET executed = '3' WHERE rowid == '%zd';", run_id);
+    status = sqlite3_exec (acc_profiler->db_file, query, NULL, 0, &err_msg);
     assert(status == SQLITE_OK);
-
-    acc_sqlite_save(acc_profiler->db_file);
   }
 
   for (i = 0; i < exec_data->num_data_out; i++)

@@ -74,7 +74,7 @@ extern enum acc_sqlite_type_e loop_entry_field_types[15];
 extern size_t loop_entry_field_sizes[15];
 extern size_t loop_entry_field_offsets[15];;
 
-sqlite3 * acc_sqlite_open(char * filename, int fail_if_file_missing);
+sqlite3 * acc_sqlite_open(char * filename, int fail_if_file_missing, int use_in_memory_db);
 void acc_sqlite_save  (sqlite3 * db);
 void acc_sqlite_reload(sqlite3 * db);
 void acc_sqlite_close (sqlite3 * db);

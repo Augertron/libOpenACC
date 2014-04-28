@@ -126,7 +126,7 @@ static int acc_sqlite_callback_save_entries(void * user_data_, int cnt, char ** 
 
 int acc_sqlite_load_or_save_db(sqlite3 * pInMemory, const char * zFilename, int isSave);
 
-sqlite3 * acc_sqlite_open(char * filename_, int fail_if_file_missing) {
+sqlite3 * acc_sqlite_open(char * filename_, int fail_if_file_missing, int use_in_memory_db) {
   acc_sqlite_init();
 
   assert(acc_sqlite != NULL);
@@ -137,18 +137,25 @@ sqlite3 * acc_sqlite_open(char * filename_, int fail_if_file_missing) {
   struct stat buffer;
   int file_existed = stat(filename_, &buffer) == 0;
 
-  sqlite3 * result;
-
-  int status = sqlite3_open(":memory:", &result);
-  assert(status == SQLITE_OK);
-
-  char * filename = malloc((strlen(filename_) + 1) * sizeof(char));
-  strcpy(filename, filename_);
-
-  status = acc_sqlite_load_or_save_db(result, filename, 0);
-  assert(status == SQLITE_OK);
-
   if (fail_if_file_missing) assert(file_existed);
+
+  sqlite3 * result = NULL;
+  char * filename = NULL;
+  if (use_in_memory_db) {
+    int status = sqlite3_open(":memory:", &result);
+    assert(status == SQLITE_OK);
+
+    filename = malloc((strlen(filename_) + 1) * sizeof(char));
+    strcpy(filename, filename_);
+
+    status = acc_sqlite_load_or_save_db(result, filename, 0);
+    assert(status == SQLITE_OK);
+  }
+  else {
+    int status = sqlite3_open(filename_, &result);
+    assert(status == SQLITE_OK);
+  }
+  assert(result != NULL);
 
   map_insert(acc_sqlite->db_files_map, &result, &filename);
 
@@ -158,24 +165,26 @@ sqlite3 * acc_sqlite_open(char * filename_, int fail_if_file_missing) {
 void acc_sqlite_save(sqlite3 * db) {
   assert(acc_sqlite != NULL);
   char * filename = *(char**)map_lookup(acc_sqlite->db_files_map, &db);
-  assert(filename != NULL);
-  acc_sqlite_load_or_save_db(db, filename, 1);
+  if (filename != NULL)
+    acc_sqlite_load_or_save_db(db, filename, 1);
 }
 
 void acc_sqlite_reload(sqlite3 * db) {
   assert(acc_sqlite != NULL);
   char * filename = *(char**)map_lookup(acc_sqlite->db_files_map, &db);
-  assert(filename != NULL);
-  acc_sqlite_load_or_save_db(db, filename, 0);
+  if (filename != NULL)
+    acc_sqlite_load_or_save_db(db, filename, 0);
 }
 
 void acc_sqlite_close(sqlite3 * db) {
   assert(acc_sqlite != NULL);
   char * filename = *(char**)map_lookup(acc_sqlite->db_files_map, &db);
-  assert(filename != NULL);
-  acc_sqlite_load_or_save_db(db, filename, 1);
+  if (filename != NULL) {
+    acc_sqlite_load_or_save_db(db, filename, 1);
+    free(filename);
+  }
+  map_remove(acc_sqlite->db_files_map, &db);
   sqlite3_close(db);
-  free(filename);
 }
 
 int acc_sqlite_table_exists(sqlite3 * db, char * table_name) {
