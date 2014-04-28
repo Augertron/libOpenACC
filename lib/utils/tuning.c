@@ -669,7 +669,7 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
   }
   va_end(args_ptr);
 
-  conds[num_conds - 1] = "executed == '0'";
+  conds[num_conds - 1] = "executed == '1'";
 
   size_t num_fields = ((acc_tuner->num_devices == 1) ? 5 : (acc_tuner->num_devices * 6)) + 1;
 
@@ -809,7 +809,7 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
     acc_tuner_exec_kernel(exec_data);
 
     char * query = malloc(64 * sizeof(char));
-    sprintf(query, "UPDATE Runs SET executed = '1' WHERE rowid == '%zd';", run_id);
+    sprintf(query, "UPDATE Runs SET executed = '2' WHERE rowid == '%zd';", run_id);
 
     char * err_msg;
     int status = sqlite3_exec (acc_profiler->db_file, query, NULL, 0, &err_msg);
