@@ -575,36 +575,11 @@ struct acc_tuner_device_ranges_t_ * acc_tuning_build_device_ranges(size_t num_de
 }
 
 void acc_tuner_exec_kernel(struct acc_tuner_exec_data_t * exec_data) {
-  acc_push_data_environment();
-
-  size_t i;
-  for (i = 0; i < exec_data->num_data_in; i++)
-    acc_present_or_copyin_regions_(
-        exec_data->region,
-        exec_data->kernel->data_ptrs[exec_data->data_in[i]],
-        exec_data->kernel->data_size[exec_data->data_in[i]]
-    );
-  for (i = 0; i < exec_data->num_data_create; i++)
-    acc_present_or_create_regions_(
-        exec_data->region,
-        exec_data->kernel->data_ptrs[exec_data->data_create[i]],
-        exec_data->kernel->data_size[exec_data->data_create[i]]
-    );
-
   acc_region_start(exec_data->region);
 
   acc_enqueue_kernel(exec_data->region, exec_data->kernel);
 
   acc_region_stop(exec_data->region);
-
-  for (i = 0; i < exec_data->num_data_out; i++)
-    acc_present_or_copyout_regions_(
-        exec_data->region,
-        exec_data->kernel->data_ptrs[exec_data->data_out[i]],
-        exec_data->kernel->data_size[exec_data->data_out[i]]
-    );
-
-  acc_pop_data_environment();
 
   acc_profiling_release_all_events();
 }
@@ -802,6 +777,21 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
   printf("[info]     num_candidates = %zd\n", num_candidates);
 #endif
 
+  acc_push_data_environment();
+
+  for (i = 0; i < exec_data->num_data_in; i++)
+    acc_present_or_copyin_regions_(
+        exec_data->region,
+        exec_data->kernel->data_ptrs[exec_data->data_in[i]],
+        exec_data->kernel->data_size[exec_data->data_in[i]]
+    );
+  for (i = 0; i < exec_data->num_data_create; i++)
+    acc_present_or_create_regions_(
+        exec_data->region,
+        exec_data->kernel->data_ptrs[exec_data->data_create[i]],
+        exec_data->kernel->data_size[exec_data->data_create[i]]
+    );
+
   for (i = 0; i < num_candidates; i++) {
     void * run_entry = run_entries + i * entry_size;
     size_t run_id =  *(size_t *)run_entry;
@@ -827,5 +817,14 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
 
     acc_sqlite_save(acc_profiler->db_file);
   }
+
+  for (i = 0; i < exec_data->num_data_out; i++)
+    acc_present_or_copyout_regions_(
+        exec_data->region,
+        exec_data->kernel->data_ptrs[exec_data->data_out[i]],
+        exec_data->kernel->data_size[exec_data->data_out[i]]
+    );
+
+  acc_pop_data_environment();
 }
 
