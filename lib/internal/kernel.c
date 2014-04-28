@@ -325,13 +325,22 @@ void acc_select_kernel_version(
 ) {
   unsigned best_matching_score = 0;
   if (kernel->desc->version_by_devices != NULL) {
-    unsigned i;
+    size_t i;
     for (i = 0; i < region->num_devices; i++)
       if (region->devices[i].device_idx == device_idx)
         break;
     assert(i < region->num_devices);
-    size_t version_idx = kernel->desc->version_by_devices[i];
+    size_t version_id = kernel->desc->version_by_devices[i];
+    assert(version_id != -1);
+
+    size_t version_idx = -1;
+    for (i = 0; i < kernel->desc->num_versions; i++)
+      if (kernel->desc->versions[i]->id == version_id) {
+        version_idx = i;
+        break;
+      }
     assert(version_idx != -1);
+
     acc_eval_kernel_version(
       region, kernel, context,
       device_idx, version_idx,

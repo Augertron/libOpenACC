@@ -27,6 +27,8 @@ extern "C" {
  * Descriptor of one version of one kernel
  */
 struct acc_kernel_version_t_ {
+  size_t id;
+
   /// Number of Gangs assumed by this version (0 means dynamic)
   unsigned long num_gang;
 

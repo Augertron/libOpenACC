@@ -1,10 +1,12 @@
-	
-#include "OpenACC/utils/sqlite.h"
 
 #include "OpenACC/internal/region.h"
 #include "OpenACC/internal/kernel.h"
 #include "OpenACC/internal/loop.h"
 #include "OpenACC/internal/compiler.h"
+
+#include "OpenACC/utils/sqlite.h"
+
+#include "OpenACC/utils/containers/map.h"
 
 #include <time.h>
 #include <stdlib.h>
@@ -23,6 +25,27 @@
 #ifndef PRINT_INFO
 # define PRINT_INFO 0
 #endif
+
+struct acc_sqlite_t_ {
+  map_t db_files_map;
+};
+
+struct acc_sqlite_t_ * acc_sqlite;
+
+void acc_sqlite_init() {
+  if (acc_sqlite == NULL) {
+    acc_sqlite = malloc(sizeof(struct acc_sqlite_t_));
+    acc_sqlite->db_files_map = map_alloc(64, sizeof(sqlite3 *), sizeof(char *), NULL);
+  }
+}
+
+void acc_sqlite_exit() {
+  if (acc_sqlite != NULL) {
+    map_free(acc_sqlite->db_files_map);
+    free(acc_sqlite);
+    acc_sqlite = NULL;
+  }
+}
 
 const char * acc_sqlite_type_string(enum acc_sqlite_type_e type) {
   switch (type) {
@@ -101,21 +124,58 @@ static int acc_sqlite_callback_save_entries(void * user_data_, int cnt, char ** 
   return 0;
 }
 
-sqlite3 * acc_sqlite_open_db(char * filename, int fail_if_file_missing) {
+int acc_sqlite_load_or_save_db(sqlite3 * pInMemory, const char * zFilename, int isSave);
+
+sqlite3 * acc_sqlite_open(char * filename_, int fail_if_file_missing) {
+  acc_sqlite_init();
+
+  assert(acc_sqlite != NULL);
 #if PRINT_INFO
   printf("[info]   Enter acc_sqlite_open_db(...)\n");
 #endif
-  sqlite3 * result;
 
   struct stat buffer;
-  int file_existed = stat(filename, &buffer) == 0;
+  int file_existed = stat(filename_, &buffer) == 0;
+
+  sqlite3 * result;
+
+  int status = sqlite3_open(":memory:", &result);
+  assert(status == SQLITE_OK);
+
+  char * filename = malloc((strlen(filename_) + 1) * sizeof(char));
+  strcpy(filename, filename_);
+
+  status = acc_sqlite_load_or_save_db(result, filename, 0);
+  assert(status == SQLITE_OK);
 
   if (fail_if_file_missing) assert(file_existed);
 
-  int status = sqlite3_open(filename, &result);
-  assert(status == SQLITE_OK);
+  map_insert(acc_sqlite->db_files_map, &result, &filename);
 
   return result;
+}
+
+void acc_sqlite_save(sqlite3 * db) {
+  assert(acc_sqlite != NULL);
+  char * filename = *(char**)map_lookup(acc_sqlite->db_files_map, &db);
+  assert(filename != NULL);
+  acc_sqlite_load_or_save_db(db, filename, 1);
+}
+
+void acc_sqlite_reload(sqlite3 * db) {
+  assert(acc_sqlite != NULL);
+  char * filename = *(char**)map_lookup(acc_sqlite->db_files_map, &db);
+  assert(filename != NULL);
+  acc_sqlite_load_or_save_db(db, filename, 0);
+}
+
+void acc_sqlite_close(sqlite3 * db) {
+  assert(acc_sqlite != NULL);
+  char * filename = *(char**)map_lookup(acc_sqlite->db_files_map, &db);
+  assert(filename != NULL);
+  acc_sqlite_load_or_save_db(db, filename, 1);
+  sqlite3_close(db);
+  free(filename);
 }
 
 int acc_sqlite_table_exists(sqlite3 * db, char * table_name) {
@@ -273,16 +333,16 @@ size_t acc_sqlite_read_table(
   return num_entries;
 }
 
-void acc_sqlite_load_compiler_data(sqlite3 * db) {
+void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler_data_filter_t_ * filter) {
 #if PRINT_INFO
   printf("[info]   Enter acc_sqlite_load_compiler_data(...)\n");
 #endif
   assert(compiler_data.num_regions == 0 && compiler_data.regions == NULL);
 
-  acc_sqlite_table_exists(db, "Regions");
-  acc_sqlite_table_exists(db, "Kernels");
-  acc_sqlite_table_exists(db, "Versions");
-  acc_sqlite_table_exists(db, "Loops");
+  assert(acc_sqlite_table_exists(db, "Regions"  ));
+  assert(acc_sqlite_table_exists(db, "Kernels"  ));
+  assert(acc_sqlite_table_exists(db, "Versions" ));
+  assert(acc_sqlite_table_exists(db, "Loops"    ));
 
   struct acc_sqlite_region_entry_t * region_entries;
   compiler_data.num_regions = acc_sqlite_read_table(
@@ -338,20 +398,46 @@ void acc_sqlite_load_compiler_data(sqlite3 * db) {
 
       char kernel_id_cond[20];
       sprintf(kernel_id_cond, "kernel_id == '%zd'", kernel_entries[r_idx].kernel_id);
-      char * version_conds[2] = {region_id_cond, kernel_id_cond};
+
+      size_t num_version_conds = filter != NULL ? 3 : 2;
+
+      char ** version_conds = malloc(num_version_conds * sizeof(char*));
+      version_conds[0] = region_id_cond;
+      version_conds[1] = kernel_id_cond;
+
+      if (filter != NULL) {
+        size_t num_enabled_versions = filter->num_enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[r_idx].kernel_id];
+        size_t * enabled_versions = filter->enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[r_idx].kernel_id];
+
+        version_conds[2] = malloc((24 * num_enabled_versions + 1) * sizeof(char));
+        version_conds[2][0] = '\0';
+
+        size_t i;
+        char tmp_cond[25];
+        sprintf(tmp_cond, "( version_id == '%zd'", enabled_versions[0]);
+        strcat(version_conds[2], tmp_cond);
+        for (i = 1; i < num_enabled_versions; i++) {
+          strcat(version_conds[2], " OR ");
+          sprintf(tmp_cond, "version_id == '%zd'", enabled_versions[i]);
+          strcat(version_conds[2], tmp_cond);
+        }
+        strcat(version_conds[2], " )");
+      }
 
       struct acc_sqlite_version_entry_t * version_entries;
       kernel->num_versions = acc_sqlite_read_table(
-                               db, "Versions", 2, version_conds,
+                               db, "Versions", num_version_conds, version_conds,
                                version_entry_num_fields, version_entry_field_names, version_entry_field_types,
                                                          version_entry_field_sizes, version_entry_field_offsets,
                                sizeof(struct acc_sqlite_version_entry_t), (void**)&version_entries
                              );
-      assert(kernel->num_versions == kernel_entries[k_idx].num_versions);
+      assert(kernel->num_versions > 0);
+      assert(kernel->num_versions <= kernel_entries[k_idx].num_versions);
       kernel->versions = malloc(kernel->num_versions * sizeof(struct acc_kernel_version_t_ *));
 
       for (v_idx = 0; v_idx < kernel->num_versions; v_idx++) {
         struct acc_kernel_version_t_ * version = malloc(sizeof(struct acc_kernel_version_t_));
+        version->id = version_entries[v_idx].version_id;
         version->num_gang = 0;      /// \todo add to Version DB
         version->num_worker = 0;    /// \todo add to Version DB
         version->vector_length = 1; /// \todo add to Version DB
@@ -450,4 +536,69 @@ size_t loop_entry_field_offsets[15] = {
   offsetof(struct acc_sqlite_loop_entry_t, unroll) + 2 * sizeof(size_t),
   offsetof(struct acc_sqlite_loop_entry_t, unroll) + 3 * sizeof(size_t)
 };
+
+/**
+ * /brief From http://www.sqlite.org/backup.html
+ *
+** This function is used to load the contents of a database file on disk 
+** into the "main" database of open database connection pInMemory, or
+** to save the current contents of the database opened by pInMemory into
+** a database file on disk. pInMemory is probably an in-memory database, 
+** but this function will also work fine if it is not.
+**
+** Parameter zFilename points to a nul-terminated string containing the
+** name of the database file on disk to load from or save to. If parameter
+** isSave is non-zero, then the contents of the file zFilename are 
+** overwritten with the contents of the database opened by pInMemory. If
+** parameter isSave is zero, then the contents of the database opened by
+** pInMemory are replaced by data loaded from the file zFilename.
+**
+** If the operation is successful, SQLITE_OK is returned. Otherwise, if
+** an error occurs, an SQLite error code is returned.
+*/
+int acc_sqlite_load_or_save_db(sqlite3 * pInMemory, const char * zFilename, int isSave) {
+  int rc;                   /* Function return code */
+  sqlite3 *pFile;           /* Database connection opened on zFilename */
+  sqlite3_backup *pBackup;  /* Backup object used to copy data */
+  sqlite3 *pTo;             /* Database to copy to (pFile or pInMemory) */
+  sqlite3 *pFrom;           /* Database to copy from (pFile or pInMemory) */
+
+  /* Open the database file identified by zFilename. Exit early if this fails
+  ** for any reason. */
+  rc = sqlite3_open(zFilename, &pFile);
+  if( rc==SQLITE_OK ){
+
+    /* If this is a 'load' operation (isSave==0), then data is copied
+    ** from the database file just opened to database pInMemory. 
+    ** Otherwise, if this is a 'save' operation (isSave==1), then data
+    ** is copied from pInMemory to pFile.  Set the variables pFrom and
+    ** pTo accordingly. */
+    pFrom = (isSave ? pInMemory : pFile);
+    pTo   = (isSave ? pFile     : pInMemory);
+
+    /* Set up the backup procedure to copy from the "main" database of 
+    ** connection pFile to the main database of connection pInMemory.
+    ** If something goes wrong, pBackup will be set to NULL and an error
+    ** code and  message left in connection pTo.
+    **
+    ** If the backup object is successfully created, call backup_step()
+    ** to copy data from pFile to pInMemory. Then call backup_finish()
+    ** to release resources associated with the pBackup object.  If an
+    ** error occurred, then  an error code and message will be left in
+    ** connection pTo. If no error occurred, then the error code belonging
+    ** to pTo is set to SQLITE_OK.
+    */
+    pBackup = sqlite3_backup_init(pTo, "main", pFrom, "main");
+    if( pBackup ){
+      (void)sqlite3_backup_step(pBackup, -1);
+      (void)sqlite3_backup_finish(pBackup);
+    }
+    rc = sqlite3_errcode(pTo);
+  }
+
+  /* Close the database connection opened on database file zFilename
+  ** and return the result of this function. */
+  (void)sqlite3_close(pFile);
+  return rc;
+}
 

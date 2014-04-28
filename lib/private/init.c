@@ -9,6 +9,7 @@
 #include "OpenACC/private/runtime.h"
 
 #include "OpenACC/utils/profiling.h"
+#include "OpenACC/utils/sqlite.h"
 
 #include <assert.h>
 
@@ -16,6 +17,11 @@ void acc_init_once() {
   if (!check_flag(f_alloc)) {
     acc_runtime.opencl_data = (acc_opencl_data_t)malloc(sizeof(struct acc_opencl_data_t_));
     set_flag(f_alloc);
+  }
+
+  if (!check_flag(f_acc_sqlite)) {
+    acc_sqlite_init();
+    set_flag(f_acc_sqlite);
   }
 
   if (!check_flag(f_ocl_devices))
@@ -40,13 +46,13 @@ void acc_init_once() {
 
   if (!check_flag(f_data_env)) {
     data_environment = acc_build_data_environment(NULL);
+    assert(data_environment != NULL);
     set_flag(f_data_env);
   }
 
-  if (!check_flag(f_profiling)){
+  if (!check_flag(f_acc_profiling)){
     acc_profiling_init();
-    set_flag(f_profiling);
+    set_flag(f_acc_profiling);
   }
-  assert(check_flag(f_profiling));
 }
 

@@ -11,6 +11,10 @@
 extern "C" {
 #endif
 
+void acc_sqlite_init();
+
+void acc_sqlite_exit();
+
 enum acc_sqlite_type_e {
   e_sqlite_int,
   e_sqlite_float,
@@ -70,7 +74,10 @@ extern enum acc_sqlite_type_e loop_entry_field_types[15];
 extern size_t loop_entry_field_sizes[15];
 extern size_t loop_entry_field_offsets[15];;
 
-sqlite3 * acc_sqlite_open_db(char * filename, int fail_if_file_missing);
+sqlite3 * acc_sqlite_open(char * filename, int fail_if_file_missing);
+void acc_sqlite_save  (sqlite3 * db);
+void acc_sqlite_reload(sqlite3 * db);
+void acc_sqlite_close (sqlite3 * db);
 
 int acc_sqlite_table_exists(sqlite3 * db, char * table_name);
 
@@ -88,7 +95,13 @@ size_t acc_sqlite_read_table(
   size_t entry_size, void ** entries
 );
 
-void acc_sqlite_load_compiler_data(sqlite3 * db);
+struct acc_sqlite_load_compiler_data_filter_t_ {
+  size_t ** enabled_versions;
+  size_t * num_enabled_versions;
+  size_t * region_offset;
+};
+
+void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler_data_filter_t_ * filter);
 
 #ifdef __cplusplus
 }

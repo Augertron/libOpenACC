@@ -76,7 +76,7 @@ void acc_profiling_new_run(char * user_data) {
 }
 
 void acc_profiling_init_db() {
-  acc_profiler->db_file = acc_sqlite_open_db(acc_profiler->db_file_name, 0);
+  acc_profiler->db_file = acc_sqlite_open(acc_profiler->db_file_name, 0);
 
   acc_sqlite_create_table(acc_profiler->db_file, "Platforms",
                      "ID INT, CL_PLATFORM_NAME CHAR(100),  CL_PLATFORM_VERSION CHAR(100),  CL_DEVICE_TYPE_ALL INT");
@@ -135,9 +135,8 @@ acc_profiler_t acc_profiler_build_profiler() {
 
 void
 acc_profiling_init() {
-  if (acc_profiler == NULL) {
+  if (acc_profiler == NULL)
     acc_profiler = acc_profiler_build_profiler();
-  }
 
   acc_profiling_get_db_file_names();
 
@@ -150,11 +149,10 @@ acc_profiling_exit ()
   if (acc_profiler != NULL) {
     acc_profiling_release_all_events();
 
+    if (acc_profiler->db_file != NULL)
+      acc_sqlite_close(acc_profiler->db_file);
     if (acc_profiler->db_file_name != NULL)
       free(acc_profiler->db_file_name);
-    if (acc_profiler->db_file != NULL) {
-      sqlite3_close(acc_profiler->db_file);
-    }
 
     free(acc_profiler);
   }
@@ -232,6 +230,8 @@ void acc_profiling_release_event(cl_event event, struct acc_event_data_t * event
   int DbErr =
     sqlite3_exec (acc_profiler->db_file, Dbstr, NULL, 0, &DbErrMsg);
   assert (DbErr == SQLITE_OK);
+
+  acc_sqlite_save(acc_profiler->db_file);
 
   free(event_data);
 }

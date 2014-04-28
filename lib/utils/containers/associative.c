@@ -160,6 +160,10 @@ void associative_insert_(
   container->count++;
 }
 
+static int pointer_less(const void ** v0, const void ** v1) {
+  return *v0 < *v1;
+}
+
 associative_t associative_alloc(size_t size, size_t key_size, size_t data_size, key_cmp_f key_less) {
   associative_t container = (associative_t)malloc(sizeof(struct associative_t_));
 
@@ -181,8 +185,10 @@ associative_t associative_alloc(size_t size, size_t key_size, size_t data_size, 
   }
  *
  */
-
-  container->key_less = key_less;
+  if (key_less != NULL)
+    container->key_less = key_less;
+  else
+    container->key_less = &pointer_less;
   assert(container->key_less != NULL);
 
   container->datas = malloc(size * container->storage_size);

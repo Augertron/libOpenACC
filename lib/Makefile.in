@@ -40,7 +40,7 @@ OPENACC_UTILS_LIB = \
   utils/sqlite.o
 
 CC=gcc
-CFLAGS=-g -I../include/ -I$(OPENCL_INC_PATH) -I$(SQLITE_INC_PATH) -fPIC
+CFLAGS=-O0 -g -I../include/ -I$(OPENCL_INC_PATH) -I$(SQLITE_INC_PATH) -fPIC
 
 PRINT_INFO?=0
 

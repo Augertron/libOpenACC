@@ -68,7 +68,9 @@ enum flags_e {
   f_mem_manager   = 0x0020,
   f_data_env      = 0x0040,
 
-  f_profiling     = 0x0080
+  f_acc_profiling = 0x0080,
+  f_acc_tuner     = 0x0100,
+  f_acc_sqlite    = 0x0200
 };
 
 /// OpenACC runtime global data (singleton)

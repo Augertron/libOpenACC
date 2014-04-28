@@ -349,14 +349,16 @@ void acc_tuning_generate_run_list() {
 
   // Add valid runs to the DB
 
-#if PRINT_INFO || 1
-  printf("[info]     Created %zd combinaison of versions\n", num_version_combinaisons);
+#if PRINT_INFO
+  printf("[info]     #versions: %zd\n", num_version_combinaisons);
+  printf("[info]     #portions: %zd\n", num_portion_combinaisons);
+  printf("[info]     #params  : %zd\n", acc_tuner->num_params_values);
 #endif
 
   size_t param_idx;
   for (version_combinaison_idx = 0; version_combinaison_idx < num_version_combinaisons; version_combinaison_idx++) {
 
-#if PRINT_INFO || 1
+#if PRINT_INFO
   printf("[info]       Next combinaison of versions... (%zd/%zd)\n", version_combinaison_idx, num_version_combinaisons);
 #endif
 
@@ -548,19 +550,19 @@ struct acc_tuner_data_params_desc_t_ * acc_tuning_build_data_params(size_t num_p
     result->type_params = (enum acc_sqlite_type_e *)malloc(num_params * sizeof(enum acc_sqlite_type_e));
     result->num_params = num_params;
 
-  va_list list_params;
-  va_start(list_params, 2 * num_params);
+  va_list args_ptr;
+  va_start(args_ptr, num_params);
 
   size_t i;
   for (i = 0; i < num_params; i++) {
-    char * param_name = va_arg(list_params, char *);
+    char * param_name = va_arg(args_ptr, char *);
     result->name_params[i] = (char *)malloc((strlen(param_name) + 1) * sizeof(char));
     strcpy(result->name_params[i], param_name);
 
-    enum acc_sqlite_type_e param_type = va_arg(list_params, enum acc_sqlite_type_e);
+    enum acc_sqlite_type_e param_type = va_arg(args_ptr, enum acc_sqlite_type_e);
     result->type_params[i] = param_type;
   }
-  va_end(list_params);
+  va_end(args_ptr);
 
   return result;
 }
@@ -609,7 +611,7 @@ void acc_tuner_exec_kernel(struct acc_tuner_exec_data_t * exec_data) {
 
 void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
 #if PRINT_INFO
-  printf("[info]   Enter acc_tuning_execute_all(...)\n");
+  printf("[info]   Enter acc_tuning_execute(...)\n");
 #endif
   assert(acc_tuner != NULL);
 
@@ -618,28 +620,48 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
   struct acc_region_desc_t_ * region = exec_data->region->desc;
   struct acc_kernel_desc_t_ * kernel = exec_data->kernel->desc;
 
-  size_t num_conds = acc_tuner->num_devices + acc_tuner->data_params->num_params + 1;
   kernel->version_by_devices = malloc(acc_tuner->num_devices * sizeof(size_t));
-  char * conds[num_conds];
 
-  va_list list_params;
-  va_start(list_params, acc_tuner->num_devices + acc_tuner->data_params->num_params);
+  size_t num_conds = acc_tuner->num_devices + acc_tuner->data_params->num_params + 1;
+  char ** conds = malloc(num_conds * sizeof(char *));
+
+  region->num_options = acc_tuner->num_devices;
+  region->options = malloc(acc_tuner->num_devices * sizeof(char *));
+
+  va_list args_ptr;
+  va_start(args_ptr, exec_data);
   if (acc_tuner->num_devices == 1) {
-    kernel->version_by_devices[0] = va_arg(list_params, size_t);
+    kernel->version_by_devices[0] = va_arg(args_ptr, size_t);
     conds[0] = malloc(22 * sizeof(char));
     sprintf(conds[0], "version_id == '%zd'", kernel->version_by_devices[0]);
 
-    region->options[0] = malloc((10 + strlen(kernel->name) + strlen(kernel->versions[kernel->version_by_devices[0]]->suffix)) * sizeof(char));
-    sprintf(region->options[0], "-DENABLE_%s%s", kernel->name, kernel->versions[kernel->version_by_devices[0]]->suffix);
+    struct acc_kernel_version_t_ * version = NULL;
+    for (j = 0; j < kernel->num_versions; j++)
+      if (kernel->versions[j]->id == kernel->version_by_devices[0]) {
+        version = kernel->versions[j];
+        break;
+      }
+    assert(version != NULL);
+
+    region->options[0] = malloc((10 + strlen(kernel->name) + strlen(version->suffix)) * sizeof(char));
+    sprintf(region->options[0], "-DENABLE_%s%s", kernel->name, version->suffix);
   }
   else {
     for (i = 0; i < acc_tuner->num_devices; i++) {
-      kernel->version_by_devices[i] = va_arg(list_params, size_t);
+      kernel->version_by_devices[i] = va_arg(args_ptr, size_t);
       conds[i] = malloc(28 * sizeof(char));
       sprintf(conds[i], "version_id_%zd == '%zd'", i, kernel->version_by_devices[i]);
 
-      region->options[i] = malloc((10 + strlen(kernel->name) + strlen(kernel->versions[kernel->version_by_devices[i]]->suffix)) * sizeof(char));
-      sprintf(region->options[i], "-DENABLE_%s%s", kernel->name, kernel->versions[kernel->version_by_devices[i]]->suffix);
+      struct acc_kernel_version_t_ * version = NULL;
+      for (j = 0; j < kernel->num_versions; j++)
+        if (kernel->versions[j]->id == kernel->version_by_devices[i]) {
+          version = kernel->versions[j];
+          break;
+        }
+      assert(version != NULL);
+
+      region->options[i] = malloc((11 + strlen(kernel->name) + strlen(version->suffix)) * sizeof(char));
+      sprintf(region->options[i], "-DENABLE_%s%s ", kernel->name, version->suffix);
     }
   }
   for (i = 0; i < acc_tuner->data_params->num_params; i++) {
@@ -647,21 +669,21 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
     switch (acc_tuner->data_params->type_params[i]) {
       case e_sqlite_int:
       {
-        size_t param = va_arg(list_params, size_t);
+        size_t param = va_arg(args_ptr, size_t);
         conds[idx] = malloc((strlen(acc_tuner->data_params->name_params[i]) + 24) * sizeof(char));
         sprintf(conds[idx], "%s == '%zd'", acc_tuner->data_params->name_params[i], param);
         break;
       }
       case e_sqlite_float:
       {
-        double param = va_arg(list_params, double);
+        double param = va_arg(args_ptr, double);
         conds[idx] = malloc((strlen(acc_tuner->data_params->name_params[i]) + 24) * sizeof(char));
         sprintf(conds[idx], "%s == '%f'", acc_tuner->data_params->name_params[i], param);
         break;
       }
       case e_sqlite_text:
       {
-        char * param = va_arg(list_params, char *);
+        char * param = va_arg(args_ptr, char *);
         conds[idx] = malloc((strlen(acc_tuner->data_params->name_params[i]) + strlen(param) + 7) * sizeof(char));
         sprintf(conds[idx], "%s == '%s'", acc_tuner->data_params->name_params[i], param);
         break;
@@ -670,87 +692,92 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
         assert(0);
     }
   }
-  va_end(list_params);
+  va_end(args_ptr);
 
   conds[num_conds - 1] = "executed == '0'";
 
-  size_t num_fields = (acc_tuner->num_devices == 1) ? 5 : (acc_tuner->num_devices * 6);
+  size_t num_fields = ((acc_tuner->num_devices == 1) ? 5 : (acc_tuner->num_devices * 6)) + 1;
 
   char ** field_names = malloc(num_fields * sizeof(char *));
   enum acc_sqlite_type_e * field_types = malloc(num_fields * sizeof(enum acc_sqlite_type_e));
   size_t * field_sizes = malloc(num_fields * sizeof(size_t));
   size_t * field_offsets = malloc(num_fields * sizeof(size_t));
 
+  field_names  [0] = "rowid";
+  field_types  [0] = e_sqlite_int;
+  field_sizes  [0] = sizeof(size_t);
+  field_offsets[0] = 0;
+
   if (acc_tuner->num_devices == 1) {
-    field_names  [0] = "version_id";
-    field_types  [0] = e_sqlite_int;
-    field_sizes  [0] = sizeof(size_t);
-    field_offsets[0] = 0;
+    field_names  [1] = "version_id";
+    field_types  [1] = e_sqlite_int;
+    field_sizes  [1] = sizeof(size_t);
+    field_offsets[1] = field_offsets[0] + field_sizes[0];;
 
-    field_names  [1] = "acc_device_type";
-    field_types  [1] = e_sqlite_text;
-    field_sizes  [1] = sizeof(char[40]);
-    field_offsets[1] = field_offsets[0] + field_sizes[0];
-
-    field_names  [2] = "gang";
-    field_types  [2] = e_sqlite_int;
-    field_sizes  [2] = sizeof(size_t);
+    field_names  [2] = "acc_device_type";
+    field_types  [2] = e_sqlite_text;
+    field_sizes  [2] = sizeof(char[40]);
     field_offsets[2] = field_offsets[1] + field_sizes[1];
 
-    field_names  [3] = "worker";
+    field_names  [3] = "gang";
     field_types  [3] = e_sqlite_int;
     field_sizes  [3] = sizeof(size_t);
     field_offsets[3] = field_offsets[2] + field_sizes[2];
 
-    field_names  [4] = "vector";
+    field_names  [4] = "worker";
     field_types  [4] = e_sqlite_int;
     field_sizes  [4] = sizeof(size_t);
     field_offsets[4] = field_offsets[3] + field_sizes[3];
+
+    field_names  [5] = "vector";
+    field_types  [5] = e_sqlite_int;
+    field_sizes  [5] = sizeof(size_t);
+    field_offsets[5] = field_offsets[4] + field_sizes[4];
   }
   else {
     size_t offset = 0;
     for (i = 0; i < acc_tuner->num_devices; i++) {
-      field_names  [6 * i + 0] = malloc(14 * sizeof(char));
-        sprintf(field_names[6 * i + 0], "version_id_%zd", i);
-      field_types  [6 * i + 0] = e_sqlite_int;
-      field_sizes  [6 * i + 0] = sizeof(size_t);
-      field_offsets[6 * i + 0] = offset;
-      offset += field_sizes[6 * i + 0];
-
-      field_names  [6 * i + 1] = malloc(19 * sizeof(char));
-        sprintf(field_names[6 * i + 1], "acc_device_type_%zd", i);
-      field_types  [6 * i + 1] = e_sqlite_text;
-      field_sizes  [6 * i + 1] = sizeof(char[40]);
+      field_names  [6 * i + 1] = malloc(14 * sizeof(char));
+        sprintf(field_names[6 * i + 1], "version_id_%zd", i);
+      field_types  [6 * i + 1] = e_sqlite_int;
+      field_sizes  [6 * i + 1] = sizeof(size_t);
       field_offsets[6 * i + 1] = offset;
       offset += field_sizes[6 * i + 1];
 
-      field_names  [6 * i + 2] = malloc(8 * sizeof(char));
-        sprintf(field_names[6 * i + 2], "gang_%zd", i);
-      field_types  [6 * i + 2] = e_sqlite_int;
-      field_sizes  [6 * i + 2] = sizeof(size_t);
+      field_names  [6 * i + 2] = malloc(19 * sizeof(char));
+        sprintf(field_names[6 * i + 2], "acc_device_type_%zd", i);
+      field_types  [6 * i + 2] = e_sqlite_text;
+      field_sizes  [6 * i + 2] = sizeof(char[40]);
       field_offsets[6 * i + 2] = offset;
       offset += field_sizes[6 * i + 2];
 
-      field_names  [6 * i + 3] = malloc(10 * sizeof(char));
-        sprintf(field_names[6 * i + 3], "worker_%zd", i);
+      field_names  [6 * i + 3] = malloc(8 * sizeof(char));
+        sprintf(field_names[6 * i + 3], "gang_%zd", i);
       field_types  [6 * i + 3] = e_sqlite_int;
       field_sizes  [6 * i + 3] = sizeof(size_t);
       field_offsets[6 * i + 3] = offset;
       offset += field_sizes[6 * i + 3];
 
       field_names  [6 * i + 4] = malloc(10 * sizeof(char));
-        sprintf(field_names[6 * i + 4], "vector_%zd", i);
+        sprintf(field_names[6 * i + 4], "worker_%zd", i);
       field_types  [6 * i + 4] = e_sqlite_int;
       field_sizes  [6 * i + 4] = sizeof(size_t);
       field_offsets[6 * i + 4] = offset;
       offset += field_sizes[6 * i + 4];
 
-      field_names  [6 * i + 5] = malloc(11 * sizeof(char));
-        sprintf(field_names[6 * i + 5], "portion_%zd", i);
+      field_names  [6 * i + 5] = malloc(10 * sizeof(char));
+        sprintf(field_names[6 * i + 5], "vector_%zd", i);
       field_types  [6 * i + 5] = e_sqlite_int;
       field_sizes  [6 * i + 5] = sizeof(size_t);
       field_offsets[6 * i + 5] = offset;
       offset += field_sizes[6 * i + 5];
+
+      field_names  [6 * i + 6] = malloc(11 * sizeof(char));
+        sprintf(field_names[6 * i + 6], "portion_%zd", i);
+      field_types  [6 * i + 6] = e_sqlite_int;
+      field_sizes  [6 * i + 6] = sizeof(size_t);
+      field_offsets[6 * i + 6] = offset;
+      offset += field_sizes[6 * i + 6];
     }
   }
 
@@ -769,22 +796,36 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
     entry_size, (void**)&run_entries
   );
 
-#if PRINT_INFO || 1
+  free(conds);
+
+#if PRINT_INFO
   printf("[info]     num_candidates = %zd\n", num_candidates);
 #endif
 
   for (i = 0; i < num_candidates; i++) {
     void * run_entry = run_entries + i * entry_size;
+    size_t run_id =  *(size_t *)run_entry;
     for (j = 0; j < acc_tuner->num_devices; j++) {
-      exec_data->region->devices[j].num_gang      = *(size_t *)(run_entry + field_offsets[6 * j + 2]);
-      exec_data->region->devices[j].num_worker    = *(size_t *)(run_entry + field_offsets[6 * j + 3]);
-      exec_data->region->devices[j].vector_length = *(size_t *)(run_entry + field_offsets[6 * j + 4]);
-#if PRINT_INFO || 1
+      exec_data->region->devices[j].num_gang      = *(size_t *)(run_entry + field_offsets[6 * j + 3]);
+      exec_data->region->devices[j].num_worker    = *(size_t *)(run_entry + field_offsets[6 * j + 4]);
+      exec_data->region->devices[j].vector_length = *(size_t *)(run_entry + field_offsets[6 * j + 5]);
+#if PRINT_INFO
       printf("[info]       Device %zd uses gang = %zd, worker = %zd, and vector = %zd\n", j, exec_data->region->devices[j].num_gang, exec_data->region->devices[j].num_worker, exec_data->region->devices[j].vector_length);
 #endif
     }
+
+    acc_profiler->run_id = run_id;
     
     acc_tuner_exec_kernel(exec_data);
+
+    char * query = malloc(64 * sizeof(char));
+    sprintf(query, "UPDATE Runs SET executed = '1' WHERE rowid == '%zd';", run_id);
+
+    char * err_msg;
+    int status = sqlite3_exec (acc_profiler->db_file, query, NULL, 0, &err_msg);
+    assert(status == SQLITE_OK);
+
+    acc_sqlite_save(acc_profiler->db_file);
   }
 }
 
