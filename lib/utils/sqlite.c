@@ -141,7 +141,7 @@ sqlite3 * acc_sqlite_open(char * filename_, int fail_if_file_missing, int use_in
 
   sqlite3 * result = NULL;
   char * filename = NULL;
-  if (use_in_memory_db) {
+  if (use_in_memory_db == 1) {
     int status = sqlite3_open(":memory:", &result);
     assert(status == SQLITE_OK);
 
@@ -151,10 +151,11 @@ sqlite3 * acc_sqlite_open(char * filename_, int fail_if_file_missing, int use_in
     status = acc_sqlite_load_or_save_db(result, filename, 0);
     assert(status == SQLITE_OK);
   }
-  else {
+  else if (use_in_memory_db == 0) {
     int status = sqlite3_open(filename_, &result);
     assert(status == SQLITE_OK);
   }
+  else assert(0);
   assert(result != NULL);
 
   map_insert(acc_sqlite->db_files_map, &result, &filename);
