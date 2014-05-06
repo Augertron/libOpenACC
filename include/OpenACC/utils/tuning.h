@@ -12,22 +12,6 @@ extern "C" {
 
 typedef size_t (*acc_tuner_loop_length_func_t)(size_t, void *);
 
-/// Different combinaisons to be tested
-struct acc_tuner_device_ranges_t_ {
-  size_t num_versions;
-  size_t num_gang_values;
-  size_t num_worker_values;
-  size_t num_vector_values;
-
-  size_t * version_ids;
-  size_t * gang_values;
-  size_t * worker_values;
-  size_t * vector_values;
-};
-
-/// Create a descriptor of the data for which we tuned a given kernel
-struct acc_tuner_device_ranges_t_ * acc_tuning_build_device_ranges(size_t num_devices);
-
 /// Parameters space
 struct acc_tuner_data_params_desc_t_ {
   char ** name_params;                  /// Names used to store the params in the database
@@ -41,36 +25,53 @@ struct acc_tuner_data_params_desc_t_ * acc_tuning_build_data_params(size_t num_p
 struct acc_tuner_t {
   size_t num_devices;
   char ** devices_name;
-  struct acc_tuner_device_ranges_t_ * ranges_per_devices;
 
   struct acc_tuner_data_params_desc_t_ * data_params;
   size_t params_size;
+
+  sqlite3 * versions_db;
+};
+extern struct acc_tuner_t * acc_tuner;
+
+/// Initialize the libOpenACC tuner's
+void acc_tuning_init(
+  size_t num_devices,
+  char ** devices_name,
+  struct acc_tuner_data_params_desc_t_ * data_params,
+  sqlite3 * versions_db
+);
+
+struct acc_tuner_per_devices_gen_data_t {
+  size_t num_versions;
+  size_t * version_ids;
+
+  size_t num_gang_values;
+  size_t * gang_values;
+
+  size_t num_worker_values;
+  size_t * worker_values;
+
+  size_t num_vector_values;
+  size_t * vector_values;
+};
+
+struct acc_tuner_gen_data_t {
+  size_t region_id;
+  size_t kernel_id;
+
+  struct acc_tuner_per_devices_gen_data_t * per_devices_gen_data;
+
   size_t num_params_values;
   void * params_values;
 
   size_t num_portions;
 
   acc_tuner_loop_length_func_t loop_length_func;
-
-  sqlite3 * versions_db;
 };
-extern struct acc_tuner_t * acc_tuner;
 
-/**
- *  Initialize the libOpenACC tuner's
- */
-int acc_tuning_init(
-  size_t num_devices,
-  char ** devices_name,
-  struct acc_tuner_device_ranges_t_ * ranges_per_devices,
-  struct acc_tuner_data_params_desc_t_ * data_params,
-  size_t num_params_values,
-  void * params_values,
-  size_t num_portions,
-  acc_tuner_loop_length_func_t loop_length_func,
-  sqlite3 * versions_db
-);
+struct acc_tuner_gen_data_t * acc_tuning_build_gen_data();
 
+void acc_tuning_generate(struct acc_tuner_gen_data_t * gen_data);
 
 struct acc_tuner_exec_data_t {
   struct acc_region_t_ * region;

@@ -49,24 +49,14 @@ struct acc_tuner_device_param_t {
 int acc_tuning_create_experiment();
 
 /**
- *  Generate the list of runs needed by the experiment
- */
-void acc_tuning_generate_run_list();
-
-/**
  *  Register a run as part of the experiment with 'acc_profiling_new_run'
  */
 void acc_tuning_add_run(struct acc_tuner_device_param_t * device_params, void * params);
 
-int acc_tuning_init(
+void acc_tuning_init(
   size_t num_devices,
   char ** devices_name,
-  struct acc_tuner_device_ranges_t_ * ranges_per_devices,
   struct acc_tuner_data_params_desc_t_ * data_params,
-  size_t num_params_values,
-  void * params_values,
-  size_t num_portions,
-  acc_tuner_loop_length_func_t loop_length_func,
   sqlite3 * versions_db
 ) {
 #if PRINT_INFO
@@ -77,15 +67,10 @@ int acc_tuning_init(
   assert(data_params != NULL);
   assert(versions_db != NULL);
 
-  // Initialize OpenACC (for profiling)
-  acc_init_once();
-
   acc_tuner = (struct acc_tuner_t *)malloc(sizeof(struct acc_tuner_t));
 
   acc_tuner->num_devices = num_devices;
   acc_tuner->devices_name = devices_name;
-
-  acc_tuner->ranges_per_devices = ranges_per_devices;
 
   acc_tuner->data_params = data_params;
 
@@ -94,37 +79,53 @@ int acc_tuning_init(
   for (i = 0; i < acc_tuner->data_params->num_params; i++)
     acc_tuner->params_size += acc_sqlite_type_size(acc_tuner->data_params->type_params[i]);
 
-  acc_tuner->num_params_values = num_params_values;
-  acc_tuner->params_values = params_values;
-
-  acc_tuner->num_portions = num_portions;
-
-  acc_tuner->loop_length_func = loop_length_func;
-
   acc_tuner->versions_db = versions_db;
-
-  if (acc_tuning_create_experiment()) {
-    assert(ranges_per_devices != NULL);
-    assert(num_params_values > 0);
-    assert(params_values != NULL);
-    assert(num_portions > 0);
-    assert(loop_length_func != NULL);
-
-    acc_tuning_generate_run_list();
-    return 1;
-  }
-  else return 0;
 }
 
-void acc_tuning_gen_all_version_combinaisons(size_t * version_combinaisons, size_t * version_combinaison_idx, size_t dev_idx, size_t * buffer) {
+struct acc_tuner_gen_data_t * acc_tuning_build_gen_data() {
+  assert(acc_tuner != NULL);
+
+  struct acc_tuner_gen_data_t * result = malloc(sizeof(struct acc_tuner_gen_data_t));
+
+  result->region_id = 0;
+  result->kernel_id = 0;
+
+  result->per_devices_gen_data = malloc(acc_tuner->num_devices * sizeof(struct acc_tuner_per_devices_gen_data_t));
+
+  size_t i;
+  for (i = 0; i < acc_tuner->num_devices; i++) {
+    result->per_devices_gen_data[i].num_versions = 0;
+    result->per_devices_gen_data[i].version_ids = NULL;
+
+    result->per_devices_gen_data[i].num_gang_values = 0;
+    result->per_devices_gen_data[i].gang_values = NULL;
+
+    result->per_devices_gen_data[i].num_worker_values = 0;
+    result->per_devices_gen_data[i].worker_values = NULL;
+
+    result->per_devices_gen_data[i].num_vector_values = 0;
+    result->per_devices_gen_data[i].vector_values = NULL;
+  }
+
+  result->num_params_values = 0;
+  result->params_values = NULL;
+
+  result->num_portions = 0;
+
+  result->loop_length_func = NULL;
+
+  return result;
+}
+
+void acc_tuning_gen_all_version_combinaisons(size_t * version_combinaisons, size_t * version_combinaison_idx, size_t dev_idx, size_t * buffer, struct acc_tuner_gen_data_t * gen_data) {
 #if PRINT_INFO
   printf("[info]   Enter acc_tuning_gen_all_version_combinaisons(dev_idx = %zd)\n", dev_idx);
 #endif
   if (dev_idx < acc_tuner->num_devices) {
     size_t version_idx;
-    for (version_idx = 0; version_idx < acc_tuner->ranges_per_devices[dev_idx].num_versions; version_idx++) {
-      buffer[dev_idx] = acc_tuner->ranges_per_devices[dev_idx].version_ids[version_idx];
-      acc_tuning_gen_all_version_combinaisons(version_combinaisons, version_combinaison_idx, dev_idx + 1, buffer);
+    for (version_idx = 0; version_idx < gen_data->per_devices_gen_data[dev_idx].num_versions; version_idx++) {
+      buffer[dev_idx] = gen_data->per_devices_gen_data[dev_idx].version_ids[version_idx];
+      acc_tuning_gen_all_version_combinaisons(version_combinaisons, version_combinaison_idx, dev_idx + 1, buffer, gen_data);
     }
   }
   else {
@@ -179,7 +180,8 @@ int acc_tuner_is_valid_gwv_combinaison(
   size_t num_loops,
   struct acc_sqlite_loop_entry_t * loop_entries,
   size_t portion,
-  size_t gwv[3]
+  size_t gwv[3],
+  struct acc_tuner_gen_data_t * gen_data
 ) {
 #if PRINT_INFO
   printf("[info]   Enter acc_tuning_is_valid_gwv_combinaison(...)\n");
@@ -188,7 +190,7 @@ int acc_tuner_is_valid_gwv_combinaison(
   for (i = 0; i < num_loops; i++) {
     if ((loop_entries[i].tiles[1] == 1) && (loop_entries[i].tiles[3] == 1) && (loop_entries[i].tiles[5] == 1)) continue;
 
-    size_t loop_length = (*(acc_tuner->loop_length_func))(i, params);
+    size_t loop_length = (*(gen_data->loop_length_func))(i, params);
     int has_dynamic_tile = (loop_entries[i].tiles[0] == 0) ||
                            (loop_entries[i].tiles[2] == 0) ||
                            (loop_entries[i].tiles[4] == 0) ||
@@ -231,7 +233,8 @@ void acc_tuning_gen_valid_gwv_combinaisons_rec(
   struct acc_tuner_gwv_list_t_ * gwv_lists,
   size_t dev_idx, size_t (*buffer)[3],
   size_t * num_loops,
-  struct acc_sqlite_loop_entry_t ** loop_entries
+  struct acc_sqlite_loop_entry_t ** loop_entries,
+  struct acc_tuner_gen_data_t * gen_data
 ) {
 #if PRINT_INFO
   printf("[info]   Enter acc_tuning_gen_valid_gwv_combinaisons_rec(...)\n");
@@ -242,7 +245,7 @@ void acc_tuning_gen_valid_gwv_combinaisons_rec(
 
     size_t gwv_idx;
     for (gwv_idx = 0; gwv_idx < gwv_lists[dev_idx].num; gwv_idx++) {
-      if (!acc_tuner_is_valid_gwv_combinaison(params, num_loops[dev_idx], loop_entries[dev_idx], portion, gwv_lists[dev_idx].gwv[gwv_idx])) continue;
+      if (!acc_tuner_is_valid_gwv_combinaison(params, num_loops[dev_idx], loop_entries[dev_idx], portion, gwv_lists[dev_idx].gwv[gwv_idx], gen_data)) continue;
 
       memcpy(buffer[dev_idx], gwv_lists[dev_idx].gwv[gwv_idx], sizeof(size_t[3]));
 
@@ -252,7 +255,8 @@ void acc_tuning_gen_valid_gwv_combinaisons_rec(
         gwv_combinaisons,
         size_gwv_combinaisons,
         gwv_lists, dev_idx + 1,
-        buffer, num_loops, loop_entries
+        buffer, num_loops, loop_entries,
+        gen_data
       );
     }
   }
@@ -273,7 +277,8 @@ void acc_tuning_gen_valid_gwv_combinaisons(
   size_t * num_gwv_combinaisons,
   size_t (**gwv_combinaisons)[3],
   size_t * num_loops,
-  struct acc_sqlite_loop_entry_t ** loop_entries
+  struct acc_sqlite_loop_entry_t ** loop_entries,
+  struct acc_tuner_gen_data_t * gen_data
 ) {
 #if PRINT_INFO
   printf("[info]   Enter acc_tuning_gen_valid_gwv_combinaisons(...)\n");
@@ -286,17 +291,17 @@ void acc_tuning_gen_valid_gwv_combinaisons(
   struct acc_tuner_gwv_list_t_ * gwv_lists = (struct acc_tuner_gwv_list_t_ *)malloc(acc_tuner->num_devices * sizeof(struct acc_tuner_gwv_list_t_));
   size_t dev_idx, g_idx, w_idx, v_idx, cnt;
   for (dev_idx = 0; dev_idx < acc_tuner->num_devices; dev_idx++) {
-    gwv_lists[dev_idx].num = acc_tuner->ranges_per_devices[dev_idx].num_gang_values
-                           * acc_tuner->ranges_per_devices[dev_idx].num_worker_values
-                           * acc_tuner->ranges_per_devices[dev_idx].num_vector_values;
+    gwv_lists[dev_idx].num = gen_data->per_devices_gen_data[dev_idx].num_gang_values
+                           * gen_data->per_devices_gen_data[dev_idx].num_worker_values
+                           * gen_data->per_devices_gen_data[dev_idx].num_vector_values;
     gwv_lists[dev_idx].gwv = malloc(gwv_lists[dev_idx].num * sizeof(size_t[3]));
     cnt = 0;
-    for (g_idx = 0; g_idx < acc_tuner->ranges_per_devices[dev_idx].num_gang_values; g_idx++) {
-      for (w_idx = 0; w_idx < acc_tuner->ranges_per_devices[dev_idx].num_worker_values; w_idx++) {
-        for (v_idx = 0; v_idx < acc_tuner->ranges_per_devices[dev_idx].num_vector_values; v_idx++) {
-          gwv_lists[dev_idx].gwv[cnt][0] = acc_tuner->ranges_per_devices[dev_idx].gang_values[g_idx];
-          gwv_lists[dev_idx].gwv[cnt][1] = acc_tuner->ranges_per_devices[dev_idx].worker_values[w_idx];
-          gwv_lists[dev_idx].gwv[cnt][2] = acc_tuner->ranges_per_devices[dev_idx].vector_values[v_idx];
+    for (g_idx = 0; g_idx < gen_data->per_devices_gen_data[dev_idx].num_gang_values; g_idx++) {
+      for (w_idx = 0; w_idx < gen_data->per_devices_gen_data[dev_idx].num_worker_values; w_idx++) {
+        for (v_idx = 0; v_idx < gen_data->per_devices_gen_data[dev_idx].num_vector_values; v_idx++) {
+          gwv_lists[dev_idx].gwv[cnt][0] = gen_data->per_devices_gen_data[dev_idx].gang_values[g_idx];
+          gwv_lists[dev_idx].gwv[cnt][1] = gen_data->per_devices_gen_data[dev_idx].worker_values[w_idx];
+          gwv_lists[dev_idx].gwv[cnt][2] = gen_data->per_devices_gen_data[dev_idx].vector_values[v_idx];
           cnt++;
         }
       }
@@ -310,14 +315,16 @@ void acc_tuning_gen_valid_gwv_combinaisons(
     gwv_combinaisons,
     &size_gwv_combinaisons,
     gwv_lists, 0, buffer,
-    num_loops, loop_entries
+    num_loops, loop_entries,
+    gen_data
   );
   free(buffer);
 }
 
-void acc_tuning_generate_run_list() {
+
+void acc_tuning_generate(struct acc_tuner_gen_data_t * gen_data) {
 #if PRINT_INFO
-  printf("[info]   Enter acc_tuning_generate_run_list(...)\n");
+  printf("[info]   Enter acc_tuning_generate(...)\n");
 #endif
   assert(acc_tuner != NULL);
 
@@ -329,20 +336,20 @@ void acc_tuning_generate_run_list() {
 
   size_t num_version_combinaisons = 1;
   for (dev_idx = 0; dev_idx < acc_tuner->num_devices; dev_idx++)
-    num_version_combinaisons *= acc_tuner->ranges_per_devices[dev_idx].num_versions;
+    num_version_combinaisons *= gen_data->per_devices_gen_data[dev_idx].num_versions;
   size_t * version_combinaisons = (size_t *)malloc(num_version_combinaisons * acc_tuner->num_devices * sizeof(size_t));
 
   size_t version_combinaison_idx = 0;
-  acc_tuning_gen_all_version_combinaisons(version_combinaisons, &version_combinaison_idx, 0, buffer);
+  acc_tuning_gen_all_version_combinaisons(version_combinaisons, &version_combinaison_idx, 0, buffer, gen_data);
   assert(version_combinaison_idx == num_version_combinaisons);
 
   // Generate all combinaison of portions
 
-  size_t num_portion_combinaisons = acc_tuning_count_portion_combinaisons(acc_tuner->num_portions, acc_tuner->num_devices);
+  size_t num_portion_combinaisons = acc_tuning_count_portion_combinaisons(gen_data->num_portions, acc_tuner->num_devices);
   size_t * portion_combinaisons = (size_t *)malloc(num_portion_combinaisons * acc_tuner->num_devices * sizeof(size_t));
 
   size_t portion_combinaison_idx = 0;
-  acc_tuning_gen_all_portion_combinaisons(acc_tuner->num_portions, 0, portion_combinaisons, &portion_combinaison_idx, buffer);
+  acc_tuning_gen_all_portion_combinaisons(gen_data->num_portions, 0, portion_combinaisons, &portion_combinaison_idx, buffer);
   assert(portion_combinaison_idx == num_portion_combinaisons);
 
   free(buffer);
@@ -352,8 +359,13 @@ void acc_tuning_generate_run_list() {
 #if PRINT_INFO
   printf("[info]     #versions: %zd\n", num_version_combinaisons);
   printf("[info]     #portions: %zd\n", num_portion_combinaisons);
-  printf("[info]     #params  : %zd\n", acc_tuner->num_params_values);
+  printf("[info]     #params  : %zd\n", gen_data->num_params_values);
 #endif
+
+  char region_id_cond[20];
+  sprintf(region_id_cond, "region_id == '%zd'", gen_data->region_id);
+  char kernel_id_cond[20];
+  sprintf(kernel_id_cond, "kernel_id == '%zd'", gen_data->kernel_id);
 
   size_t param_idx;
   for (version_combinaison_idx = 0; version_combinaison_idx < num_version_combinaisons; version_combinaison_idx++) {
@@ -367,7 +379,7 @@ void acc_tuning_generate_run_list() {
     for (dev_idx = 0; dev_idx < acc_tuner->num_devices; dev_idx++) {
       char version_id_cond[20];
       sprintf(version_id_cond, "version_id == '%zd'", *(version_combinaisons + acc_tuner->num_devices * version_combinaison_idx + dev_idx));
-      char * loop_conds[3] = {"region_id =='0'", "kernel_id =='0'", version_id_cond};
+      char * loop_conds[3] = {region_id_cond, kernel_id_cond, version_id_cond};
 
       num_loops[dev_idx] = acc_sqlite_read_table(
                              acc_tuner->versions_db, "Loops",
@@ -377,16 +389,16 @@ void acc_tuning_generate_run_list() {
                            );
     }
 
-    for (param_idx = 0; param_idx < acc_tuner->num_params_values; param_idx++) {
+    for (param_idx = 0; param_idx < gen_data->num_params_values; param_idx++) {
       for (portion_combinaison_idx = 0; portion_combinaison_idx < num_portion_combinaisons; portion_combinaison_idx++) {
         size_t num_gwv_combinaisons = 0;
         size_t (*gwv_combinaisons)[3] = malloc(num_gwv_combinaisons * acc_tuner->num_devices * sizeof(size_t[3]));
 
         acc_tuning_gen_valid_gwv_combinaisons(
-          acc_tuner->params_values + param_idx * acc_tuner->params_size,
+          gen_data->params_values + param_idx * acc_tuner->params_size,
           version_combinaisons + acc_tuner->num_devices * version_combinaison_idx,
           portion_combinaisons + acc_tuner->num_devices * portion_combinaison_idx,
-          &num_gwv_combinaisons, &gwv_combinaisons, num_loops, loop_entries
+          &num_gwv_combinaisons, &gwv_combinaisons, num_loops, loop_entries, gen_data
         );
 
         size_t gwv_combinaison_idx;
@@ -401,7 +413,7 @@ void acc_tuning_generate_run_list() {
             device_params[dev_idx].portion    = portion_combinaisons[acc_tuner->num_devices * portion_combinaison_idx + dev_idx];
           }
 
-          acc_tuning_add_run(device_params, acc_tuner->params_values + param_idx * acc_tuner->params_size);
+          acc_tuning_add_run(device_params, gen_data->params_values + param_idx * acc_tuner->params_size);
         }
 
         free(gwv_combinaisons);
@@ -567,13 +579,6 @@ struct acc_tuner_data_params_desc_t_ * acc_tuning_build_data_params(size_t num_p
   return result;
 }
 
-struct acc_tuner_device_ranges_t_ * acc_tuning_build_device_ranges(size_t num_devices) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_build_device_ranges(...)\n");
-#endif
-  return (struct acc_tuner_device_ranges_t_ *)malloc(num_devices * sizeof(struct acc_tuner_device_ranges_t_));
-}
-
 void acc_tuner_exec_kernel(struct acc_tuner_exec_data_t * exec_data) {
   acc_region_start(exec_data->region);
 
@@ -671,105 +676,18 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
 
   conds[num_conds - 1] = "executed == '1'";
 
-  size_t num_fields = ((acc_tuner->num_devices == 1) ? 5 : (acc_tuner->num_devices * 6)) + 1;
-
-  char ** field_names = malloc(num_fields * sizeof(char *));
-  enum acc_sqlite_type_e * field_types = malloc(num_fields * sizeof(enum acc_sqlite_type_e));
-  size_t * field_sizes = malloc(num_fields * sizeof(size_t));
-  size_t * field_offsets = malloc(num_fields * sizeof(size_t));
-
-  field_names  [0] = "rowid";
-  field_types  [0] = e_sqlite_int;
-  field_sizes  [0] = sizeof(size_t);
-  field_offsets[0] = 0;
-
-  if (acc_tuner->num_devices == 1) {
-    field_names  [1] = "version_id";
-    field_types  [1] = e_sqlite_int;
-    field_sizes  [1] = sizeof(size_t);
-    field_offsets[1] = field_offsets[0] + field_sizes[0];;
-
-    field_names  [2] = "acc_device_type";
-    field_types  [2] = e_sqlite_text;
-    field_sizes  [2] = sizeof(char[40]);
-    field_offsets[2] = field_offsets[1] + field_sizes[1];
-
-    field_names  [3] = "gang";
-    field_types  [3] = e_sqlite_int;
-    field_sizes  [3] = sizeof(size_t);
-    field_offsets[3] = field_offsets[2] + field_sizes[2];
-
-    field_names  [4] = "worker";
-    field_types  [4] = e_sqlite_int;
-    field_sizes  [4] = sizeof(size_t);
-    field_offsets[4] = field_offsets[3] + field_sizes[3];
-
-    field_names  [5] = "vector";
-    field_types  [5] = e_sqlite_int;
-    field_sizes  [5] = sizeof(size_t);
-    field_offsets[5] = field_offsets[4] + field_sizes[4];
-  }
-  else {
-    size_t offset = 0;
-    for (i = 0; i < acc_tuner->num_devices; i++) {
-      field_names  [6 * i + 1] = malloc(14 * sizeof(char));
-        sprintf(field_names[6 * i + 1], "version_id_%zd", i);
-      field_types  [6 * i + 1] = e_sqlite_int;
-      field_sizes  [6 * i + 1] = sizeof(size_t);
-      field_offsets[6 * i + 1] = offset;
-      offset += field_sizes[6 * i + 1];
-
-      field_names  [6 * i + 2] = malloc(19 * sizeof(char));
-        sprintf(field_names[6 * i + 2], "acc_device_type_%zd", i);
-      field_types  [6 * i + 2] = e_sqlite_text;
-      field_sizes  [6 * i + 2] = sizeof(char[40]);
-      field_offsets[6 * i + 2] = offset;
-      offset += field_sizes[6 * i + 2];
-
-      field_names  [6 * i + 3] = malloc(8 * sizeof(char));
-        sprintf(field_names[6 * i + 3], "gang_%zd", i);
-      field_types  [6 * i + 3] = e_sqlite_int;
-      field_sizes  [6 * i + 3] = sizeof(size_t);
-      field_offsets[6 * i + 3] = offset;
-      offset += field_sizes[6 * i + 3];
-
-      field_names  [6 * i + 4] = malloc(10 * sizeof(char));
-        sprintf(field_names[6 * i + 4], "worker_%zd", i);
-      field_types  [6 * i + 4] = e_sqlite_int;
-      field_sizes  [6 * i + 4] = sizeof(size_t);
-      field_offsets[6 * i + 4] = offset;
-      offset += field_sizes[6 * i + 4];
-
-      field_names  [6 * i + 5] = malloc(10 * sizeof(char));
-        sprintf(field_names[6 * i + 5], "vector_%zd", i);
-      field_types  [6 * i + 5] = e_sqlite_int;
-      field_sizes  [6 * i + 5] = sizeof(size_t);
-      field_offsets[6 * i + 5] = offset;
-      offset += field_sizes[6 * i + 5];
-
-      field_names  [6 * i + 6] = malloc(11 * sizeof(char));
-        sprintf(field_names[6 * i + 6], "portion_%zd", i);
-      field_types  [6 * i + 6] = e_sqlite_int;
-      field_sizes  [6 * i + 6] = sizeof(size_t);
-      field_offsets[6 * i + 6] = offset;
-      offset += field_sizes[6 * i + 6];
-    }
-  }
-
-  size_t entry_size = 0;
-  for (i = 0; i < num_fields; i++)
-    entry_size += field_sizes[i];
-
+  size_t entry_size;
   void * run_entries;
+  size_t num_fields;
+  char ** field_names;
+  enum acc_sqlite_type_e * field_types;
+  size_t * field_sizes;
+  size_t * field_offsets;
 
-//acc_sqlite_print_table(acc_profiler->db_file, "Runs");
-
-  size_t num_candidates = acc_sqlite_read_table(
-    acc_profiler->db_file, "Runs",
-    num_conds, conds,
-    num_fields, field_names, field_types, field_sizes, field_offsets,
-    entry_size, (void**)&run_entries
-  );
+  size_t num_candidates = acc_sqlite_read_run_table(
+                            acc_profiler->db_file, acc_tuner->num_devices, acc_tuner->data_params, num_conds, conds,
+                            &entry_size, &run_entries, &num_fields, &field_names, &field_types, &field_sizes, &field_offsets, NULL
+                          );
 
   free(conds);
 
@@ -829,5 +747,8 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
     );
 
   acc_pop_data_environment();
+
+  acc_sqlite_clean_run_table_read(acc_tuner->num_devices, field_names, field_types, field_sizes, field_offsets);
+  free(run_entries);
 }
 

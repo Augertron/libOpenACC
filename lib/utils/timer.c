@@ -29,10 +29,10 @@ void acc_timer_delta(acc_timer_t timer) {
    if (timer == NULL) return;
 
   timer->delta = (timer->stop.tv_nsec - timer->start.tv_nsec) / 1000000;
-  if (timer->delta >= 0)
+  if (timer->delta > 0)
     timer->delta += (timer->stop.tv_sec - timer->start.tv_sec) * 1000;
   else
-    timer->delta = (timer->stop.tv_sec - timer->start.tv_sec) * 1000 + timer->delta;
+    timer->delta = (timer->stop.tv_sec - timer->start.tv_sec) * 1000 - timer->delta;
 }
 
 /*

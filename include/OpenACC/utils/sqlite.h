@@ -17,12 +17,14 @@ void acc_sqlite_exit();
 
 enum acc_sqlite_type_e {
   e_sqlite_int,
+  e_sqlite_bigint,
   e_sqlite_float,
   e_sqlite_text
 };
 
 const char * acc_sqlite_type_string(enum acc_sqlite_type_e type);
 const size_t acc_sqlite_type_size  (enum acc_sqlite_type_e type);
+const char * acc_sqlite_type_format(enum acc_sqlite_type_e type);
 
 struct acc_sqlite_region_entry_t {
   size_t region_id;
@@ -72,7 +74,23 @@ extern size_t loop_entry_num_fields;
 extern char * loop_entry_field_names[15];
 extern enum acc_sqlite_type_e loop_entry_field_types[15];
 extern size_t loop_entry_field_sizes[15];
-extern size_t loop_entry_field_offsets[15];;
+extern size_t loop_entry_field_offsets[15];
+
+struct acc_sqlite_event_entry_t {
+  size_t run_id;
+  size_t device_id;
+  char command_name[128];
+  size_t command_id;
+  long cl_profiling_command_queued;
+  long cl_profiling_command_submit;
+  long cl_profiling_command_start;
+  long cl_profiling_command_end;
+};
+extern size_t event_entry_num_fields;
+extern char * event_entry_field_names[8];
+extern enum acc_sqlite_type_e event_entry_field_types[8];
+extern size_t event_entry_field_sizes[8];
+extern size_t event_entry_field_offsets[8];
 
 sqlite3 * acc_sqlite_open(char * filename, int fail_if_file_missing, int use_in_memory_db);
 void acc_sqlite_save  (sqlite3 * db);

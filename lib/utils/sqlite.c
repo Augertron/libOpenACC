@@ -5,6 +5,7 @@
 #include "OpenACC/internal/compiler.h"
 
 #include "OpenACC/utils/sqlite.h"
+#include "OpenACC/utils/tuning.h"
 
 #include "OpenACC/utils/containers/map.h"
 
@@ -49,18 +50,30 @@ void acc_sqlite_exit() {
 
 const char * acc_sqlite_type_string(enum acc_sqlite_type_e type) {
   switch (type) {
-    case e_sqlite_int:   return "INT";
-    case e_sqlite_float: return "FLOAT";
-    case e_sqlite_text:  return "TEXT";
+    case e_sqlite_int:    return "INT";
+    case e_sqlite_bigint: return "BIGINT";
+    case e_sqlite_float:  return "FLOAT";
+    case e_sqlite_text:   return "TEXT";
     default: assert(0);
   }
 }
 
 const size_t acc_sqlite_type_size(enum acc_sqlite_type_e type) {
   switch (type) {
-    case e_sqlite_int:   return sizeof(size_t);
-    case e_sqlite_float: return sizeof(float);
-    case e_sqlite_text:  return 64 * sizeof(char);
+    case e_sqlite_int:    return sizeof(size_t);
+    case e_sqlite_bigint: return sizeof(long);
+    case e_sqlite_float:  return sizeof(float);
+    case e_sqlite_text:   return 64 * sizeof(char);
+    default: assert(0);
+  }
+}
+
+const char * acc_sqlite_type_format(enum acc_sqlite_type_e type) {
+  switch (type) {
+    case e_sqlite_int:    return "%zd";
+    case e_sqlite_bigint: return "%ld";
+    case e_sqlite_float:  return "%f";
+    case e_sqlite_text:   return "%s";
     default: assert(0);
   }
 }
@@ -100,6 +113,13 @@ static int acc_sqlite_callback_save_entries(void * user_data_, int cnt, char ** 
       {
         size_t val = atoi(values[i]);
         assert(user_data->field_sizes[i] == sizeof(size_t));
+        memcpy(user_data->entries + user_data->field_offsets[i], &val, user_data->field_sizes[i]);
+        break;
+      }
+      case e_sqlite_bigint:
+      {
+        long val = atol(values[i]);
+        assert(user_data->field_sizes[i] == sizeof(long));
         memcpy(user_data->entries + user_data->field_offsets[i], &val, user_data->field_sizes[i]);
         break;
       }
@@ -546,6 +566,165 @@ size_t loop_entry_field_offsets[15] = {
   offsetof(struct acc_sqlite_loop_entry_t, unroll) + 2 * sizeof(size_t),
   offsetof(struct acc_sqlite_loop_entry_t, unroll) + 3 * sizeof(size_t)
 };
+
+size_t event_entry_num_fields = 8;
+char * event_entry_field_names[8] = {
+  "run_id", "device_id", "command_name", "command_id",
+  "cl_profiling_command_queued", "cl_profiling_command_submit",
+  "cl_profiling_command_start", "cl_profiling_command_end"
+};
+enum acc_sqlite_type_e event_entry_field_types[8] = {e_sqlite_int, e_sqlite_int, e_sqlite_text, e_sqlite_int, e_sqlite_bigint, e_sqlite_bigint, e_sqlite_bigint, e_sqlite_bigint};
+size_t event_entry_field_sizes[8] = {sizeof(size_t), sizeof(size_t), sizeof(char[128]), sizeof(size_t), sizeof(long), sizeof(long), sizeof(long), sizeof(long)};
+size_t event_entry_field_offsets[8] = {
+  offsetof(struct acc_sqlite_event_entry_t, run_id),
+  offsetof(struct acc_sqlite_event_entry_t, device_id),
+  offsetof(struct acc_sqlite_event_entry_t, command_name),
+  offsetof(struct acc_sqlite_event_entry_t, command_id),
+  offsetof(struct acc_sqlite_event_entry_t, cl_profiling_command_queued),
+  offsetof(struct acc_sqlite_event_entry_t, cl_profiling_command_submit),
+  offsetof(struct acc_sqlite_event_entry_t, cl_profiling_command_start),
+  offsetof(struct acc_sqlite_event_entry_t, cl_profiling_command_end)
+};
+
+int acc_sqlite_read_run_table(
+  sqlite3 * db,
+  size_t num_devices,
+  struct acc_tuner_data_params_desc_t_ * data_params,
+  size_t num_conds, char ** conds,
+  size_t * entry_size,
+  void ** run_entries,
+  size_t * num_fields,
+  char *** field_names,
+  enum acc_sqlite_type_e ** field_types,
+  size_t ** field_sizes,
+  size_t ** field_offsets,
+  char * run_id_str
+) {
+  size_t i;
+  size_t num_dev_fields = ((num_devices == 1) ? 5 : (num_devices * 6)) + 1;
+  *num_fields = num_dev_fields + data_params->num_params;
+
+  *field_names = malloc(*num_fields * sizeof(char *));
+  *field_types = malloc(*num_fields * sizeof(enum acc_sqlite_type_e));
+  *field_sizes = malloc(*num_fields * sizeof(size_t));
+  *field_offsets = malloc(*num_fields * sizeof(size_t));
+
+  if (run_id_str == NULL)
+    (*field_names)  [0] = "rowid";
+  else
+    (*field_names)  [0] = run_id_str;
+  (*field_types)  [0] = e_sqlite_int;
+  (*field_sizes)  [0] = sizeof(size_t);
+  (*field_offsets)[0] = 0;
+
+  if (num_devices == 1) {
+    (*field_names)  [1] = "version_id";
+    (*field_types)  [1] = e_sqlite_int;
+    (*field_sizes)  [1] = sizeof(size_t);
+    (*field_offsets)[1] = (*field_offsets)[0] + (*field_sizes)[0];;
+
+    (*field_names)  [2] = "acc_device_type";
+    (*field_types)  [2] = e_sqlite_text;
+    (*field_sizes)  [2] = sizeof(char[40]);
+    (*field_offsets)[2] = (*field_offsets)[1] + (*field_sizes)[1];
+
+    (*field_names)  [3] = "gang";
+    (*field_types)  [3] = e_sqlite_int;
+    (*field_sizes)  [3] = sizeof(size_t);
+    (*field_offsets)[3] = (*field_offsets)[2] + (*field_sizes)[2];
+
+    (*field_names)  [4] = "worker";
+    (*field_types)  [4] = e_sqlite_int;
+    (*field_sizes)  [4] = sizeof(size_t);
+    (*field_offsets)[4] = (*field_offsets)[3] + (*field_sizes)[3];
+
+    (*field_names)  [5] = "vector";
+    (*field_types)  [5] = e_sqlite_int;
+    (*field_sizes)  [5] = sizeof(size_t);
+    (*field_offsets)[5] = (*field_offsets)[4] + (*field_sizes)[4];
+  }
+  else {
+    size_t offset = 0;
+    for (i = 0; i < num_devices; i++) {
+      (*field_names)  [6 * i + 1] = malloc(14 * sizeof(char));
+        sprintf((*field_names)[6 * i + 1], "version_id_%zd", i);
+      (*field_types)  [6 * i + 1] = e_sqlite_int;
+      (*field_sizes)  [6 * i + 1] = sizeof(size_t);
+      (*field_offsets)[6 * i + 1] = offset;
+      offset += (*field_sizes)[6 * i + 1];
+
+      (*field_names)  [6 * i + 2] = malloc(19 * sizeof(char));
+        sprintf((*field_names)[6 * i + 2], "acc_device_type_%zd", i);
+      (*field_types)  [6 * i + 2] = e_sqlite_text;
+      (*field_sizes)  [6 * i + 2] = sizeof(char[40]);
+      (*field_offsets)[6 * i + 2] = offset;
+      offset += (*field_sizes)[6 * i + 2];
+
+      (*field_names)  [6 * i + 3] = malloc(8 * sizeof(char));
+        sprintf((*field_names)[6 * i + 3], "gang_%zd", i);
+      (*field_types)  [6 * i + 3] = e_sqlite_int;
+      (*field_sizes)  [6 * i + 3] = sizeof(size_t);
+      (*field_offsets)[6 * i + 3] = offset;
+      offset += (*field_sizes)[6 * i + 3];
+
+      (*field_names)  [6 * i + 4] = malloc(10 * sizeof(char));
+        sprintf((*field_names)[6 * i + 4], "worker_%zd", i);
+      (*field_types)  [6 * i + 4] = e_sqlite_int;
+      (*field_sizes)  [6 * i + 4] = sizeof(size_t);
+      (*field_offsets)[6 * i + 4] = offset;
+      offset += (*field_sizes)[6 * i + 4];
+
+      (*field_names)  [6 * i + 5] = malloc(10 * sizeof(char));
+        sprintf((*field_names)[6 * i + 5], "vector_%zd", i);
+      (*field_types)  [6 * i + 5] = e_sqlite_int;
+      (*field_sizes)  [6 * i + 5] = sizeof(size_t);
+      (*field_offsets)[6 * i + 5] = offset;
+      offset += (*field_sizes)[6 * i + 5];
+
+      (*field_names)  [6 * i + 6] = malloc(11 * sizeof(char));
+        sprintf((*field_names)[6 * i + 6], "portion_%zd", i);
+      (*field_types)  [6 * i + 6] = e_sqlite_int;
+      (*field_sizes)  [6 * i + 6] = sizeof(size_t);
+      (*field_offsets)[6 * i + 6] = offset;
+      offset += (*field_sizes)[6 * i + 6];
+    }
+  }
+
+  for (i = 0; i < data_params->num_params; i++) {
+    (*field_names)  [num_dev_fields + i] = data_params->name_params[i];
+    (*field_types)  [num_dev_fields + i] = data_params->type_params[i];
+    (*field_sizes)  [num_dev_fields + i] = acc_sqlite_type_size(data_params->type_params[i]);
+    (*field_offsets)[num_dev_fields + i] = (*field_offsets)[num_dev_fields + i - 1] + (*field_sizes)[num_dev_fields + i - 1];
+  }
+
+  *entry_size = 0;
+  for (i = 0; i < *num_fields; i++)
+    *entry_size += (*field_sizes)[i];
+
+  return acc_sqlite_read_table(
+    db, "Runs",
+    num_conds, conds,
+    *num_fields, *field_names, *field_types, *field_sizes, *field_offsets,
+    *entry_size, run_entries
+  );
+}
+
+void acc_sqlite_clean_run_table_read(
+  size_t num_devices,
+  char * field_names,
+  enum acc_sqlite_type_e * field_types,
+  size_t * field_sizes,
+  size_t * field_offsets
+) {
+  size_t i;
+  if (num_devices > 1)
+    for (i = 0; i < num_devices; i++)
+      free(field_names[6 * i + 1]);
+  free(field_names);
+  free(field_types);
+  free(field_sizes);
+  free(field_offsets);
+}
 
 /**
  * /brief From http://www.sqlite.org/backup.html
