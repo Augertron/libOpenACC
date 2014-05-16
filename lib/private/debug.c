@@ -67,7 +67,8 @@ void acc_dbg_dump_runtime() {
     printf("No OpenCL Data !\n");
 }
 
-extern const char * cl_invalid_mem_object_tag = "CL_INVALID_MEM_OBJECT";
+const char * CL_BUILD_PROGRAM_FAILURE_tag = "CL_BUILD_PROGRAM_FAILURE";
+const char * CL_INVALID_MEM_OBJECT_tag = "CL_INVALID_MEM_OBJECT";
 
 const char * acc_ocl_status_to_char(cl_int status) {
   char * status_str;
@@ -82,7 +83,7 @@ const char * acc_ocl_status_to_char(cl_int status) {
       case CL_MEM_COPY_OVERLAP:                          return (char *)"CL_MEM_COPY_OVERLAP";
       case CL_IMAGE_FORMAT_MISMATCH:                     return (char *)"CL_IMAGE_FORMAT_MISMATCH";
       case CL_IMAGE_FORMAT_NOT_SUPPORTED:                return (char *)"CL_IMAGE_FORMAT_NOT_SUPPORTED";
-      case CL_BUILD_PROGRAM_FAILURE:                     return (char *)"CL_BUILD_PROGRAM_FAILURE";
+      case CL_BUILD_PROGRAM_FAILURE:                     return CL_BUILD_PROGRAM_FAILURE_tag;
       case CL_MAP_FAILURE:                               return (char *)"CL_MAP_FAILURE";
       case CL_INVALID_VALUE:                             return (char *)"CL_INVALID_VALUE";
       case CL_INVALID_DEVICE_TYPE:                       return (char *)"CL_INVALID_DEVICE_TYPE";
@@ -92,7 +93,7 @@ const char * acc_ocl_status_to_char(cl_int status) {
       case CL_INVALID_QUEUE_PROPERTIES:                  return (char *)"CL_INVALID_QUEUE_PROPERTIES";
       case CL_INVALID_COMMAND_QUEUE:                     return (char *)"CL_INVALID_COMMAND_QUEUE";
       case CL_INVALID_HOST_PTR:                          return (char *)"CL_INVALID_HOST_PTR";
-      case CL_INVALID_MEM_OBJECT:                        return (char *)"CL_INVALID_MEM_OBJECT";
+      case CL_INVALID_MEM_OBJECT:                        return CL_INVALID_MEM_OBJECT_tag;
       case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:           return (char *)"CL_INVALID_IMAGE_FORMAT_DESCRIPTOR";
       case CL_INVALID_IMAGE_SIZE:                        return (char *)"CL_INVALID_IMAGE_SIZE";
       case CL_INVALID_SAMPLER:                           return (char *)"CL_INVALID_SAMPLER";

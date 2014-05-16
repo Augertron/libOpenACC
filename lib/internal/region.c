@@ -84,15 +84,19 @@ void acc_region_init(struct acc_region_t_ * region) {
 
       *program = clCreateProgramWithSource(*context, 2, (const char **)ocl_sources, NULL, &status);
       if (status != CL_SUCCESS) {
-        printf("[fatal]   clCreateProgramWithSource on %s (#%u) for region %zd return %u : failed\n",
-               acc_device_name[acc_runtime.curr_device_type], acc_runtime.curr_device_num, region_id, status);
+        const char * status_str = acc_ocl_status_to_char(status);
+        printf("[fatal]   clCreateProgramWithSource on %s (#%u) for region %zd return %s : failed\n",
+               acc_device_name[acc_runtime.curr_device_type], acc_runtime.curr_device_num, region_id, status_str);
         exit(-1);
       }
 
       status = clBuildProgram(*program, 1, &(acc_runtime.opencl_data->devices[0][device_idx]), build_options, NULL, NULL);
+      if (status == CL_BUILD_PROGRAM_FAILURE)
+        acc_dbg_ocl_build_log(device_idx, *program);
       if (status != CL_SUCCESS) {
-        printf("[fatal]   clBuildProgram on %s (#%u) for region %zd return %u\n",
-               acc_device_name[acc_runtime.curr_device_type], acc_runtime.curr_device_num, region_id, status);
+        const char * status_str = acc_ocl_status_to_char(status);
+        printf("[fatal]   clBuildProgram on %s (#%u) for region %zd return %s\n",
+               acc_device_name[acc_runtime.curr_device_type], acc_runtime.curr_device_num, region_id, status_str);
         exit(-1);
       }
 
