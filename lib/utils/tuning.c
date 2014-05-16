@@ -615,6 +615,7 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
     conds[0] = malloc(22 * sizeof(char));
     sprintf(conds[0], "version_id == '%zd'", kernel->version_by_devices[0]);
 
+    /// \todo function for: lookup for acc_kernel_version_t_::id in acc_kernel_desc_t::versions
     struct acc_kernel_version_t_ * version = NULL;
     for (j = 0; j < kernel->num_versions; j++)
       if (kernel->versions[j]->id == kernel->version_by_devices[0]) {

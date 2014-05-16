@@ -44,9 +44,7 @@ struct acc_region_t_ {
   } devices [];
 };
 
-struct acc_region_t_ * acc_build_region(
-  struct acc_region_desc_t_ * region
-);
+struct acc_region_t_ * acc_build_region(size_t region_id);
 
 /*! \func acc_region_start
  *  \param region pointer to a parallel region descriptor

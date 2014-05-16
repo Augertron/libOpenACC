@@ -53,6 +53,8 @@ struct acc_region_desc_t_ {
   struct acc_data_distribution_t_ * distributed_data;
 };
 
+struct acc_region_desc_t_ * acc_region_desc_by_ID(size_t region_id);
+
 /**
  *  Initialize a region : build the associated OpenCL program (only have to be done once)
  */

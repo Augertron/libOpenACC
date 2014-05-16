@@ -11,8 +11,12 @@
 
 #include <assert.h>
 
+#ifndef PRINT_INFO
+# define PRINT_INFO 0
+#endif
+
 #ifndef PRINT_BUILD_LOG
-# define PRINT_BUILD_LOG 1
+# define PRINT_BUILD_LOG 0
 #endif
 
 acc_runtime_t acc_runtime = {0, NULL, acc_device_any, 0}; // by default, we use the first of any device
@@ -27,6 +31,15 @@ void acc_init(acc_device_t dev) {
   unsigned i;
   for (i = 0; i < num_devices; i++)
     acc_init_(dev, i);
+}
+
+static void acc_ocl_ctx_error_callback(
+  const char * errinfo, 
+  const void * private_info, 
+  size_t cb, 
+  void * user_data
+) {
+  printf("[error]   acc_ocl_ctx_error_callback : %s\n", errinfo);
 }
 
 void acc_init__(unsigned device_idx) { 
@@ -44,7 +57,7 @@ void acc_init__(unsigned device_idx) {
     }
     acc_runtime.opencl_data->devices_data[device_idx] = device_data;
 
-    device_data->context = clCreateContext(NULL, 1, device, NULL, NULL, &status);
+    device_data->context = clCreateContext(NULL, 1, device, &acc_ocl_ctx_error_callback, NULL, &status);
     if (status != CL_SUCCESS || device_data->context == NULL) {
        printf("[error]   clCreateContext : %s, %u return %u : failed\n", "", 0/** \todo acc_device_name[dev], num*/, status);
 
@@ -107,6 +120,9 @@ void acc_shutdown(acc_device_t dev) {
 }
 
 void acc_shutdown_(acc_device_t dev, int num) {
+#if PRINT_INFO
+  printf("[warning] Shuting OpenACC down...\n");
+#endif
   acc_init_once();
 
   unsigned device_idx = acc_get_device_idx(dev, num);

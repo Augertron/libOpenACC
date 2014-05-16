@@ -393,7 +393,7 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
       strcpy(region->file, region_entries[r_idx].opencl_file);
     region->num_options = 0;          /// \todo add to Version DB
     region->options = NULL;           /// \todo add to Version DB
-    region->num_devices = 0;          /// \todo add to Version DB
+    region->num_devices = 1;          /// \todo add to Version DB
     region->devices = NULL;           /// \todo add to Version DB
     region->num_distributed_data = 0; /// \todo add to Version DB
     region->distributed_data = NULL;  /// \todo add to Version DB
@@ -427,7 +427,7 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
       kernel->version_by_devices = NULL;
 
       char kernel_id_cond[20];
-      sprintf(kernel_id_cond, "kernel_id == '%zd'", kernel_entries[r_idx].kernel_id);
+      sprintf(kernel_id_cond, "kernel_id == '%zd'", kernel_entries[k_idx].kernel_id);
 
       size_t num_version_conds = filter != NULL ? 3 : 2;
 
@@ -436,8 +436,8 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
       version_conds[1] = kernel_id_cond;
 
       if (filter != NULL) {
-        size_t num_enabled_versions = filter->num_enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[r_idx].kernel_id];
-        size_t * enabled_versions = filter->enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[r_idx].kernel_id];
+        size_t num_enabled_versions = filter->num_enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[k_idx].kernel_id];
+        size_t * enabled_versions = filter->enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[k_idx].kernel_id];
 
         version_conds[2] = malloc((24 * num_enabled_versions + 1) * sizeof(char));
         version_conds[2][0] = '\0';

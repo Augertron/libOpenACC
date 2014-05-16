@@ -7,6 +7,7 @@
 #include "OpenACC/private/debug.h"
 
 #include "OpenACC/utils/io.h"
+#include "OpenACC/utils/sqlite.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -165,6 +166,15 @@ void acc_load_ocl_sources() {
   strcat(ocl_rt_file, "/");
   strcat(ocl_rt_file, compiler_data.acc_runtime_ocl);
   acc_runtime.opencl_data->runtime_sources = readSource(ocl_rt_file);
+
+  if (compiler_data.regions == NULL) {
+    char * env_versions_db = getenv("ACC_VERSIONS_DB");
+    if (env_versions_db != NULL && env_versions_db[0] != '\0') {
+      sqlite3 * versions_db = acc_sqlite_open(env_versions_db, 1, 1);
+      acc_sqlite_load_compiler_data(versions_db, NULL);
+      acc_sqlite_close(versions_db);
+    }
+  }
 
   if (compiler_data.num_regions <= 0) {
     printf("[error]   There is not any OpenCL region (parallel/kernel constructs) listed! Check that acc_init_kernel_first is called (and correct).\n");

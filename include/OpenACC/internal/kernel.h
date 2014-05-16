@@ -102,6 +102,8 @@ struct acc_kernel_desc_t_ {
   size_t * version_by_devices; 
 };
 
+struct acc_kernel_desc_t_ * acc_kernel_desc_by_ID(size_t region_id, size_t kernel_id);
+
 /*! \func acc_create_context
  *
  *  Create the context associated to 'region' and 'kernel'

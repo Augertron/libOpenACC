@@ -24,8 +24,11 @@ typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_region_t_ * acc_region_t;
 typedef struct acc_context_t_ * acc_context_t;
 
-acc_kernel_t acc_build_kernel(acc_kernel_desc_t kernel) {
+acc_kernel_t acc_build_kernel(size_t region_id, size_t kernel_id) {
   acc_init_once();
+
+  acc_kernel_desc_t kernel = acc_kernel_desc_by_ID(region_id, kernel_id);
+  assert(kernel != NULL);
 
   acc_kernel_t result = (acc_kernel_t)malloc(sizeof(struct acc_kernel_t_));
 

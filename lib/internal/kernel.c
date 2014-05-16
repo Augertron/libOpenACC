@@ -8,6 +8,7 @@
 #include "OpenACC/internal/kernel.h"
 
 #include "OpenACC/internal/loop.h"
+#include "OpenACC/internal/compiler.h"
 
 #include "OpenACC/internal/runtime.h"
 #include "OpenACC/private/debug.h"
@@ -31,6 +32,17 @@ struct loop_triplet_t {
   unsigned long nbr_it;
   unsigned long stride;
 };
+
+struct acc_kernel_desc_t_ * acc_kernel_desc_by_ID(size_t region_id, size_t kernel_id) {
+  struct acc_region_desc_t_ * region = acc_region_desc_by_ID(region_id);
+  if (region != NULL) {
+    size_t i;
+    for (i = 0; i < region->num_kernels; i++)
+      if (region->kernels[i]->id == kernel_id)
+        return region->kernels[i];
+  }
+  return NULL;
+}
 
 acc_context_t acc_create_context(acc_region_t region, acc_kernel_t kernel, size_t device_idx) {
   acc_context_t result = (acc_context_t)malloc(sizeof(struct acc_context_t_) + kernel->desc->num_loops * sizeof(struct acc_kernel_loop_t_));
@@ -383,8 +395,13 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   strcpy(kernel_name, kernel->desc->name);
   strcat(kernel_name, version_suffix);
 
-  cl_program program = acc_runtime.opencl_data->devices_data[device_idx]->programs[region->desc->id];
+  size_t i;
+  for (i = 0; i < compiler_data.num_regions; i++)
+    if (compiler_data.regions[i]->id == region->desc->id)
+      break;
+  assert(i < compiler_data.num_regions);
 
+  cl_program program = acc_runtime.opencl_data->devices_data[device_idx]->programs[i];
   assert(program != NULL);
 
   cl_int status;

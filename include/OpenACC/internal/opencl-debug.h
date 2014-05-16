@@ -20,7 +20,7 @@ extern "C" {
 /*!
  * \brief Debug: Print an OpenCL build log
  */
-void acc_dbg_ocl_build_log(unsigned device_idx, cl_program program, acc_device_t dev, int num);
+void acc_dbg_ocl_build_log(unsigned device_idx, cl_program program);
 
 #ifdef __cplusplus
 }

@@ -12,8 +12,11 @@
 typedef struct acc_region_desc_t_ * acc_region_desc_t;
 typedef struct acc_region_t_ * acc_region_t;
 
-struct acc_region_t_ * acc_build_region(acc_region_desc_t region) {
+struct acc_region_t_ * acc_build_region(size_t region_id) {
   acc_init_once();
+
+  acc_region_desc_t region = acc_region_desc_by_ID(region_id);
+  assert(region != NULL);
 
   unsigned num_devices = region->num_devices;
 
