@@ -22,7 +22,7 @@ struct bimap_t_
     size_t key_1_size;
     /// Size of Key #2
     size_t key_2_size;
-    /// size of storage for each data 
+    /// size of storage for each entry 
     size_t storage_size;
 
     /// Map from Key #1 to the index of the corresponding value in values

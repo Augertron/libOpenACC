@@ -23,8 +23,8 @@
 
 #include <assert.h>
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
+#ifndef DBG_SQLITE_CONNECTION
+# define DBG_SQLITE_CONNECTION 0
 #endif
 
 struct acc_sqlite_t_ {
@@ -150,8 +150,8 @@ sqlite3 * acc_sqlite_open(char * filename_, int fail_if_file_missing, int use_in
   acc_sqlite_init();
 
   assert(acc_sqlite != NULL);
-#if PRINT_INFO
-  printf("[info]   Enter acc_sqlite_open_db(...)\n");
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Enter acc_sqlite_open_db(...)\n");
 #endif
 
   struct stat buffer;
@@ -209,8 +209,8 @@ void acc_sqlite_close(sqlite3 * db) {
 }
 
 int acc_sqlite_table_exists(sqlite3 * db, char * table_name) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_sqlite_table_exists(...)\n");
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Enter acc_sqlite_table_exists(...)\n");
 #endif
   assert(db != NULL && table_name != NULL);
 
@@ -228,8 +228,8 @@ int acc_sqlite_table_exists(sqlite3 * db, char * table_name) {
 }
 
 void acc_sqlite_print_table(sqlite3 * db, char * table_name) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_sqlite_print_table(...)\n");
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Enter acc_sqlite_print_table(...)\n");
 #endif
   assert(db != NULL && table_name != NULL);
 
@@ -257,8 +257,8 @@ int acc_sqlite_create_table(sqlite3 * db, char * table_name, char * table_conten
 }
 
 void acc_sqlite_build_select_query(char * table_name, size_t num_fields, char ** fields, size_t num_conds, char ** conds, char ** query) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_sqlite_build_select_query(...)\n");
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Enter acc_sqlite_build_select_query(...)\n");
 #endif
   assert(table_name != NULL && (num_conds == 0 || conds != NULL) && (num_fields == 0 || fields != NULL));
 
@@ -309,14 +309,14 @@ void acc_sqlite_build_select_query(char * table_name, size_t num_fields, char **
   }
   strcat(*query, ";");
 
-#if PRINT_INFO
-  printf("[info]   Leave acc_sqlite_build_select_query, query = %s\n", *query);
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Leave acc_sqlite_build_select_query, query = %s\n", *query);
 #endif
 }
 
 size_t acc_sqlite_count_table_entries(sqlite3 * db, char * table_name, size_t num_conds, char ** conds) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_sqlite_count_table_entries(...)\n");
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Enter acc_sqlite_count_table_entries(...)\n");
 #endif
   assert(db != NULL && table_name != NULL && (num_conds == 0 || conds != NULL));
 
@@ -338,8 +338,8 @@ size_t acc_sqlite_read_table(
   size_t num_fields, char ** field_names, enum acc_sqlite_type_e * field_types, size_t * field_sizes, size_t * field_offsets,
   size_t entry_size, void ** entries
 ) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_sqlite_read_table(...)\n");
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Enter acc_sqlite_read_table(...)\n");
 #endif
   size_t num_entries = acc_sqlite_count_table_entries(db, table_name, num_conds, conds);
   *entries = malloc(num_entries * entry_size);
@@ -364,8 +364,10 @@ size_t acc_sqlite_read_table(
 }
 
 void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler_data_filter_t_ * filter) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_sqlite_load_compiler_data(...)\n");
+  size_t i;
+
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Enter acc_sqlite_load_compiler_data(...)\n");
 #endif
   assert(compiler_data.num_regions == 0 && compiler_data.regions == NULL);
 
@@ -417,11 +419,6 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
       kernel->id = kernel_entries[k_idx].kernel_id;
       kernel->name = malloc((strlen(kernel_entries[k_idx].name) + 1) * sizeof(char));
         strcpy(kernel->name, kernel_entries[k_idx].name);
-      kernel->num_params = 0;       /// \todo add to Version DB
-      kernel->size_params = NULL;   /// \todo add to Version DB
-      kernel->num_scalars = 0;      /// \todo add to Version DB
-      kernel->size_scalars = NULL;  /// \todo add to Version DB
-      kernel->num_datas = 0;        /// \todo add to Version DB
       kernel->num_loops = kernel_entries[k_idx].num_loops;
       kernel->splitted_loop = NULL; /// \todo add to Version DB
       kernel->version_by_devices = NULL;
@@ -434,6 +431,41 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
       char ** version_conds = malloc(num_version_conds * sizeof(char*));
       version_conds[0] = region_id_cond;
       version_conds[1] = kernel_id_cond;
+
+      struct acc_sqlite_parameter_entry_t * parameter_entries;
+      kernel->num_params = acc_sqlite_read_table(
+                             db, "Parameters", 2, version_conds,
+                             parameter_entry_num_fields, parameter_entry_field_names, parameter_entry_field_types,
+                                                         parameter_entry_field_sizes, parameter_entry_field_offsets,
+                             sizeof(struct acc_sqlite_parameter_entry_t), (void**)&parameter_entries
+                           );
+      if (kernel->num_params > 0) {
+        kernel->size_params = malloc(kernel->num_params * sizeof(size_t));
+        for (i = 0; i < kernel->num_params; i++)
+          kernel->size_params[parameter_entries[i].idx] = parameter_entries[i].size;
+      }
+
+      struct acc_sqlite_scalar_entry_t * scalar_entries;
+      kernel->num_scalars = acc_sqlite_read_table(
+                              db, "Scalars", 2, version_conds,
+                              scalar_entry_num_fields, scalar_entry_field_names, scalar_entry_field_types,
+                                                         scalar_entry_field_sizes, scalar_entry_field_offsets,
+                              sizeof(struct acc_sqlite_scalar_entry_t), (void**)&scalar_entries
+                            );
+      if (kernel->num_scalars > 0) {
+        kernel->size_scalars = malloc(kernel->num_scalars * sizeof(size_t));
+        for (i = 0; i < kernel->num_scalars; i++)
+          kernel->size_scalars[scalar_entries[i].idx] = scalar_entries[i].size;
+      }
+
+      struct acc_sqlite_data_entry_t * data_entries;
+      kernel->num_datas = acc_sqlite_read_table(
+                            db, "Datas", 2, version_conds,
+                            data_entry_num_fields, data_entry_field_names, data_entry_field_types,
+                                                   data_entry_field_sizes, data_entry_field_offsets,
+                            sizeof(struct acc_sqlite_data_entry_t), (void**)&data_entries
+                          );
+
 
       if (filter != NULL) {
         size_t num_enabled_versions = filter->num_enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[k_idx].kernel_id];
@@ -507,8 +539,8 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
 
   free(region_entries);
 
-#if PRINT_INFO
-  printf("[info]   Leave acc_sqlite_load_compiler_data\n");
+#if DBG_SQLITE_CONNECTION
+  printf("[debug]  Leave acc_sqlite_load_compiler_data\n");
 #endif
 }
 
@@ -584,6 +616,38 @@ size_t event_entry_field_offsets[8] = {
   offsetof(struct acc_sqlite_event_entry_t, cl_profiling_command_submit),
   offsetof(struct acc_sqlite_event_entry_t, cl_profiling_command_start),
   offsetof(struct acc_sqlite_event_entry_t, cl_profiling_command_end)
+};
+
+size_t parameter_entry_num_fields = 4;
+char * parameter_entry_field_names[4] = {"region_id", "kernel_id", "idx", "size"};
+enum acc_sqlite_type_e parameter_entry_field_types[4] = {e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int};
+size_t parameter_entry_field_sizes[4] = {sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t)};
+size_t parameter_entry_field_offsets[4] = {
+  offsetof(struct acc_sqlite_parameter_entry_t, region_id),
+  offsetof(struct acc_sqlite_parameter_entry_t, kernel_id),
+  offsetof(struct acc_sqlite_parameter_entry_t, idx),
+  offsetof(struct acc_sqlite_parameter_entry_t, size)
+};
+
+size_t scalar_entry_num_fields = 4;
+char * scalar_entry_field_names[4] = {"region_id", "kernel_id", "idx", "size"};
+enum acc_sqlite_type_e scalar_entry_field_types[4] = {e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int};
+size_t scalar_entry_field_sizes[4] = {sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t)};
+size_t scalar_entry_field_offsets[4] = {
+  offsetof(struct acc_sqlite_scalar_entry_t, region_id),
+  offsetof(struct acc_sqlite_scalar_entry_t, kernel_id),
+  offsetof(struct acc_sqlite_scalar_entry_t, idx),
+  offsetof(struct acc_sqlite_scalar_entry_t, size)
+};
+
+size_t data_entry_num_fields = 3;
+char * data_entry_field_names[3] = {"region_id", "kernel_id", "idx"};
+enum acc_sqlite_type_e data_entry_field_types[3] = {e_sqlite_int, e_sqlite_int, e_sqlite_int};
+size_t data_entry_field_sizes[3] = {sizeof(size_t), sizeof(size_t), sizeof(size_t)};
+size_t data_entry_field_offsets[3] = {
+  offsetof(struct acc_sqlite_data_entry_t, region_id),
+  offsetof(struct acc_sqlite_data_entry_t, kernel_id),
+  offsetof(struct acc_sqlite_data_entry_t, idx)
 };
 
 int acc_sqlite_read_run_table(

@@ -19,8 +19,8 @@
 
 #include <assert.h>
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
+#ifndef DBG_HOST_CTX
+# define DBG_HOST_CTX 0
 #endif
 
 typedef struct acc_region_t_ * acc_region_t;
@@ -385,7 +385,7 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
 
   memcpy(context->loops, best_matching_loops, context->num_loop * sizeof(struct acc_kernel_loop_t_));
 
-#if PRINT_INFO
+#if DBG_HOST_CTX
   acc_debug_dump_context(region, kernel, context, device_idx);
 #endif
 

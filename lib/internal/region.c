@@ -12,12 +12,12 @@
 
 #include <assert.h>
 
-#ifndef PRINT_BUILD_LOG
-# define PRINT_BUILD_LOG 0 
+#ifndef DBG_REGION
+# define DBG_REGION 0
 #endif
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
+#ifndef BUILD_LOG
+# define BUILD_LOG 0
 #endif
 
 struct acc_region_desc_t_ * acc_region_desc_by_ID(size_t region_id) {
@@ -44,6 +44,9 @@ void acc_get_region_defaults(struct acc_region_t_ * region) {
 }
 
 void acc_region_init(struct acc_region_t_ * region) {
+#if DBG_REGION
+  printf("[debug]  acc_region_init\n");
+#endif
 
   size_t region_id;
   for (region_id = 0; region_id < compiler_data.num_regions; region_id++)
@@ -116,8 +119,8 @@ void acc_region_init(struct acc_region_t_ * region) {
           acc_dbg_ocl_build_log(device_idx, *program);
           exit(-1);
         case CL_BUILD_SUCCESS:
-          printf("[success] clGetProgramBuildInfo: build status: CL_BUILD_SUCCESS.\n");
-#if PRINT_BUILD_LOG
+          printf("[info]    clGetProgramBuildInfo: build status: CL_BUILD_SUCCESS.\n");
+#if BUILD_LOG
           acc_dbg_ocl_build_log(device_idx, *program);
 #endif
           break;

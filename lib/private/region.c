@@ -9,6 +9,10 @@
 
 #include <assert.h>
 
+#ifndef DBG_REGION
+#define DBG_REGION 0
+#endif
+
 typedef struct acc_region_desc_t_ * acc_region_desc_t;
 typedef struct acc_region_t_ * acc_region_t;
 
@@ -53,6 +57,10 @@ struct acc_region_t_ * acc_build_region(size_t region_id) {
 }
 
 void acc_region_start(acc_region_t region) {
+#if DBG_REGION
+  printf("[debug]  acc_region_start #%zd\n", region->desc->id);
+#endif
+
   acc_region_init(region);
 
   acc_get_region_defaults(region);
@@ -65,6 +73,9 @@ void acc_region_start(acc_region_t region) {
 }
 
 void acc_region_stop(acc_region_t region) {
+#if DBG_REGION
+  printf("[debug]  acc_region_stop #%zd\n", region->desc->id);
+#endif
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
     assert(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue != NULL);

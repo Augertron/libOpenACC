@@ -28,8 +28,8 @@
 
 #include <assert.h>
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
+#ifndef DBG_TUNING
+# define DBG_TUNING 0
 #endif
 
 struct acc_tuner_t * acc_tuner;
@@ -59,8 +59,8 @@ void acc_tuning_init(
   struct acc_tuner_data_params_desc_t_ * data_params,
   sqlite3 * versions_db
 ) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_init(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_init(...)\n");
 #endif
   assert(num_devices > 0);
   assert(devices_name != NULL);
@@ -118,8 +118,8 @@ struct acc_tuner_gen_data_t * acc_tuning_build_gen_data() {
 }
 
 void acc_tuning_gen_all_version_combinaisons(size_t * version_combinaisons, size_t * version_combinaison_idx, size_t dev_idx, size_t * buffer, struct acc_tuner_gen_data_t * gen_data) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_gen_all_version_combinaisons(dev_idx = %zd)\n", dev_idx);
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_gen_all_version_combinaisons(dev_idx = %zd)\n", dev_idx);
 #endif
   if (dev_idx < acc_tuner->num_devices) {
     size_t version_idx;
@@ -129,8 +129,8 @@ void acc_tuning_gen_all_version_combinaisons(size_t * version_combinaisons, size
     }
   }
   else {
-#if PRINT_INFO
-  printf("[info]   Save... (*version_combinaison_idx = %zd)\n", *version_combinaison_idx);
+#if DBG_TUNING
+  printf("[debug]  Save... (*version_combinaison_idx = %zd)\n", *version_combinaison_idx);
 #endif
     memcpy(version_combinaisons + (*version_combinaison_idx) * acc_tuner->num_devices, buffer, acc_tuner->num_devices * sizeof(size_t));
     (*version_combinaison_idx)++;
@@ -149,8 +149,8 @@ size_t acc_tuning_count_portion_combinaisons(size_t portions, size_t num_dev) {
 }
 
 void acc_tuning_gen_all_portion_combinaisons(size_t portion, size_t dev_idx, size_t * portion_combinaisons, size_t * portion_combinaison_idx, size_t * buffer) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_gen_all_portion_combinaisons(portion = %zd, dev_idx = %zd)\n", portion, dev_idx);
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_gen_all_portion_combinaisons(portion = %zd, dev_idx = %zd)\n", portion, dev_idx);
 #endif
   if (dev_idx < acc_tuner->num_devices - 1) {
     size_t i;
@@ -160,8 +160,8 @@ void acc_tuning_gen_all_portion_combinaisons(size_t portion, size_t dev_idx, siz
     }
   }
   else if (dev_idx == acc_tuner->num_devices - 1) {
-#if PRINT_INFO
-  printf("[info]   Save... (*portion_combinaison_idx = %zd)\n", *portion_combinaison_idx);
+#if DBG_TUNING
+  printf("[debug]  Save... (*portion_combinaison_idx = %zd)\n", *portion_combinaison_idx);
 #endif
     buffer[dev_idx] = portion;
     memcpy(portion_combinaisons + (*portion_combinaison_idx) * acc_tuner->num_devices, buffer, acc_tuner->num_devices * sizeof(size_t));
@@ -183,8 +183,8 @@ int acc_tuner_is_valid_gwv_combinaison(
   size_t gwv[3],
   struct acc_tuner_gen_data_t * gen_data
 ) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_is_valid_gwv_combinaison(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_is_valid_gwv_combinaison(...)\n");
 #endif
   size_t i;
   for (i = 0; i < num_loops; i++) {
@@ -236,8 +236,8 @@ void acc_tuning_gen_valid_gwv_combinaisons_rec(
   struct acc_sqlite_loop_entry_t ** loop_entries,
   struct acc_tuner_gen_data_t * gen_data
 ) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_gen_valid_gwv_combinaisons_rec(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_gen_valid_gwv_combinaisons_rec(...)\n");
 #endif
   if (dev_idx < acc_tuner->num_devices) {
     size_t version = versions[dev_idx];
@@ -280,8 +280,8 @@ void acc_tuning_gen_valid_gwv_combinaisons(
   struct acc_sqlite_loop_entry_t ** loop_entries,
   struct acc_tuner_gen_data_t * gen_data
 ) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_gen_valid_gwv_combinaisons(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_gen_valid_gwv_combinaisons(...)\n");
 #endif
   *num_gwv_combinaisons = 0;
 
@@ -323,8 +323,8 @@ void acc_tuning_gen_valid_gwv_combinaisons(
 
 
 void acc_tuning_generate(struct acc_tuner_gen_data_t * gen_data) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_generate(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_generate(...)\n");
 #endif
   assert(acc_tuner != NULL);
 
@@ -356,10 +356,10 @@ void acc_tuning_generate(struct acc_tuner_gen_data_t * gen_data) {
 
   // Add valid runs to the DB
 
-#if PRINT_INFO
-  printf("[info]     #versions: %zd\n", num_version_combinaisons);
-  printf("[info]     #portions: %zd\n", num_portion_combinaisons);
-  printf("[info]     #params  : %zd\n", gen_data->num_params_values);
+#if DBG_TUNING
+  printf("[debug]    #versions: %zd\n", num_version_combinaisons);
+  printf("[debug]    #portions: %zd\n", num_portion_combinaisons);
+  printf("[debug]    #params  : %zd\n", gen_data->num_params_values);
 #endif
 
   char region_id_cond[20];
@@ -370,8 +370,8 @@ void acc_tuning_generate(struct acc_tuner_gen_data_t * gen_data) {
   size_t param_idx;
   for (version_combinaison_idx = 0; version_combinaison_idx < num_version_combinaisons; version_combinaison_idx++) {
 
-#if PRINT_INFO
-  printf("[info]       Next combinaison of versions... (%zd/%zd)\n", version_combinaison_idx, num_version_combinaisons);
+#if DBG_TUNING
+  printf("[debug]      Next combinaison of versions... (%zd/%zd)\n", version_combinaison_idx, num_version_combinaisons);
 #endif
 
     size_t * num_loops = malloc(acc_tuner->num_devices * sizeof(size_t));
@@ -426,8 +426,8 @@ void acc_tuning_generate(struct acc_tuner_gen_data_t * gen_data) {
 }
 
 int acc_tuning_create_experiment() {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_create_experiment(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_create_experiment(...)\n");
 #endif
   char tmp[200];
   size_t i;
@@ -463,8 +463,8 @@ int acc_tuning_create_experiment() {
   experiment_desc = (char *)realloc(experiment_desc, experiment_desc_length * sizeof(char));
   strcat(experiment_desc, exec_flag);
 
-#if PRINT_INFO
-  printf("[info]   Call acc_profiling_set_experiment(\"%s\")\n", experiment_desc);
+#if DBG_TUNING
+  printf("[debug]  Call acc_profiling_set_experiment(\"%s\")\n", experiment_desc);
 #endif
 
   int res = acc_profiling_set_experiment(experiment_desc);
@@ -475,8 +475,8 @@ int acc_tuning_create_experiment() {
 }
 
 void acc_tuning_add_run(struct acc_tuner_device_param_t * device_params, void * params) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_add_run(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_add_run(...)\n");
 #endif
   char tmp[200];
   size_t i;
@@ -544,8 +544,8 @@ void acc_tuning_add_run(struct acc_tuner_device_param_t * device_params, void * 
   run_desc = (char *)realloc(run_desc, run_desc_length * sizeof(char));
   strcat(run_desc, tmp);
 
-#if PRINT_INFO
-    printf("[info]   Call acc_profiling_new_run(\"%s\")\n", run_desc);
+#if DBG_TUNING
+    printf("[debug]  Call acc_profiling_new_run(\"%s\")\n", run_desc);
 #endif
 
   acc_profiling_new_run(run_desc);
@@ -554,8 +554,8 @@ void acc_tuning_add_run(struct acc_tuner_device_param_t * device_params, void * 
 }
 
 struct acc_tuner_data_params_desc_t_ * acc_tuning_build_data_params(size_t num_params, ...) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_build_data_params(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_build_data_params(...)\n");
 #endif
   struct acc_tuner_data_params_desc_t_ * result = (struct acc_tuner_data_params_desc_t_ *)malloc(sizeof(struct acc_tuner_data_params_desc_t_));
     result->name_params = (char **)malloc(num_params * sizeof(char *));
@@ -590,8 +590,8 @@ void acc_tuner_exec_kernel(struct acc_tuner_exec_data_t * exec_data) {
 }
 
 void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
-#if PRINT_INFO
-  printf("[info]   Enter acc_tuning_execute(...)\n");
+#if DBG_TUNING
+  printf("[debug]  Enter acc_tuning_execute(...)\n");
 #endif
   assert(acc_tuner != NULL);
 
@@ -692,8 +692,8 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
 
   free(conds);
 
-#if PRINT_INFO
-  printf("[info]     num_candidates = %zd\n", num_candidates);
+#if DBG_TUNING
+  printf("[debug]    num_candidates = %zd\n", num_candidates);
 #endif
 
   acc_push_data_environment();
@@ -718,8 +718,8 @@ void acc_tuning_execute(struct acc_tuner_exec_data_t * exec_data, ...) {
       exec_data->region->devices[j].num_gang      = *(size_t *)(run_entry + field_offsets[6 * j + 3]);
       exec_data->region->devices[j].num_worker    = *(size_t *)(run_entry + field_offsets[6 * j + 4]);
       exec_data->region->devices[j].vector_length = *(size_t *)(run_entry + field_offsets[6 * j + 5]);
-#if PRINT_INFO
-      printf("[info]       Device %zd uses gang = %zd, worker = %zd, and vector = %zd\n", j, exec_data->region->devices[j].num_gang, exec_data->region->devices[j].num_worker, exec_data->region->devices[j].vector_length);
+#if DBG_TUNING
+      printf("[debug]      Device %zd uses gang = %zd, worker = %zd, and vector = %zd\n", j, exec_data->region->devices[j].num_gang, exec_data->region->devices[j].num_worker, exec_data->region->devices[j].vector_length);
 #endif
     }
 

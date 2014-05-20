@@ -92,6 +92,41 @@ extern enum acc_sqlite_type_e event_entry_field_types[8];
 extern size_t event_entry_field_sizes[8];
 extern size_t event_entry_field_offsets[8];
 
+struct acc_sqlite_parameter_entry_t {
+  size_t region_id;
+  size_t kernel_id;
+  size_t idx;
+  size_t size;
+};
+extern size_t parameter_entry_num_fields;
+extern char * parameter_entry_field_names[4];
+extern enum acc_sqlite_type_e parameter_entry_field_types[4];
+extern size_t parameter_entry_field_sizes[4];
+extern size_t parameter_entry_field_offsets[4];
+
+struct acc_sqlite_scalar_entry_t {
+  size_t region_id;
+  size_t kernel_id;
+  size_t idx;
+  size_t size;
+};
+extern size_t scalar_entry_num_fields;
+extern char * scalar_entry_field_names[4];
+extern enum acc_sqlite_type_e scalar_entry_field_types[4];
+extern size_t scalar_entry_field_sizes[4];
+extern size_t scalar_entry_field_offsets[4];
+
+struct acc_sqlite_data_entry_t {
+  size_t region_id;
+  size_t kernel_id;
+  size_t idx;
+};
+extern size_t data_entry_num_fields;
+extern char * data_entry_field_names[3];
+extern enum acc_sqlite_type_e data_entry_field_types[3];
+extern size_t data_entry_field_sizes[3];
+extern size_t data_entry_field_offsets[3];
+
 sqlite3 * acc_sqlite_open(char * filename, int fail_if_file_missing, int use_in_memory_db);
 void acc_sqlite_save  (sqlite3 * db);
 void acc_sqlite_reload(sqlite3 * db);

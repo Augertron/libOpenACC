@@ -21,8 +21,8 @@
 
 #undef ENABLE_LOGGING
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
+#ifndef DBG_PROFILING
+# define DBG_PROFILING 0
 #endif
 
 acc_profiler_t acc_profiler = NULL;
@@ -215,8 +215,8 @@ void acc_profiling_get_profile_from_event(cl_event event, cl_ulong * queued, cl_
 void acc_profiling_release_event(cl_event event, struct acc_event_data_t * event_data) {
   cl_ulong queued, submit, start, end;
 
-#if PRINT_INFO
-  printf("[info]    acc_profiling_release_event\n");
+#if DBG_PROFILING
+  printf("[debug]   acc_profiling_release_event\n");
 #endif
 
   acc_profiling_get_profile_from_event(event, &queued, &submit, &start, &end);
@@ -246,8 +246,8 @@ void acc_profiling_register_memcpy_to_device(cl_event event, size_t device_idx, 
   map_insert(acc_profiler->events, &event, &event_data);
 
   /// \todo save command
-#if PRINT_INFO
-  printf("[info]    acc_profiling_register_memcpy_to_device\n");
+#if DBG_PROFILING
+  printf("[debug]   acc_profiling_register_memcpy_to_device\n");
 #endif
 /*
   cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);
@@ -268,8 +268,8 @@ void acc_profiling_register_memcpy_from_device(cl_event event, size_t device_idx
   map_insert(acc_profiler->events, &event, &event_data);
 
   /// \todo save command
-#if PRINT_INFO
-  printf("[info]    acc_profiling_register_memcpy_from_device\n");
+#if DBG_PROFILING
+  printf("[debug]   acc_profiling_register_memcpy_from_device\n");
 #endif
 /*
   cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);
@@ -290,8 +290,8 @@ void acc_profiling_register_kernel_launch(cl_event event, size_t device_idx, siz
   map_insert(acc_profiler->events, &event, &event_data);
 
   /// \todo save command
-#if PRINT_INFO
-  printf("[info]    acc_profiling_register_kernel_launch\n");
+#if DBG_PROFILING
+  printf("[debug]   acc_profiling_register_kernel_launch\n");
 #endif
 /*
   cl_int status = clSetEventCallback(event, CL_COMPLETE, &acc_profiling_event_callback, event_data);

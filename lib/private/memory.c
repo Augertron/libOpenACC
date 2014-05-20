@@ -22,8 +22,12 @@
 #include <string.h>
 #include <assert.h>
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
+#ifndef DBG_DATA
+# define DBG_DATA 0
+#endif
+
+#ifndef DBG_DIST_DATA
+# define DBG_DIST_DATA 0
 #endif
 
 #ifdef __cplusplus
@@ -70,26 +74,26 @@ void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx_, h_v
     if (k < device_idx)
       prev_portion += region->desc->distributed_data[data_idx].portions[k];
   }
-#if PRINT_INFO
-  printf("[info]    region[%u] on device #%u distributed data.\n", region->desc->id, device_idx_);
-  printf("[info]        host_ptr     = %X\n", *host_ptr);
-  printf("[info]        n            = %d\n", *n);
-  printf("[info]        sum_portions = %d\n", sum_portions);
-  printf("[info]        prev_portion = %d\n", prev_portion);
+#if DBG_DIST_DATA
+  printf("[debug]   region[%u] on device #%u distributed data.\n", region->desc->id, device_idx_);
+  printf("[debug]       host_ptr     = %X\n", *host_ptr);
+  printf("[debug]       n            = %d\n", *n);
+  printf("[debug]       sum_portions = %d\n", sum_portions);
+  printf("[debug]       prev_portion = %d\n", prev_portion);
 #endif
   // Update host_ptr and n to cover the desired portion
   *host_ptr += (*n * prev_portion) / sum_portions;
   *n         = (*n * region->desc->distributed_data[data_idx].portions[device_idx]) / sum_portions;
 
-#if PRINT_INFO
-  printf("[info]        host_ptr     = %X\n", *host_ptr);
-  printf("[info]        n            = %d\n", *n);
+#if DBG_DIST_DATA
+  printf("[debug]       host_ptr     = %X\n", *host_ptr);
+  printf("[debug]       n            = %d\n", *n);
 #endif
 }
 
 d_void * acc_malloc_(size_t device_idx, size_t n) {
-#if PRINT_INFO
-  printf("[info]  acc_malloc_(size_t device_idx = %u, size_t n = %d)\n", device_idx, n);
+#if DBG_DIST_DATA
+  printf("[debug] acc_malloc_(size_t device_idx = %u, size_t n = %d)\n", device_idx, n);
 #endif
 
   cl_int status;
@@ -107,8 +111,8 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
     exit(-1); /// \todo error code
   }
 
-#if PRINT_INFO
-  printf("[info]      return %X\n", buffer);
+#if DBG_DIST_DATA
+  printf("[debug]     return %X\n", buffer);
 #endif
 
   return (d_void *)buffer;
@@ -126,6 +130,9 @@ void acc_free_(size_t device_idx, d_void * dev_ptr) {
 ////////////////////////////////////////////////////////////////////////
 
 d_void * acc_copyin_(size_t device_idx, h_void * host_ptr, size_t n) {
+#if DBG_DATA
+  printf("[debug] acc_copyin_(device_idx = %zd, host_ptr = %x, n = %zd)\n", device_idx, host_ptr, n);
+#endif
 
   assert(!acc_is_present_(device_idx, host_ptr, n));
 
@@ -139,8 +146,8 @@ d_void * acc_copyin_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
-#if PRINT_INFO
-  printf("[info]  acc_copyin_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#if DBG_DATA
+  printf("[debug] acc_copyin_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
 #endif
   acc_init_region_(region);
   unsigned idx;
@@ -161,8 +168,8 @@ d_void * acc_present_or_copyin_(size_t device_idx, h_void * host_ptr, size_t n) 
 }
 
 void acc_present_or_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
-#if PRINT_INFO
-  printf("[info]  acc_present_or_copyin_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#if DBG_DATA
+  printf("[debug] acc_present_or_copyin_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
 #endif
   acc_init_region_(region);
   unsigned idx;
@@ -180,6 +187,9 @@ d_void * acc_pcopyin_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 d_void * acc_create_(size_t device_idx, h_void * host_ptr, size_t n) {
+#if DBG_DATA
+  printf("[debug] acc_create_(device_idx = %zd, host_ptr = %x, n = %zd)\n", device_idx, host_ptr, n);
+#endif
   assert(!acc_is_present_(device_idx, host_ptr, n));
 
   d_void * dev_ptr = acc_malloc_(device_idx, n);
@@ -190,8 +200,8 @@ d_void * acc_create_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
-#if PRINT_INFO
-  printf("[info]  acc_create_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#if DBG_DATA
+  printf("[debug] acc_create_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
 #endif
   acc_init_region_(region);
   unsigned idx;
@@ -212,8 +222,8 @@ d_void * acc_present_or_create_(size_t device_idx, h_void * host_ptr, size_t n) 
 }
 
 void acc_present_or_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
-#if PRINT_INFO
-  printf("[info]  acc_present_or_create_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#if DBG_DATA
+  printf("[debug] acc_present_or_create_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
 #endif
   acc_init_region_(region);
   unsigned idx;
@@ -231,6 +241,10 @@ d_void * acc_pcreate_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyout_(size_t device_idx, h_void * host_ptr, size_t n) {
+#if DBG_DATA
+  printf("[debug] acc_copyout_(device_idx = %zd, host_ptr = %x, n = %zd)\n", device_idx, host_ptr, n);
+#endif
+
   assert(acc_is_present_(device_idx, host_ptr, n));
 
   d_void * dev_ptr = acc_deviceptr_(device_idx, host_ptr);
@@ -239,9 +253,10 @@ void acc_copyout_(size_t device_idx, h_void * host_ptr, size_t n) {
 }
 
 void acc_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
-#if PRINT_INFO
-  printf("[info]  acc_copyout_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#if DBG_DATA
+  printf("[debug] acc_copyout_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
 #endif
+
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -261,9 +276,10 @@ d_void * acc_present_or_copyout_(size_t device_idx, h_void * host_ptr, size_t n)
 }
 
 void acc_present_or_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
-#if PRINT_INFO
-  printf("[info]  acc_present_or_copyout_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#if DBG_DATA
+  printf("[debug] acc_present_or_copyout_regions_(region = #%u, h_void * host_ptr = %X, size_t n = %d)\n", region->desc->id, host_ptr, n);
 #endif
+
   acc_init_region_(region);
   unsigned idx;
   for (idx = 0; idx < region->num_devices; idx++) {
@@ -310,6 +326,9 @@ void acc_update_self_(size_t device_idx, h_void * host_ptr, size_t n) {
 ////////////////////////////////////////////////////////////////////////
 
 d_void * acc_deviceptr_(size_t device_idx, h_void * host_ptr) {
+#if DBG_DATA
+  printf("[debug] acc_deviceptr_(device_idx = %zd, host_ptr = %x)\n", device_idx, host_ptr);
+#endif
 
   d_void * dev_ptr = acc_get_deviceptr(device_idx, host_ptr);
 
@@ -317,6 +336,9 @@ d_void * acc_deviceptr_(size_t device_idx, h_void * host_ptr) {
 }
 
 h_void * acc_hostptr_(size_t device_idx, d_void * dev_ptr) {
+#if DBG_DATA
+  printf("[debug] acc_hostptr_(device_idx = %zd, dev_ptr = %x)\n", device_idx, dev_ptr);
+#endif
 
   h_void * host_ptr = acc_get_hostptr(device_idx, dev_ptr);
 
@@ -332,12 +354,16 @@ int acc_is_present_(size_t device_idx, h_void * host_ptr, size_t n) {;
 ////////////////////////////////////////////////////////////////////////
 
 void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_t bytes) {
+#if DBG_DATA
+  printf("[debug] acc_memcpy_to_device_(device_idx = %zd, dev_ptr = %x, host_ptr = %x, bytes = %zd)\n", device_idx, dest, src, bytes);
+#endif
+
   cl_event event;
 
   cl_int status = clEnqueueWriteBuffer(
     /* cl_command_queue command_queue  */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer                   */ (cl_mem)dest,
-    /* cl_bool blocking_write          */ CL_FALSE,
+    /* cl_bool blocking_write          */ CL_TRUE,
     /* size_t offset                   */ 0,
     /* size_t cb                       */ bytes,
     /* const void *ptr                 */ src,
@@ -355,12 +381,16 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
 }
 
 void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, size_t bytes) {
+#if DBG_DATA
+  printf("[debug] acc_memcpy_from_device_(device_idx = %zd, host_ptr = %x, dev_ptr = %x, bytes = %zd)\n", device_idx, dest, src, bytes);
+#endif
+
   cl_event event;
 
   cl_int status = clEnqueueReadBuffer (
     /* cl_command_queue command_queue */ acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
     /* cl_mem buffer */ (cl_mem)src,
-    /* cl_bool blocking_read */ CL_FALSE,
+    /* cl_bool blocking_read */ CL_TRUE,
     /* size_t offset */ 0,
     /* size_t cb */ bytes,
     /* void *ptr */ dest,

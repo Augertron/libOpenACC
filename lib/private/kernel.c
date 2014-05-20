@@ -16,8 +16,8 @@
 
 #include <assert.h>
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
+#ifndef DBG_KERNEL
+# define DBG_KERNEL 0
 #endif
 
 typedef struct acc_kernel_t_ * acc_kernel_t;
@@ -53,8 +53,8 @@ acc_kernel_t acc_build_kernel(size_t region_id, size_t kernel_id) {
 }
 
 void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
-#if PRINT_INFO
-  printf("[info]  acc_enqueue_kernel\n");
+#if DBG_KERNEL
+  printf("[debug] acc_enqueue_kernel #%zd\n", kernel->desc->id);
 #endif
 
   unsigned dev_idx;
@@ -115,7 +115,11 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       acc_distributed_data(region, device_idx, &h_data_ptr, &n);
 
       d_void * d_data_ptr = acc_deviceptr_(device_idx, h_data_ptr);
-      assert(d_data_ptr != NULL);
+      if (d_data_ptr == NULL) {
+        printf("[fatal]   Cannot find device pointer for %x (%x) on device #%d for region[%u].kernel[%u] argument %u (data #%u).\n",
+                  h_data_ptr, kernel->data_ptrs[i], device_idx, region->desc->id, kernel->desc->id, idx, i);
+        exit(-1); /// \todo error code
+      }
       status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(d_data_ptr));
       if (status != CL_SUCCESS) {
         const char * status_str = acc_ocl_status_to_char(status);
@@ -131,8 +135,8 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
         if (kernel->data_ptrs[i] == region->distributed_data[j].ptr)
           break;
       if (j < region->desc->num_distributed_data && region->desc->distributed_data[j].mode != e_all) {
-#if PRINT_INFO
-        printf("[info]    region[%u].kernel[%u] on device #%u  data #%u is distributed.\n",
+#if DBG_KERNEL
+        printf("[debug]   region[%u].kernel[%u] on device #%u  data #%u is distributed.\n",
                     region->desc->id, kernel->desc->id, device_idx, i
                 );
 #endif
@@ -156,10 +160,10 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
 
         int offset = (region->distributed_data[j].size * prev_portion) / sum_portions;
 
-#if PRINT_INFO
-        printf("[info]        sum_portions = %d\n", sum_portions);
-        printf("[info]        prev_portion = %d\n", prev_portion);
-        printf("[info]        offset       = %d\n", offset);
+#if DBG_KERNEL
+        printf("[debug]       sum_portions = %d\n", sum_portions);
+        printf("[debug]       prev_portion = %d\n", prev_portion);
+        printf("[debug]       offset       = %d\n", offset);
 #endif
 
         status = clSetKernelArg(ocl_kernel, idx, sizeof(int), &offset);

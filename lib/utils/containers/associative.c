@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <assert.h>
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
+#ifndef DBG_ASSOC_CONTAINER
+# define DBG_ASSOC_CONTAINER 0
 #endif
 typedef struct associative_t_ * associative_t;
 
@@ -37,8 +37,8 @@ size_t associative_lookup_(
   size_t start,
   size_t n
 ) {
-#if PRINT_INFO
-  printf("[info]    associative_lookup_(container = %x, key = %x, start = %zd, n = %zd) with container->count = %u\n",
+#if DBG_ASSOC_CONTAINER
+  printf("[debug]   associative_lookup_(container = %x, key = %x, start = %zd, n = %zd) with container->count = %u\n",
          container, *((void**)key), start, n, container->count);
 #endif
 
@@ -67,8 +67,8 @@ size_t associative_lookup_(
   else {
     size_t pivot = n/2;
 
-#if PRINT_INFO
-    printf("[info]      associative_lookup_(...) : pivot = %zd\n", pivot);
+#if DBG_ASSOC_CONTAINER
+    printf("[debug]     associative_lookup_(...) : pivot = %zd\n", pivot);
 #endif
 
     const key_type * key_ = associative_get_key_by_index(container, start + pivot);
@@ -77,7 +77,7 @@ size_t associative_lookup_(
     else if ((*container->key_less)(key_, key))                                     // key > key[start + pivot]
       return associative_lookup_(container, key, start + pivot + 1, n - pivot - 1);   // search in ] start+pivot , start+n [
     else                                                                            // key == key[start + pivot]
-      return pivot;                                                                   // Found!
+      return start + pivot;                                                                   // Found!
   }
 }
 
@@ -88,8 +88,8 @@ void associative_remove_(
   struct associative_t_ * container,
   size_t idx
 ) {
-#if PRINT_INFO
-  printf("[info]    associative_remove_(container = %x, idx = %zd) with container->count = %u\n", container, idx, container->count);
+#if DBG_ASSOC_CONTAINER
+  printf("[debug]   associative_remove_(container = %x, idx = %zd) with container->count = %u\n", container, idx, container->count);
 #endif
 
   void * storage_start = associative_get_storage_by_index(container, idx);
@@ -114,8 +114,8 @@ void associative_insert_(
   const key_type * key,
   const data_type * data
 ) {
-#if PRINT_INFO
-  printf("[info]    associative_insert_(container = %x, idx = %zd, key = %x, data = ...) with container->count = %u\n",
+#if DBG_ASSOC_CONTAINER
+  printf("[debug]   associative_insert_(container = %x, idx = %zd, key = %x, data = ...) with container->count = %u\n",
          container, idx, *((void**)key), container->count);
 #endif
 
@@ -136,8 +136,8 @@ void associative_insert_(
       memcpy(container->datas + container->key_size, data, container->data_size);
   }
   else if (idx == container->count) {
-#if PRINT_INFO
-    printf("[info]      associative_lookup_(...) : idx == container->count\n");
+#if DBG_ASSOC_CONTAINER
+    printf("[debug]     associative_lookup_(...) : idx == container->count\n");
     memcpy(container_end, key, container->key_size);
 #endif
 

@@ -11,12 +11,8 @@
 
 #include <assert.h>
 
-#ifndef PRINT_INFO
-# define PRINT_INFO 0
-#endif
-
-#ifndef PRINT_BUILD_LOG
-# define PRINT_BUILD_LOG 0
+#ifndef DBG_RUNTIME
+# define DBG_RUNTIME 0
 #endif
 
 acc_runtime_t acc_runtime = {0, NULL, acc_device_any, 0}; // by default, we use the first of any device
@@ -120,7 +116,7 @@ void acc_shutdown(acc_device_t dev) {
 }
 
 void acc_shutdown_(acc_device_t dev, int num) {
-#if PRINT_INFO
+#if DBG_RUNTIME
   printf("[warning] Shuting OpenACC down...\n");
 #endif
   acc_init_once();
