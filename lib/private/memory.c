@@ -92,7 +92,7 @@ void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx_, h_v
 }
 
 d_void * acc_malloc_(size_t device_idx, size_t n) {
-#if DBG_DIST_DATA
+#if DBG_DATA
   printf("[debug] acc_malloc_(size_t device_idx = %u, size_t n = %d)\n", device_idx, n);
 #endif
 
@@ -111,7 +111,7 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
     exit(-1); /// \todo error code
   }
 
-#if DBG_DIST_DATA
+#if DBG_DATA
   printf("[debug]     return %X\n", buffer);
 #endif
 
@@ -119,6 +119,9 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
 }
 
 void acc_free_(size_t device_idx, d_void * dev_ptr) {
+#if DBG_DATA
+  printf("[debug] acc_free_(device_idx = %zd, dev_ptr = %x)\n", device_idx, dev_ptr);
+#endif
   cl_int status = clReleaseMemObject((cl_mem)dev_ptr);
   if (status != CL_SUCCESS) {
     const char * status_str = acc_ocl_status_to_char(status);

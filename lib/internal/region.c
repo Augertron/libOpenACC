@@ -69,6 +69,7 @@ void acc_region_init(struct acc_region_t_ * region) {
 
   unsigned i;
   for (i = 0; i < compiler_data.regions[region_id]->num_options; i++) {
+    assert(strlen(build_options) < 512);
     strcat(build_options, compiler_data.regions[region_id]->options[i]);
     strcat(build_options, " ");
   }

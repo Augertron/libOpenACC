@@ -40,7 +40,7 @@ OPENACC_UTILS_LIB = \
   utils/sqlite.o
 
 CC=gcc
-CFLAGS=-O0 -g -fno-stack-protector -I../include/ -I$(OPENCL_INC_PATH) -I$(SQLITE_INC_PATH) -fPIC
+CFLAGS=-g -O2 -I../include/ -I$(OPENCL_INC_PATH) -I$(SQLITE_INC_PATH) -fPIC
 
 ACC_VERBOSE?=0
 ACC_DBG_RUNTIME?=0

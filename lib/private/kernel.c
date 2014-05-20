@@ -191,6 +191,8 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       exit(-1); /// \todo error code
     }
 
+    free(context); // Not needed anymore
+
     // Set context of the kernel
     status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &ocl_context);
     if (status != CL_SUCCESS) {
@@ -230,6 +232,10 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     }
 
     acc_profiling_register_kernel_launch(event, device_idx, region->desc->id, kernel->desc->id);
+
+    clReleaseMemObject(ocl_context);
+
+    clReleaseKernel(ocl_kernel);
   }
 }
 

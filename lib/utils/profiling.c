@@ -235,6 +235,8 @@ void acc_profiling_release_event(cl_event event, struct acc_event_data_t * event
   acc_sqlite_save(acc_profiler->db_file);
 
   free(event_data);
+
+  clReleaseEvent(event);
 }
 
 void acc_profiling_register_memcpy_to_device(cl_event event, size_t device_idx, h_void * host_ptr, d_void * dev_ptr, size_t size) {
