@@ -55,5 +55,14 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime gethostname memmove strstr])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+                 include/Makefile
+                 include/OpenACC/Makefile
+                 include/OpenACC/device/Makefile
+                 include/OpenACC/internal/Makefile
+                 include/OpenACC/private/Makefile
+                 include/OpenACC/public/Makefile
+                 include/OpenACC/utils/Makefile
+                 include/OpenACC/utils/containers/Makefile
+                 lib/Makefile])
 AC_OUTPUT
