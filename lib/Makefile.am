@@ -1,6 +1,5 @@
 
-AUTOMAKE_OPTIONS = foreign
-
+AUTOMAKE_OPTIONS = foreign subdir-objects
 
 ACC_VERBOSE ?= 0
 ACC_DBG_RUNTIME ?= 0
@@ -17,41 +16,41 @@ OPTS=-DVERBOSE=$(ACC_VERBOSE) -DDBG_RUNTIME=$(ACC_DBG_RUNTIME) -DDBG_REGION=$(AC
 
 
 OPENACC_PUBLIC_LIB = \
-  public/arch.o \
-  public/async.o \
-  public/device.o \
-  public/memory.o \
-  public/runtime.o
+  public/arch.c \
+  public/async.c \
+  public/device.c \
+  public/memory.c \
+  public/runtime.c
 
 OPENACC_PRIVATE_LIB = \
-  private/data-env.o \
-  private/init.o \
-  private/kernel.o \
-  private/region.o \
-  private/memory.o \
-  private/debug.o
+  private/data-env.c \
+  private/init.c \
+  private/kernel.c \
+  private/region.c \
+  private/memory.c \
+  private/debug.c
 
 OPENACC_INTERNAL_LIB = \
-  internal/mem-manager.o \
-  internal/data-env.o \
-  internal/init.o \
-  internal/opencl-init.o \
-  internal/opencl-debug.o \
-  internal/region.o \
-  internal/runtime.o \
-  internal/kernel.o
+  internal/mem-manager.c \
+  internal/data-env.c \
+  internal/init.c \
+  internal/opencl-init.c \
+  internal/opencl-debug.c \
+  internal/region.c \
+  internal/runtime.c \
+  internal/kernel.c
 
 OPENACC_UTILS_LIB = \
-  utils/utils.o \
-  utils/io.o \
-  utils/timer.o \
-  utils/containers/associative.o \
-  utils/containers/set.o \
-  utils/containers/map.o \
-  utils/containers/bimap.o \
-  utils/profiling.o \
-  utils/tuning.o \
-  utils/sqlite.o
+  utils/utils.c \
+  utils/io.c \
+  utils/timer.c \
+  utils/containers/associative.c \
+  utils/containers/set.c \
+  utils/containers/map.c \
+  utils/containers/bimap.c \
+  utils/profiling.c \
+  utils/tuning.c \
+  utils/sqlite.c
 
 lib_LTLIBRARIES=libopenacc.la
 
@@ -61,8 +60,8 @@ libopenacc_la_SOURCES= \
   $(OPENACC_INTERNAL_LIB) \
   $(OPENACC_UTILS_LIB)
   
-libopenacc_la_CXXFLAGS= \
+libopenacc_la_CFLAGS= \
   -g -O2 \
-  -I$(srcdir)/../include \
+  -I$(top_srcdir)/include \
   -I@sqlite_path@/include
 
