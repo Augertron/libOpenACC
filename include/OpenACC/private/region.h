@@ -36,9 +36,9 @@ struct acc_region_t_ {
     // Device Index
     size_t device_idx;
     /// Number of gang
-    size_t num_gang;
+    size_t num_gang[3];
     /// Number of worker
-    size_t num_worker;
+    size_t num_worker[3];
     /// Vector size used for this parallel region (needed to determine workers chunk size)
     size_t vector_length;
   } devices [];

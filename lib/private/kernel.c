@@ -39,14 +39,12 @@ acc_kernel_t acc_build_kernel(size_t region_id, size_t kernel_id) {
   result->data_ptrs   = (d_void **)malloc(kernel->num_datas   * sizeof(d_void *));
   result->data_size   = ( size_t *)malloc(kernel->num_datas   * sizeof(  size_t));
 
-  result->loops = (acc_loop_desc_t *)malloc(kernel->num_loops * sizeof(struct acc_loop_desc_t_ *));
+  result->loops = malloc(kernel->num_loops * sizeof(struct acc_loop_t_));
   unsigned i;
   for (i = 0; i < kernel->num_loops; i++) {
-    result->loops[i] = (acc_loop_desc_t)malloc(sizeof(struct acc_loop_desc_t_));
-    result->loops[i]->lower = 0;
-    result->loops[i]->upper = 0;
-    result->loops[i]->stride = 0;
-    result->loops[i]->nbr_it = 0;
+    result->loops[i].lower = 0;
+    result->loops[i].upper = 0;
+    result->loops[i].stride = 0;
   }
 
   return result;
@@ -57,27 +55,30 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
   printf("[debug] acc_enqueue_kernel #%zd\n", kernel->desc->id);
 #endif
 
-  unsigned dev_idx;
+  size_t i, j, k, l, dev_idx;
   for (dev_idx = 0; dev_idx < region->num_devices; dev_idx++) {
-    assert(region->devices[dev_idx].num_gang > 0);
-    assert(region->devices[dev_idx].num_worker > 0);
+    assert(region->devices[dev_idx].num_gang[0] > 0);
+    assert(region->devices[dev_idx].num_gang[1] > 0);
+    assert(region->devices[dev_idx].num_gang[2] > 0);
+    assert(region->devices[dev_idx].num_worker[0] > 0);
+    assert(region->devices[dev_idx].num_worker[1] > 0);
+    assert(region->devices[dev_idx].num_worker[2] > 0);
     assert(region->devices[dev_idx].vector_length > 0);
+
+    for (i = 0; i < kernel->num_loops; i++)
+      assert(kernel->loops[i].stride != 0);
 
     size_t device_idx = region->devices[dev_idx].device_idx;
     assert(acc_runtime.opencl_data->devices_data[device_idx] != NULL);
 
     // Create a default context
-    acc_context_t context = acc_create_context(region, kernel, device_idx);
-
-    // If nothing have to be done on this device the context is NULL.
-    if (context == NULL) continue;
+    acc_context_t context;
 
     // Look for a matching ‭version of the kernel, fill the context according to the selected version
-    cl_kernel ocl_kernel = acc_build_ocl_kernel(region, kernel, context, device_idx);
+    cl_kernel ocl_kernel = acc_build_ocl_kernel(region, kernel, &context, device_idx);
 
     cl_int status;
     cl_uint idx = 0;
-    unsigned i, j, k, l;
 
     // Set params kernel arguments 
     for (i = 0; i < kernel->desc->num_params; i++) {

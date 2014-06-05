@@ -30,16 +30,19 @@ struct acc_kernel_version_t_ {
   size_t id;
 
   /// Number of Gangs assumed by this version (0 means dynamic)
-  unsigned long num_gang;
+  size_t num_gang[3];
 
   /// Number of Workers assumed by this version (0 means dynamic)
-  unsigned long num_worker;
+  size_t num_worker[3];
 
   /// Vector length assumed by this version (0 means dynamic)
-  unsigned long vector_length;
+  size_t vector_length;
 
-  /// Filling tiles for each loop
-  struct acc_loop_t_ * loops;
+  /// number of tiles
+  size_t num_tiles;
+
+  /// tiles
+  struct acc_tile_desc_t_ * tiles;
 
   /// suffix added to the name of the kernel 
   char * suffix;
@@ -59,19 +62,19 @@ typedef enum acc_splitting_mode_e_ {
  *  Describe how one loop can be distributed accross devices.
  */
 struct acc_loop_splitter_t_ {
-  unsigned loop_id;
+  size_t  loop_id;
 
   acc_splitting_mode_e mode;
 
-  unsigned nbr_dev;
-  unsigned * portions;
+  size_t nbr_dev;
+  size_t * portions;
 
-  unsigned chunk;
+  size_t  chunk;
 };
 typedef struct acc_loop_splitter_t_ * acc_loop_splitter_t;
 
 struct acc_kernel_desc_t_ {
-  unsigned id;
+  size_t  id;
 
   /// Kernel name in the OpenCL C code
   char * name;
@@ -89,8 +92,9 @@ struct acc_kernel_desc_t_ {
   /// number of data arguments
   size_t num_datas;
 
-  /// number of loops
+  /// number of distributed loops (which are translated in tiles)
   size_t num_loops;
+  struct acc_loop_desc_t * loops;
 
   unsigned num_versions;
   acc_kernel_version_t * versions;

@@ -16,11 +16,16 @@
 extern "C" {
 #endif
 
-struct acc_loop_desc_t_ {
+/// Bounds are inclusives
+struct acc_loop_t_ {
   long lower;
   long upper;
   long stride;
-  unsigned long nbr_it;
+};
+
+struct acc_tile_t_ {
+  long length;
+  long stride;
 };
 
 #ifdef __cplusplus

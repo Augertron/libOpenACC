@@ -18,18 +18,27 @@
 extern "C" {
 #endif
 
-typedef enum acc_loop_tile_e_ {
-  e_tile_0 = 0,
-  e_gang   = 1,
-  e_tile_1 = 2,
-  e_worker = 3,
-  e_tile_2 = 4,
-  e_vector = 5,
-  e_tile_3 = 6
-} acc_loop_tile_e;
+enum acc_tile_kind_e {
+  e_gang_tile,
+  e_worker_tile,
+  e_vector_tile,
+  e_dynamic_tile,
+  e_static_tile,
+  e_unrolled_tile
+};
 
-struct acc_loop_t_ {
-  unsigned long num_iterations[7];
+struct acc_tile_desc_t_ {
+  enum acc_tile_kind_e kind;
+  union param {
+    size_t nbr_it; // valid iff kind = e_static_tile or e_unrolled_tile
+    size_t level;  // valid iff kind = e_gang_tile or e_worker_tile,
+  };
+  size_t original_loop_id;
+};
+
+struct acc_loop_desc_t_ {
+  size_t num_tiles;
+  size_t * tiles;
 };
 
 #ifdef __cplusplus
