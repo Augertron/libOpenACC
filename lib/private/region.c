@@ -39,16 +39,24 @@ struct acc_region_t_ * acc_build_region(size_t region_id) {
     int dev_num = acc_get_device_num(dev_type);
 
     result->devices[0].device_idx = acc_get_device_idx(dev_type, dev_num);
-    result->devices[0].num_gang = 0;
-    result->devices[0].num_worker = 0;
+    result->devices[0].num_gang[0] = 0;
+    result->devices[0].num_gang[1] = 0;
+    result->devices[0].num_gang[2] = 0;
+    result->devices[0].num_worker[0] = 0;
+    result->devices[0].num_worker[1] = 0;
+    result->devices[0].num_worker[2] = 0;
     result->devices[0].vector_length = 0;
   }
   else {
     unsigned i;
     for (i = 0; i < num_devices; i++) {
       result->devices[i].device_idx = acc_get_device_idx(region->devices[i].kind, region->devices[i].num);
-      result->devices[i].num_gang = 0;
-      result->devices[i].num_worker = 0;
+      result->devices[i].num_gang[0] = 0;
+      result->devices[i].num_gang[1] = 0;
+      result->devices[i].num_gang[2] = 0;
+      result->devices[i].num_worker[0] = 0;
+      result->devices[i].num_worker[1] = 0;
+      result->devices[i].num_worker[2] = 0;
       result->devices[i].vector_length = 0;
     }
   }

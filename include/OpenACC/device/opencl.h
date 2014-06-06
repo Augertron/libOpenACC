@@ -18,20 +18,14 @@
 
 #include "OpenACC/device/host-context.h"
 
-long acc_gang_iteration(__constant struct acc_context_t_ * ctx, size_t loop_id, long it_tile_0);
-long acc_worker_iteration(__constant struct acc_context_t_ * ctx, size_t loop_id, long it_tile_1);
+long acc_gang_iteration(__constant struct acc_context_t_ * ctx, size_t tile_id, long it_tile, short lvl);
+long acc_worker_iteration(__constant struct acc_context_t_ * ctx, size_t tile_id, long it_tile, short lvl);
 
-size_t acc_gang_id(__constant struct acc_context_t_ * ctx);
-size_t acc_worker_id(__constant struct acc_context_t_ * ctx);
+size_t acc_gang_id(__constant struct acc_context_t_ * ctx, short lvl);
+size_t acc_worker_id(__constant struct acc_context_t_ * ctx, short lvl);
 
-size_t acc_gang_size(__constant struct acc_context_t_ * ctx);
-size_t acc_worker_size(__constant struct acc_context_t_ * ctx);
-
-/*!
- *  \param[ctx] an OpenACC Context stored in constant memory. It is provided by the host when calling the kernel.
- *  \return true if the calling Worker is active
- */
-int acc_WS_mode(__constant struct acc_context_t_ * ctx);
+size_t acc_gang_size(__constant struct acc_context_t_ * ctx, short lvl);
+size_t acc_worker_size(__constant struct acc_context_t_ * ctx, short lvl);
 
 #endif /* __LIB_OPENACC_DEVICE_H__ */ /** }@ */
 

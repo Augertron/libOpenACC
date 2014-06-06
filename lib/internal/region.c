@@ -31,15 +31,22 @@ struct acc_region_desc_t_ * acc_region_desc_by_ID(size_t region_id) {
 void acc_get_region_defaults(struct acc_region_t_ * region) {
   unsigned i;
   for (i = 0; i < region->num_devices; i++) {
-    if (region->devices[i].num_gang == 0)
-      region->devices[i].num_gang = acc_device_defaults[region->desc->devices[i].kind].num_gang;
-    assert(region->devices[i].num_gang > 0);
-    if (region->devices[i].num_worker == 0)
-      region->devices[i].num_worker = acc_device_defaults[region->desc->devices[i].kind].num_worker;
-    assert(region->devices[i].num_worker > 0);
+    if (region->devices[i].num_gang[0] == 0)
+      region->devices[i].num_gang[0] = acc_device_defaults[region->desc->devices[i].kind].num_gang[0];
+    if (region->devices[i].num_gang[1] == 0)
+      region->devices[i].num_gang[1] = acc_device_defaults[region->desc->devices[i].kind].num_gang[1];
+    if (region->devices[i].num_gang[2] == 0)
+      region->devices[i].num_gang[2] = acc_device_defaults[region->desc->devices[i].kind].num_gang[2];
+
+    if (region->devices[i].num_worker[0] == 0)
+      region->devices[i].num_worker[0] = acc_device_defaults[region->desc->devices[i].kind].num_worker[0];
+    if (region->devices[i].num_worker[1] == 0)
+      region->devices[i].num_worker[1] = acc_device_defaults[region->desc->devices[i].kind].num_worker[1];
+    if (region->devices[i].num_worker[2] == 0)
+      region->devices[i].num_worker[2] = acc_device_defaults[region->desc->devices[i].kind].num_worker[2];
+
     if (region->devices[i].vector_length == 0)
       region->devices[i].vector_length = acc_device_defaults[region->desc->devices[i].kind].vector_length;
-    assert(region->devices[i].vector_length > 0);
   }
 }
 

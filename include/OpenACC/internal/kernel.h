@@ -38,11 +38,11 @@ struct acc_kernel_version_t_ {
   /// Vector length assumed by this version (0 means dynamic)
   size_t vector_length;
 
-  /// number of tiles
-  size_t num_tiles;
+  /// Distributed loops (which are translated in tiles)
+  struct acc_loop_desc_t_ * loops;
 
-  /// tiles
-  struct acc_tile_desc_t_ * tiles;
+  /// Number of tiles (all loops include)
+  size_t num_tiles;
 
   /// suffix added to the name of the kernel 
   char * suffix;
@@ -92,9 +92,7 @@ struct acc_kernel_desc_t_ {
   /// number of data arguments
   size_t num_datas;
 
-  /// number of distributed loops (which are translated in tiles)
   size_t num_loops;
-  struct acc_loop_desc_t * loops;
 
   unsigned num_versions;
   acc_kernel_version_t * versions;
@@ -108,25 +106,10 @@ struct acc_kernel_desc_t_ {
 
 struct acc_kernel_desc_t_ * acc_kernel_desc_by_ID(size_t region_id, size_t kernel_id);
 
-/*! \func acc_create_context
- *
- *  Create the context associated to 'region' and 'kernel'
- *
- *  \param region pointer to a parallel region descriptor
- *  \param kernel pointer to a kernel descriptor
- *  \param current device being processed
- *  \return a non-zero value if an error occured
- */
-struct acc_context_t_ * acc_create_context(
-  struct acc_region_t_ * region,
-  struct acc_kernel_t_ * kernel,
-  size_t device_idx
-);
-
 struct cl_kernel_ * acc_build_ocl_kernel(
   struct acc_region_t_ * region,
   struct acc_kernel_t_ * kernel,
-  struct acc_context_t_ * context,
+  struct acc_context_t_ ** context,
   size_t device_idx
 );
 

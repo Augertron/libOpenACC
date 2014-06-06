@@ -64,9 +64,9 @@ void acc_eval_kernel_version(
 
   struct acc_tile_t_ * tiles = malloc(version->num_tiles * sizeof(struct acc_tile_t_));
 
-  size_t loop_idx, tile_pos, tile_idx;
+  size_t loop_idx, tile_pos;
   for (loop_idx = 0; loop_idx < kernel->desc->num_loops; loop_idx++) {
-    struct acc_loop_desc_t_ * loop_desc = &(kernel->desc->loops[loop_idx]);
+    struct acc_loop_desc_t_ * loop_desc = &(version->loops[loop_idx]);
     struct acc_loop_t_ * loop = &(kernel->loops[loop_idx]);
     size_t loop_length = loop->upper - loop->lower + 1;
 
@@ -74,21 +74,20 @@ void acc_eval_kernel_version(
     size_t dynamic_tile_pos = loop_desc->num_tiles;
     size_t static_tiles_length = 1;
     for (tile_pos = 0; tile_pos < loop_desc->num_tiles; tile_pos++) {
-      tile_idx = loop_desc->tiles[tile_pos];
-      struct acc_tile_desc_t_ * tile_desc = &(version->tiles[tile_idx]);
+      struct acc_tile_desc_t_ * tile_desc = &(loop_desc->tiles[tile_pos]);
 
       switch (tile_desc->kind) {
         case e_gang_tile:
-          tiles[tile_idx].length = region_per_device->num_gang[tile_desc->param.lvl];
-          static_tiles_length *= tiles[tile_idx].length;
+          tiles[tile_desc->id].length = region_per_device->num_gang[tile_desc->param.lvl];
+          static_tiles_length *= tiles[tile_desc->id].length;
           break;
         case e_worker_tile:
-          tiles[tile_idx].length = region_per_device->num_worker[tile_desc->param.lvl];
-          static_tiles_length *= tiles[tile_idx].length;
+          tiles[tile_desc->id].length = region_per_device->num_worker[tile_desc->param.lvl];
+          static_tiles_length *= tiles[tile_desc->id].length;
           break;
         case e_vector_tile:
-          tiles[tile_idx].length = region_per_device->num_vector;
-          static_tiles_length *= tiles[tile_idx].length;
+          tiles[tile_desc->id].length = region_per_device->vector_length;
+          static_tiles_length *= tiles[tile_desc->id].length;
           break;
         case e_dynamic_tile:
           assert(dynamic_tile_pos == loop_desc->num_tiles); // Only one dynamic tile
@@ -96,8 +95,8 @@ void acc_eval_kernel_version(
           break;
         case e_static_tile:
         case e_unrolled_tile:
-          tiles[tile_idx].length = tile_desc->param.nbr_it;
-          static_tiles_length *= tiles[tile_idx].length;
+          tiles[tile_desc->id].length = tile_desc->param.nbr_it;
+          static_tiles_length *= tiles[tile_desc->id].length;
           break;
         default:
           assert(0);
@@ -105,28 +104,29 @@ void acc_eval_kernel_version(
     }
 
     if (dynamic_tile_pos != loop_desc->num_tiles) {
-      dynamic_tile_idx = loop_desc->tiles[dynamic_tile_pos];
+      size_t dynamic_tile_idx = loop_desc->tiles[dynamic_tile_pos].id;
       tiles[dynamic_tile_idx].length = loop_length / static_tiles_length;
-      if (loop_length % static_tiles_length == 0) {
-        printf("[info]    Cannot set num iteration of dynamic tile for version %zd of kernel %zd because the length of the loop is not divisible by the product of the num iteration of the other tiles.\n", version_idx, kernel_idx);
+      if (loop_length % static_tiles_length != 0) {
+        printf("[info]    Cannot set num iteration of dynamic tile for version %zd of kernel %zd because the length of the loop is not divisible by the product of the num iteration of the other tiles.\n", version_idx, kernel->desc->id);
         break;
       }
     }
     else assert(static_tiles_length == loop_length);
 
     size_t stride = loop->stride;
+    size_t tile_idx;
     for (tile_pos = loop_desc->num_tiles; tile_pos > 0; tile_pos--) {
-      tile_idx = loop_desc->tiles[tile_pos - 1];
+      tile_idx = loop_desc->tiles[tile_pos - 1].id;
       tiles[tile_idx].stride = stride;
       tiles[tile_idx].length *= stride;
       stride = tiles[tile_idx].length;
     }
-    assert(tiles[loop_desc->tiles[0]] == loop_length);
+    assert(tiles[loop_desc->tiles[0].id].length == loop_length);
   }
 
   if (loop_idx == kernel->desc->num_loops) {
     float score = 1e-6; // best_matching_score is initialized to 0
-    for (loop_idx = 0; loop_idx < kernel->desc->num_loop; loop_idx++) {
+    for (loop_idx = 0; loop_idx < kernel->desc->num_loops; loop_idx++) {
       /// \todo Compute the score for this version
     }
     if (score > *best_matching_score) {
@@ -134,8 +134,8 @@ void acc_eval_kernel_version(
 
       *best_matching_version = version_idx;
 
-      if (*best_matching_loops != NULL)
-        free(*best_matching_loops);
+      if (*best_matching_tiles != NULL)
+        free(*best_matching_tiles);
       *best_matching_tiles = tiles;
 
       return; 
@@ -160,6 +160,7 @@ void acc_select_kernel_version(
     assert(version_id != -1);
 
     size_t version_idx = -1;
+    size_t i;
     for (i = 0; i < kernel->desc->num_versions; i++)
       if (kernel->desc->versions[i]->id == version_id) {
         version_idx = i;
@@ -191,15 +192,15 @@ void acc_select_kernel_version(
 
 struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kernel, acc_context_t * context, size_t device_idx) {
   size_t best_matching_version = kernel->desc->num_versions;
-  struct acc_kernel_tile_t_ * best_matching_tiles = NULL;
+  struct acc_tile_t_ * best_matching_tiles = NULL;
 
   size_t region_dev_idx;
   for (region_dev_idx = 0; region_dev_idx < region->num_devices; region_dev_idx++)
-    if (region->devices[i].device_idx == device_idx)
+    if (region->devices[region_dev_idx].device_idx == device_idx)
       break;
   assert(region_dev_idx < region->num_devices);
 
-  struct acc_region_per_device_t_ * region_per_device = &(region->devices[i]);
+  struct acc_region_per_device_t_ * region_per_device = &(region->devices[region_dev_idx]);
 
   acc_select_kernel_version(region_per_device, region_dev_idx, kernel, device_idx, &best_matching_version, &best_matching_tiles);
   assert(best_matching_version != kernel->desc->num_versions);
@@ -208,10 +209,11 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   struct acc_kernel_version_t_ * version = kernel->desc->versions[best_matching_version];
 
   *context = malloc(sizeof(struct acc_context_t_) + version->num_tiles * sizeof(struct acc_tile_t_));
+  (*context)->num_tiles = version->num_tiles;
   memcpy((*context)->tiles, best_matching_tiles, version->num_tiles * sizeof(struct acc_tile_t_));
 
-#if DBG_HOST_CTX
-  acc_debug_dump_context(region, kernel, context, device_idx);
+#if DBG_HOST_CTX || 1
+  acc_debug_dump_context(region, kernel, *context, device_idx);
 #endif
 
   // Build the kernel name 

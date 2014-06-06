@@ -65,7 +65,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     assert(region->devices[dev_idx].num_worker[2] > 0);
     assert(region->devices[dev_idx].vector_length > 0);
 
-    for (i = 0; i < kernel->num_loops; i++)
+    for (i = 0; i < kernel->desc->num_loops; i++)
       assert(kernel->loops[i].stride != 0);
 
     size_t device_idx = region->devices[dev_idx].device_idx;
@@ -182,7 +182,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     // Allocate/copy context in constant memory \todo alloc only copy before launch with event wait
     cl_mem ocl_context = clCreateBuffer( acc_runtime.opencl_data->devices_data[device_idx]->context,
                                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                         sizeof(struct acc_context_t_) + context->num_loop * sizeof(struct acc_kernel_loop_t_),
+                                         sizeof(struct acc_context_t_) + context->num_tiles * sizeof(struct acc_tile_t_),
                                          context, &status );
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
@@ -208,8 +208,16 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     assert(acc_runtime.opencl_data->devices_data[device_idx]->command_queue != NULL);
 
     // Launch the kernel
-    size_t global_work_size[1] = { region->devices[dev_idx].num_gang * region->devices[dev_idx].num_worker };
-    size_t local_work_size[1] = { region->devices[dev_idx].num_worker };
+    size_t global_work_size[3] = {
+                                   region->devices[dev_idx].num_gang[0] * region->devices[dev_idx].num_worker[0],
+                                   region->devices[dev_idx].num_gang[1] * region->devices[dev_idx].num_worker[1],
+                                   region->devices[dev_idx].num_gang[2] * region->devices[dev_idx].num_worker[2]
+                                 };
+    size_t local_work_size[3] =  {
+                                   region->devices[dev_idx].num_worker[0],
+                                   region->devices[dev_idx].num_worker[1],
+                                   region->devices[dev_idx].num_worker[2]
+                                 };
 
     cl_event event;
 

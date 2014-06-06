@@ -26,6 +26,10 @@ const char * acc_sqlite_type_string(enum acc_sqlite_type_e type);
 const size_t acc_sqlite_type_size  (enum acc_sqlite_type_e type);
 const char * acc_sqlite_type_format(enum acc_sqlite_type_e type);
 
+////////////////////////////
+//
+// Region
+
 struct acc_sqlite_region_entry_t {
   size_t region_id;
   size_t num_kernels;
@@ -36,6 +40,8 @@ extern char * region_entry_field_names[3];
 extern enum acc_sqlite_type_e region_entry_field_types[3];
 extern size_t region_entry_field_sizes[3];
 extern size_t region_entry_field_offsets[3];
+
+// Kernel
 
 struct acc_sqlite_kernel_entry_t {
   size_t region_id;
@@ -50,31 +56,57 @@ extern enum acc_sqlite_type_e kernel_entry_field_types[5];
 extern size_t kernel_entry_field_sizes[5];
 extern size_t kernel_entry_field_offsets[5];
 
+// Version
+
 struct acc_sqlite_version_entry_t {
   size_t region_id;
   size_t kernel_id;
   size_t version_id;
+  size_t num_gang[3];
+  size_t num_worker[3];
+  size_t vector_length;
   char suffix[30];
 };
 extern size_t version_entry_num_fields;
-extern char * version_entry_field_names[4];
-extern enum acc_sqlite_type_e version_entry_field_types[4];
-extern size_t version_entry_field_sizes[4];
-extern size_t version_entry_field_offsets[4];
+extern char * version_entry_field_names[11];
+extern enum acc_sqlite_type_e version_entry_field_types[11];
+extern size_t version_entry_field_sizes[11];
+extern size_t version_entry_field_offsets[11];
+
+// Loop
 
 struct acc_sqlite_loop_entry_t {
   size_t region_id;
   size_t kernel_id;
   size_t version_id;
   size_t loop_id;
-  size_t tiles[7];
-  size_t unroll[4];
+
 };
 extern size_t loop_entry_num_fields;
-extern char * loop_entry_field_names[15];
-extern enum acc_sqlite_type_e loop_entry_field_types[15];
-extern size_t loop_entry_field_sizes[15];
-extern size_t loop_entry_field_offsets[15];
+extern char * loop_entry_field_names[4];
+extern enum acc_sqlite_type_e loop_entry_field_types[4];
+extern size_t loop_entry_field_sizes[4];
+extern size_t loop_entry_field_offsets[4];
+
+// Tile
+
+struct acc_sqlite_tile_entry_t {
+  size_t region_id;
+  size_t kernel_id;
+  size_t version_id;
+  size_t loop_id;
+  size_t tile_id;
+  size_t position;
+  size_t kind;
+  size_t param;
+};
+extern size_t tile_entry_num_fields;
+extern char * tile_entry_field_names[8];
+extern enum acc_sqlite_type_e tile_entry_field_types[8];
+extern size_t tile_entry_field_sizes[8];
+extern size_t tile_entry_field_offsets[8];
+
+// Event
 
 struct acc_sqlite_event_entry_t {
   size_t run_id;
@@ -92,6 +124,8 @@ extern enum acc_sqlite_type_e event_entry_field_types[8];
 extern size_t event_entry_field_sizes[8];
 extern size_t event_entry_field_offsets[8];
 
+// Parameter
+
 struct acc_sqlite_parameter_entry_t {
   size_t region_id;
   size_t kernel_id;
@@ -103,6 +137,8 @@ extern char * parameter_entry_field_names[4];
 extern enum acc_sqlite_type_e parameter_entry_field_types[4];
 extern size_t parameter_entry_field_sizes[4];
 extern size_t parameter_entry_field_offsets[4];
+
+// Scalar
 
 struct acc_sqlite_scalar_entry_t {
   size_t region_id;
@@ -116,6 +152,8 @@ extern enum acc_sqlite_type_e scalar_entry_field_types[4];
 extern size_t scalar_entry_field_sizes[4];
 extern size_t scalar_entry_field_offsets[4];
 
+// Data
+
 struct acc_sqlite_data_entry_t {
   size_t region_id;
   size_t kernel_id;
@@ -126,6 +164,9 @@ extern char * data_entry_field_names[3];
 extern enum acc_sqlite_type_e data_entry_field_types[3];
 extern size_t data_entry_field_sizes[3];
 extern size_t data_entry_field_offsets[3];
+
+//
+////////////////////////////
 
 sqlite3 * acc_sqlite_open(char * filename, int fail_if_file_missing, int use_in_memory_db);
 void acc_sqlite_save  (sqlite3 * db);

@@ -375,6 +375,7 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
   assert(acc_sqlite_table_exists(db, "Kernels"  ));
   assert(acc_sqlite_table_exists(db, "Versions" ));
   assert(acc_sqlite_table_exists(db, "Loops"    ));
+  assert(acc_sqlite_table_exists(db, "Tiles"    ));
 
   struct acc_sqlite_region_entry_t * region_entries;
   compiler_data.num_regions = acc_sqlite_read_table(
@@ -384,7 +385,7 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
                                 sizeof(struct acc_sqlite_region_entry_t), (void**)&region_entries
                               );
 
-  size_t r_idx, k_idx, v_idx, l_idx;
+  size_t r_idx, k_idx, v_idx, l_idx, t_idx;
 
   compiler_data.regions = malloc(compiler_data.num_regions * sizeof(struct acc_region_desc_t_ *));
 
@@ -402,11 +403,11 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
 
     char region_id_cond[20];
     sprintf(region_id_cond, "region_id == '%zd'", region_entries[r_idx].region_id);
-    char * kernel_conds[1] = {region_id_cond};
+    char * region_conds[1] = {region_id_cond};
 
     struct acc_sqlite_kernel_entry_t * kernel_entries;
     region->num_kernels = acc_sqlite_read_table(
-                            db, "Kernels", 1, kernel_conds,
+                            db, "Kernels", 1, region_conds,
                             kernel_entry_num_fields, kernel_entry_field_names, kernel_entry_field_types,
                                                      kernel_entry_field_sizes, kernel_entry_field_offsets,
                             sizeof(struct acc_sqlite_kernel_entry_t), (void**)&kernel_entries
@@ -420,21 +421,21 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
       kernel->name = malloc((strlen(kernel_entries[k_idx].name) + 1) * sizeof(char));
         strcpy(kernel->name, kernel_entries[k_idx].name);
       kernel->num_loops = kernel_entries[k_idx].num_loops;
-      kernel->splitted_loop = NULL; /// \todo add to Version DB
-      kernel->version_by_devices = NULL;
+      kernel->splitted_loop = NULL;      /// \todo add to Version DB
+      kernel->version_by_devices = NULL; /// \todo add to Version DB
 
       char kernel_id_cond[20];
       sprintf(kernel_id_cond, "kernel_id == '%zd'", kernel_entries[k_idx].kernel_id);
 
-      size_t num_version_conds = filter != NULL ? 3 : 2;
+      size_t num_kernel_conds = filter != NULL ? 3 : 2;
 
-      char ** version_conds = malloc(num_version_conds * sizeof(char*));
-      version_conds[0] = region_id_cond;
-      version_conds[1] = kernel_id_cond;
+      char ** kernel_conds = malloc(num_kernel_conds * sizeof(char*));
+      kernel_conds[0] = region_id_cond;
+      kernel_conds[1] = kernel_id_cond;
 
       struct acc_sqlite_parameter_entry_t * parameter_entries;
       kernel->num_params = acc_sqlite_read_table(
-                             db, "Parameters", 2, version_conds,
+                             db, "Parameters", 2, kernel_conds,
                              parameter_entry_num_fields, parameter_entry_field_names, parameter_entry_field_types,
                                                          parameter_entry_field_sizes, parameter_entry_field_offsets,
                              sizeof(struct acc_sqlite_parameter_entry_t), (void**)&parameter_entries
@@ -447,7 +448,7 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
 
       struct acc_sqlite_scalar_entry_t * scalar_entries;
       kernel->num_scalars = acc_sqlite_read_table(
-                              db, "Scalars", 2, version_conds,
+                              db, "Scalars", 2, kernel_conds,
                               scalar_entry_num_fields, scalar_entry_field_names, scalar_entry_field_types,
                                                          scalar_entry_field_sizes, scalar_entry_field_offsets,
                               sizeof(struct acc_sqlite_scalar_entry_t), (void**)&scalar_entries
@@ -460,7 +461,7 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
 
       struct acc_sqlite_data_entry_t * data_entries;
       kernel->num_datas = acc_sqlite_read_table(
-                            db, "Datas", 2, version_conds,
+                            db, "Datas", 2, kernel_conds,
                             data_entry_num_fields, data_entry_field_names, data_entry_field_types,
                                                    data_entry_field_sizes, data_entry_field_offsets,
                             sizeof(struct acc_sqlite_data_entry_t), (void**)&data_entries
@@ -471,24 +472,24 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
         size_t num_enabled_versions = filter->num_enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[k_idx].kernel_id];
         size_t * enabled_versions = filter->enabled_versions[filter->region_offset[region_entries[r_idx].region_id] + kernel_entries[k_idx].kernel_id];
 
-        version_conds[2] = malloc((24 * num_enabled_versions + 1) * sizeof(char));
-        version_conds[2][0] = '\0';
+        kernel_conds[2] = malloc((24 * num_enabled_versions + 1) * sizeof(char));
+        kernel_conds[2][0] = '\0';
 
         size_t i;
         char tmp_cond[25];
         sprintf(tmp_cond, "( version_id == '%zd'", enabled_versions[0]);
-        strcat(version_conds[2], tmp_cond);
+        strcat(kernel_conds[2], tmp_cond);
         for (i = 1; i < num_enabled_versions; i++) {
-          strcat(version_conds[2], " OR ");
+          strcat(kernel_conds[2], " OR ");
           sprintf(tmp_cond, "version_id == '%zd'", enabled_versions[i]);
-          strcat(version_conds[2], tmp_cond);
+          strcat(kernel_conds[2], tmp_cond);
         }
-        strcat(version_conds[2], " )");
+        strcat(kernel_conds[2], " )");
       }
 
       struct acc_sqlite_version_entry_t * version_entries;
       kernel->num_versions = acc_sqlite_read_table(
-                               db, "Versions", num_version_conds, version_conds,
+                               db, "Versions", num_kernel_conds, kernel_conds,
                                version_entry_num_fields, version_entry_field_names, version_entry_field_types,
                                                          version_entry_field_sizes, version_entry_field_offsets,
                                sizeof(struct acc_sqlite_version_entry_t), (void**)&version_entries
@@ -500,36 +501,56 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
       for (v_idx = 0; v_idx < kernel->num_versions; v_idx++) {
         struct acc_kernel_version_t_ * version = malloc(sizeof(struct acc_kernel_version_t_));
         version->id = version_entries[v_idx].version_id;
-        version->num_gang = 0;      /// \todo add to Version DB
-        version->num_worker = 0;    /// \todo add to Version DB
-        version->vector_length = 1; /// \todo add to Version DB
+        version->num_gang[0] = version_entries[v_idx].num_gang[0];
+        version->num_gang[1] = version_entries[v_idx].num_gang[1];
+        version->num_gang[2] = version_entries[v_idx].num_gang[2];
+        version->num_worker[0] = version_entries[v_idx].num_worker[0];
+        version->num_worker[1] = version_entries[v_idx].num_worker[1];
+        version->num_worker[2] = version_entries[v_idx].num_worker[2];
+        version->vector_length = version_entries[v_idx].vector_length;
         version->suffix = malloc((strlen(version_entries[v_idx].suffix) + 1) * sizeof(char));;
           strcpy(version->suffix, version_entries[v_idx].suffix);
         version->device_affinity = acc_device_any;
 
         char version_id_cond[20];
         sprintf(version_id_cond, "version_id == '%zd'", version_entries[v_idx].version_id);
-        char * loop_conds[3] = {region_id_cond, kernel_id_cond, version_id_cond};
+        char * version_conds[3] = {region_id_cond, kernel_id_cond, version_id_cond};
 
         struct acc_sqlite_loop_entry_t * loop_entries;
         size_t num_loops = acc_sqlite_read_table(
-                             db, "Loops",
-                             3, loop_conds,
-                             loop_entry_num_fields, loop_entry_field_names, loop_entry_field_types, loop_entry_field_sizes, loop_entry_field_offsets,
+                             db, "Loops", 3, version_conds,
+                             loop_entry_num_fields, loop_entry_field_names, loop_entry_field_types,
+                                                    loop_entry_field_sizes, loop_entry_field_offsets,
                              sizeof(struct acc_sqlite_loop_entry_t), (void**)&loop_entries
                            );
-        //assert(num_loops == version->num_loops); /// \todo insert valid value into Version DB
-        version->loops = malloc(num_loops * sizeof(struct acc_loop_t_));
+        assert(kernel->num_loops == num_loops);
 
-        for (l_idx = 0; l_idx < num_loops; l_idx++) {
-          version->loops[l_idx].num_iterations[0] = loop_entries[l_idx].tiles[0];
-          version->loops[l_idx].num_iterations[1] = loop_entries[l_idx].tiles[1];
-          version->loops[l_idx].num_iterations[2] = loop_entries[l_idx].tiles[2];
-          version->loops[l_idx].num_iterations[3] = loop_entries[l_idx].tiles[3];
-          version->loops[l_idx].num_iterations[4] = loop_entries[l_idx].tiles[4];
-          version->loops[l_idx].num_iterations[5] = loop_entries[l_idx].tiles[5];
-          version->loops[l_idx].num_iterations[6] = loop_entries[l_idx].tiles[6];
+        version->loops = malloc(kernel->num_loops * sizeof(struct acc_loop_desc_t_));
+
+        for (l_idx = 0; l_idx < kernel->num_loops; l_idx++) {
+          version->loops[l_idx].id = loop_entries[l_idx].loop_id;
+
+          char loop_id_cond[20];
+          sprintf(loop_id_cond, "loop_id == '%zd'", loop_entries[l_idx].loop_id);
+          char * loop_conds[4] = {region_id_cond, kernel_id_cond, version_id_cond, loop_id_cond};
+
+          struct acc_sqlite_tile_entry_t * tile_entries;
+          version->loops[l_idx].num_tiles = acc_sqlite_read_table(
+                                              db, "Tiles",
+                                              4, loop_conds,
+                                              tile_entry_num_fields, tile_entry_field_names, tile_entry_field_types, tile_entry_field_sizes, tile_entry_field_offsets,
+                                              sizeof(struct acc_sqlite_tile_entry_t), (void**)&tile_entries
+                                            );
+          version->loops[l_idx].tiles = malloc(version->loops[l_idx].num_tiles * sizeof(struct acc_tile_desc_t_));
+
+          for (t_idx = 0; t_idx < version->loops[l_idx].num_tiles; t_idx++) {
+            version->loops[l_idx].tiles[t_idx].id = tile_entries[t_idx].tile_id;
+            version->loops[l_idx].tiles[t_idx].kind = tile_entries[t_idx].kind;
+            version->loops[l_idx].tiles[t_idx].param.nbr_it = tile_entries[t_idx].param;
+            version->loops[l_idx].tiles[t_idx].loop_id = loop_entries[l_idx].loop_id;
+          }
         }
+
         kernel->versions[v_idx] = version;
       }
       region->kernels[k_idx] = kernel;
@@ -562,41 +583,52 @@ size_t kernel_entry_field_offsets[5] = {
   offsetof(struct acc_sqlite_kernel_entry_t, num_loops)
 };
 
-size_t version_entry_num_fields = 4;
-char * version_entry_field_names[4] = {"region_id", "kernel_id", "version_id", "suffix"};
-enum acc_sqlite_type_e version_entry_field_types[4] = {e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_text};
-size_t version_entry_field_sizes[4] = {sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(char[30])};
-size_t version_entry_field_offsets[4] = {
+size_t version_entry_num_fields = 11;
+char * version_entry_field_names[11] = {"region_id", "kernel_id", "version_id", "num_gang_0", "num_gang_1", "num_gang_2", "num_worker_0", "num_worker_1", "num_worker_2", "vector_length", "suffix"};
+enum acc_sqlite_type_e version_entry_field_types[11] = {e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_text};
+size_t version_entry_field_sizes[11] = {sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(char[30])};
+size_t version_entry_field_offsets[11] = {
   offsetof(struct acc_sqlite_version_entry_t, region_id),
   offsetof(struct acc_sqlite_version_entry_t, kernel_id),
   offsetof(struct acc_sqlite_version_entry_t, version_id),
+  offsetof(struct acc_sqlite_version_entry_t, num_gang),
+  offsetof(struct acc_sqlite_version_entry_t, num_gang) + sizeof(size_t),
+  offsetof(struct acc_sqlite_version_entry_t, num_gang) + 2 * sizeof(size_t),
+  offsetof(struct acc_sqlite_version_entry_t, num_worker),
+  offsetof(struct acc_sqlite_version_entry_t, num_worker) + sizeof(size_t),
+  offsetof(struct acc_sqlite_version_entry_t, num_worker) + 2 * sizeof(size_t),
+  offsetof(struct acc_sqlite_version_entry_t, vector_length),
   offsetof(struct acc_sqlite_version_entry_t, suffix)
 };
 
-size_t loop_entry_num_fields = 15;
-char * loop_entry_field_names[15] = {
-  "region_id", "kernel_id", "version_id", "loop_id",
-  "tile_0", "gang", "tile_1", "worker", "tile_2", "vector", "tile_3",
-  "unroll_tile_0", "unroll_tile_1", "unroll_tile_2", "unroll_tile_3"
+size_t loop_entry_num_fields = 4;
+char * loop_entry_field_names[4] = {
+  "region_id", "kernel_id", "version_id", "loop_id"
 };
-enum acc_sqlite_type_e loop_entry_field_types[15] = {e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int};
-size_t loop_entry_field_sizes[15] = {sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t)};
-size_t loop_entry_field_offsets[15] = {
+enum acc_sqlite_type_e loop_entry_field_types[4] = {e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int};
+size_t loop_entry_field_sizes[4] = {sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t)};
+size_t loop_entry_field_offsets[4] = {
   offsetof(struct acc_sqlite_loop_entry_t, region_id),
   offsetof(struct acc_sqlite_loop_entry_t, kernel_id),
   offsetof(struct acc_sqlite_loop_entry_t, version_id),
-  offsetof(struct acc_sqlite_loop_entry_t, loop_id),
-  offsetof(struct acc_sqlite_loop_entry_t, tiles),
-  offsetof(struct acc_sqlite_loop_entry_t, tiles) + sizeof(size_t),
-  offsetof(struct acc_sqlite_loop_entry_t, tiles) + 2 * sizeof(size_t),
-  offsetof(struct acc_sqlite_loop_entry_t, tiles) + 3 * sizeof(size_t),
-  offsetof(struct acc_sqlite_loop_entry_t, tiles) + 4 * sizeof(size_t),
-  offsetof(struct acc_sqlite_loop_entry_t, tiles) + 5 * sizeof(size_t),
-  offsetof(struct acc_sqlite_loop_entry_t, tiles) + 6 * sizeof(size_t),
-  offsetof(struct acc_sqlite_loop_entry_t, unroll),
-  offsetof(struct acc_sqlite_loop_entry_t, unroll) + sizeof(size_t),
-  offsetof(struct acc_sqlite_loop_entry_t, unroll) + 2 * sizeof(size_t),
-  offsetof(struct acc_sqlite_loop_entry_t, unroll) + 3 * sizeof(size_t)
+  offsetof(struct acc_sqlite_loop_entry_t, loop_id)
+};
+
+size_t tile_entry_num_fields = 8;
+char * tile_entry_field_names[8] = {
+  "region_id", "kernel_id", "version_id", "loop_id", "tile_id", "position", "kind", "param"
+};
+enum acc_sqlite_type_e tile_entry_field_types[8] = {e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int, e_sqlite_int};
+size_t tile_entry_field_sizes[8] = {sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t)};
+size_t tile_entry_field_offsets[8] = {
+  offsetof(struct acc_sqlite_tile_entry_t, region_id),
+  offsetof(struct acc_sqlite_tile_entry_t, kernel_id),
+  offsetof(struct acc_sqlite_tile_entry_t, version_id),
+  offsetof(struct acc_sqlite_tile_entry_t, loop_id),
+  offsetof(struct acc_sqlite_tile_entry_t, tile_id),
+  offsetof(struct acc_sqlite_tile_entry_t, position),
+  offsetof(struct acc_sqlite_tile_entry_t, kind),
+  offsetof(struct acc_sqlite_tile_entry_t, param)
 };
 
 size_t event_entry_num_fields = 8;

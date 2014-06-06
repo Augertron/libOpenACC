@@ -35,7 +35,7 @@ struct acc_kernel_t_ {
   d_void ** data_ptrs;
   size_t  * data_size;
 
-  /// Tiles descriptor for dynamically defined bounds and strides
+  /// Loop bounds and stride: provided by transformed application
   struct acc_loop_t_ * loops;
 };
 

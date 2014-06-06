@@ -27,6 +27,7 @@ extern "C" {
  *
  */
 struct acc_context_t_ {
+   size_t num_tiles; // (unused) struct cannot be empty when flexible size array is used
    struct acc_tile_t_ tiles[];
 };
 

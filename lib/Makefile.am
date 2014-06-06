@@ -49,7 +49,6 @@ OPENACC_UTILS_LIB = \
   utils/containers/map.c \
   utils/containers/bimap.c \
   utils/profiling.c \
-  utils/tuning.c \
   utils/sqlite.c
 
 lib_LTLIBRARIES=libopenacc.la
@@ -59,9 +58,15 @@ libopenacc_la_SOURCES= \
   $(OPENACC_PRIVATE_LIB) \
   $(OPENACC_INTERNAL_LIB) \
   $(OPENACC_UTILS_LIB)
-  
+
+CFLAGS=
+
 libopenacc_la_CFLAGS= \
-  -g -O2 \
+  -g -O0 \
   -I$(top_srcdir)/include \
   -I@sqlite_path@/include
+
+install-exec-local:
+	mkdir -p $(prefix)/lib/opencl/
+	cp $(srcdir)/opencl/libopenacc.cl $(prefix)/lib/opencl/
 
