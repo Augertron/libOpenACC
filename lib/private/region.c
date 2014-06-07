@@ -19,49 +19,69 @@ typedef struct acc_region_t_ * acc_region_t;
 struct acc_region_t_ * acc_build_region(size_t region_id) {
   acc_init_once();
 
-  acc_region_desc_t region = acc_region_desc_by_ID(region_id);
-  assert(region != NULL);
+  acc_region_desc_t region_desc = acc_region_desc_by_ID(region_id);
+  assert(region_desc != NULL);
 
-  unsigned num_devices = region->num_devices;
+  unsigned num_devices = region_desc->num_devices;
 
   assert(num_devices > 0); /// \todo case when all present devices are used.
 
-  struct acc_region_t_ * result = (struct acc_region_t_ *)malloc(sizeof(struct acc_region_t_) + num_devices * sizeof(struct acc_region_per_device_t_));
+  struct acc_region_t_ * region = (struct acc_region_t_ *)malloc(sizeof(struct acc_region_t_) + num_devices * sizeof(struct acc_region_per_device_t_));
 
-  result->desc = region;
-  result->num_devices = num_devices;
-  result->distributed_data = (h_void **)malloc(region->num_distributed_data * (sizeof(h_void *) + sizeof(size_t)));
+  region->desc = region_desc;
 
-  if (region->devices == NULL) {
+  region->param_ptrs = malloc(region_desc->num_params * sizeof(void *));
+
+  region->scalar_ptrs = malloc(region_desc->num_scalars * sizeof(void *));
+
+  region->data_ptrs = malloc(region_desc->num_datas * sizeof(d_void *));
+  region->data_size = malloc(region_desc->num_datas * sizeof(size_t));
+
+  region->loops = malloc(region_desc->num_loops * sizeof(struct acc_loop_t_));
+
+  region->distributed_data = (h_void **)malloc(region_desc->num_distributed_data * (sizeof(h_void *) + sizeof(size_t)));
+
+  region->num_devices = num_devices;
+
+  if (region_desc->devices == NULL) {
     assert(num_devices == 1);
 
     acc_device_t dev_type = acc_get_device_type();
     int dev_num = acc_get_device_num(dev_type);
 
-    result->devices[0].device_idx = acc_get_device_idx(dev_type, dev_num);
-    result->devices[0].num_gang[0] = 0;
-    result->devices[0].num_gang[1] = 0;
-    result->devices[0].num_gang[2] = 0;
-    result->devices[0].num_worker[0] = 0;
-    result->devices[0].num_worker[1] = 0;
-    result->devices[0].num_worker[2] = 0;
-    result->devices[0].vector_length = 0;
+    region->devices[0].device_idx = acc_get_device_idx(dev_type, dev_num);
+    region->devices[0].num_gang[0] = 0;
+    region->devices[0].num_gang[1] = 0;
+    region->devices[0].num_gang[2] = 0;
+    region->devices[0].num_worker[0] = 0;
+    region->devices[0].num_worker[1] = 0;
+    region->devices[0].num_worker[2] = 0;
+    region->devices[0].vector_length = 0;
   }
   else {
     unsigned i;
     for (i = 0; i < num_devices; i++) {
-      result->devices[i].device_idx = acc_get_device_idx(region->devices[i].kind, region->devices[i].num);
-      result->devices[i].num_gang[0] = 0;
-      result->devices[i].num_gang[1] = 0;
-      result->devices[i].num_gang[2] = 0;
-      result->devices[i].num_worker[0] = 0;
-      result->devices[i].num_worker[1] = 0;
-      result->devices[i].num_worker[2] = 0;
-      result->devices[i].vector_length = 0;
+      region->devices[i].device_idx = acc_get_device_idx(region_desc->devices[i].kind, region_desc->devices[i].num);
+      region->devices[i].num_gang[0] = 0;
+      region->devices[i].num_gang[1] = 0;
+      region->devices[i].num_gang[2] = 0;
+      region->devices[i].num_worker[0] = 0;
+      region->devices[i].num_worker[1] = 0;
+      region->devices[i].num_worker[2] = 0;
+      region->devices[i].vector_length = 0;
     }
   }
 
-  return result;
+  return region;
+}
+
+void acc_region_execute(acc_region_t region) {
+#if DBG_REGION
+  printf("[debug]  acc_region_execute #%zd\n", region->desc->id);
+#endif
+
+  assert(region->desc->num_kernel_groups);
+
 }
 
 void acc_region_start(acc_region_t region) {

@@ -64,5 +64,6 @@ AC_CONFIG_FILES([Makefile
                  include/OpenACC/public/Makefile
                  include/OpenACC/utils/Makefile
                  include/OpenACC/utils/containers/Makefile
+                 include/OpenACC/utils/sqlite/Makefile
                  lib/Makefile])
 AC_OUTPUT

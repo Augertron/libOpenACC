@@ -27,17 +27,6 @@ typedef struct acc_region_t_ * acc_region_t;
 typedef struct acc_kernel_t_ * acc_kernel_t;
 typedef struct acc_context_t_ * acc_context_t;
 
-struct acc_kernel_desc_t_ * acc_kernel_desc_by_ID(size_t region_id, size_t kernel_id) {
-  struct acc_region_desc_t_ * region = acc_region_desc_by_ID(region_id);
-  if (region != NULL) {
-    size_t i;
-    for (i = 0; i < region->num_kernels; i++)
-      if (region->kernels[i]->id == kernel_id)
-        return region->kernels[i];
-  }
-  return NULL;
-}
-
 static int version_match(struct acc_region_per_device_t_ * region_per_device, acc_kernel_version_t version, size_t device_idx) {
   return acc_device_idx_check_type(device_idx, version->device_affinity)
       && ( version->num_gang[0]      == 0 || version->num_gang[0]      == region_per_device->num_gang[0]      )
@@ -58,7 +47,7 @@ void acc_eval_kernel_version(
   float  * best_matching_score,
   struct acc_tile_t_ ** best_matching_tiles
 ) {
-  struct acc_kernel_version_t_ * version = kernel->desc->versions[version_idx];
+  struct acc_kernel_version_t_ * version = &(kernel->desc->versions[version_idx]);
 
   if (!version_match(region_per_device, version, device_idx)) return;
 
@@ -162,7 +151,7 @@ void acc_select_kernel_version(
     size_t version_idx = -1;
     size_t i;
     for (i = 0; i < kernel->desc->num_versions; i++)
-      if (kernel->desc->versions[i]->id == version_id) {
+      if (kernel->desc->versions[i].id == version_id) {
         version_idx = i;
         break;
       }
@@ -206,7 +195,7 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   assert(best_matching_version != kernel->desc->num_versions);
   assert(best_matching_tiles != NULL);
 
-  struct acc_kernel_version_t_ * version = kernel->desc->versions[best_matching_version];
+  struct acc_kernel_version_t_ * version = &(kernel->desc->versions[best_matching_version]);
 
   *context = malloc(sizeof(struct acc_context_t_) + version->num_tiles * sizeof(struct acc_tile_t_));
   (*context)->num_tiles = version->num_tiles;

@@ -25,6 +25,19 @@ struct acc_region_t_ {
   /// Pointer to region descriptor
   struct acc_region_desc_t_ * desc;
 
+  /// param pointer
+  void ** param_ptrs;
+
+  /// scalar pointer
+  void ** scalar_ptrs;
+
+  /// data arguments, pointers to device memory
+  d_void ** data_ptrs;
+  size_t  * data_size;
+
+  /// Loop bounds and stride: provided by transformed application
+  struct acc_loop_t_ * loops;
+
   struct {
     h_void * ptr;
     size_t size;
@@ -46,16 +59,9 @@ struct acc_region_t_ {
 
 struct acc_region_t_ * acc_build_region(size_t region_id);
 
-/*! \func acc_region_start
- *  \param region pointer to a parallel region descriptor
- *  \return a non-zero value if an error occured
- */
-void acc_region_start(struct acc_region_t_ * region);
+void acc_region_execute(struct acc_region_t_ * region);
 
-/*! \func acc_region_stop
- *  \param region pointer to a parallel region descriptor
- *  \return a non-zero value if an error occured
- */
+void acc_region_start(struct acc_region_t_ * region);
 void acc_region_stop (struct acc_region_t_ * region);
 
 #ifdef __cplusplus

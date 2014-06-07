@@ -12,7 +12,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
+
+#include <inttypes.h>
 
 #include <assert.h>
 
@@ -82,10 +85,11 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
 
     // Set params kernel arguments 
     for (i = 0; i < kernel->desc->num_params; i++) {
-      status = clSetKernelArg(ocl_kernel, idx, kernel->desc->size_params[i], kernel->param_ptrs[i]);
+      size_t size_param = region->desc->size_params[kernel->desc->param_ids[i]];
+      status = clSetKernelArg(ocl_kernel, idx, size_param, kernel->param_ptrs[i]);
       if (status != CL_SUCCESS) {
         const char * status_str = acc_ocl_status_to_char(status);
-        printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (scalar #%u).\n",
+        printf("[fatal]   clSetKernelArg return %s for region[%zd].kernel[%zd] argument %u (scalar #%zd).\n",
                   status_str, region->desc->id, kernel->desc->id, idx, i
               );
         exit(-1); /// \todo error code
@@ -95,10 +99,11 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
 
     // Set scalar kernel arguments 
     for (i = 0; i < kernel->desc->num_scalars; i++) {
-      status = clSetKernelArg(ocl_kernel, idx, kernel->desc->size_scalars[i], kernel->scalar_ptrs[i]);
+      size_t size_scalar = region->desc->size_scalars[kernel->desc->scalar_ids[i]];
+      status = clSetKernelArg(ocl_kernel, idx, size_scalar, kernel->scalar_ptrs[i]);
       if (status != CL_SUCCESS) {
         const char * status_str = acc_ocl_status_to_char(status);
-        printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (scalar #%u).\n",
+        printf("[fatal]   clSetKernelArg return %s for region[%zd].kernel[%zd] argument %u (scalar #%zd).\n",
                   status_str, region->desc->id, kernel->desc->id, idx, i
               );
         exit(-1); /// \todo error code
@@ -117,14 +122,14 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
 
       d_void * d_data_ptr = acc_deviceptr_(device_idx, h_data_ptr);
       if (d_data_ptr == NULL) {
-        printf("[fatal]   Cannot find device pointer for %x (%x) on device #%d for region[%u].kernel[%u] argument %u (data #%u).\n",
-                  h_data_ptr, kernel->data_ptrs[i], device_idx, region->desc->id, kernel->desc->id, idx, i);
+        printf("[fatal]   Cannot find device pointer for %016" PRIxPTR " (%016" PRIxPTR ") on device #%zd for region[%zd].kernel[%zd] argument %u (data #%zd).\n",
+                  (uintptr_t)h_data_ptr, (uintptr_t)kernel->data_ptrs[i], device_idx, region->desc->id, kernel->desc->id, idx, i);
         exit(-1); /// \todo error code
       }
       status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &(d_data_ptr));
       if (status != CL_SUCCESS) {
         const char * status_str = acc_ocl_status_to_char(status);
-        printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (data #%u).\n",
+        printf("[fatal]   clSetKernelArg return %s for region[%zd].kernel[%zd] argument %u (data #%zd).\n",
                   status_str, region->desc->id, kernel->desc->id, idx, i
               );
         exit(-1); /// \todo error code
@@ -137,7 +142,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
           break;
       if (j < region->desc->num_distributed_data && region->desc->distributed_data[j].mode != e_all) {
 #if DBG_KERNEL
-        printf("[debug]   region[%u].kernel[%u] on device #%u  data #%u is distributed.\n",
+        printf("[debug]   region[%zd].kernel[%zd] on device #%zd  data #%zd is distributed.\n",
                     region->desc->id, kernel->desc->id, device_idx, i
                 );
 #endif
@@ -170,7 +175,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
         status = clSetKernelArg(ocl_kernel, idx, sizeof(int), &offset);
         if (status != CL_SUCCESS) {
           const char * status_str = acc_ocl_status_to_char(status);
-          printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u: offset for distributed data %u.\n",
+          printf("[fatal]   clSetKernelArg return %s for region[%zd].kernel[%zd] argument %u: offset for distributed data %zd.\n",
                     status_str, region->desc->id, kernel->desc->id, idx, i
                 );
           exit(-1); /// \todo error code
@@ -186,7 +191,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
                                          context, &status );
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
-      printf("[fatal]   clCreateBuffer return %s for region[%u].kernel[%u] when call to build the kernel copy of context.\n",
+      printf("[fatal]   clCreateBuffer return %s for region[%zd].kernel[%zd] when call to build the kernel copy of context.\n",
                 status_str, region->desc->id, kernel->desc->id
             );
       exit(-1); /// \todo error code
@@ -198,7 +203,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     status = clSetKernelArg(ocl_kernel, idx, sizeof(cl_mem), &ocl_context);
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
-      printf("[fatal]   clSetKernelArg return %s for region[%u].kernel[%u] argument %u (context).\n",
+      printf("[fatal]   clSetKernelArg return %s for region[%zd].kernel[%zd] argument %u (context).\n",
                 status_str, region->desc->id, kernel->desc->id, idx, i
             );
       exit(-1); /// \todo error code
@@ -234,7 +239,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     );
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);
-      printf("[fatal]   clEnqueueNDRangeKernel return %s for region[%u].kernel[%u].\n",
+      printf("[fatal]   clEnqueueNDRangeKernel return %s for region[%zd].kernel[%zd].\n",
                 status_str, region->desc->id, kernel->desc->id
             );
       exit(-1); /// \todo error code

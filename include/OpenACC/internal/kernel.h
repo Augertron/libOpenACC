@@ -79,23 +79,24 @@ struct acc_kernel_desc_t_ {
   /// Kernel name in the OpenCL C code
   char * name;
 
-  /// number of scalar arguments
+  /// Parameter arguments (used for bound and array sizes)
   size_t num_params;
-  /// size of scalar arguments
-  size_t * size_params;
+  size_t * param_ids;
 
-  /// number of scalar arguments
+  /// Scalar arguments (used in computation)
   size_t num_scalars;
-  /// size of scalar arguments
-  size_t * size_scalars;
+  size_t * scalar_ids;
 
-  /// number of data arguments
+  /// Data arguments
   size_t num_datas;
+  size_t * data_ids;
 
+  // Loops
   size_t num_loops;
+  size_t * loop_ids;
 
   unsigned num_versions;
-  acc_kernel_version_t * versions;
+  struct acc_kernel_version_t_ * versions;
 
   /// splitted loop, no splitted loop if NULL
   acc_loop_splitter_t splitted_loop;
@@ -103,8 +104,6 @@ struct acc_kernel_desc_t_ {
   /// If not NULL: versions to use with the different devices (as listed by acc_region_desc_t::devices)
   size_t * version_by_devices; 
 };
-
-struct acc_kernel_desc_t_ * acc_kernel_desc_by_ID(size_t region_id, size_t kernel_id);
 
 struct cl_kernel_ * acc_build_ocl_kernel(
   struct acc_region_t_ * region,

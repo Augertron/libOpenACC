@@ -40,8 +40,30 @@ struct acc_region_desc_t_ {
   size_t num_options;
   char ** options;
 
-  size_t num_kernels;
-  acc_kernel_desc_t * kernels;
+  /// number of scalar arguments
+  size_t num_params;
+  /// size of scalar arguments
+  size_t * size_params;
+
+  /// number of scalar arguments
+  size_t num_scalars;
+  /// size of scalar arguments
+  size_t * size_scalars;
+
+  /// number of data arguments
+  size_t num_datas;
+
+  size_t num_loops;
+
+  size_t num_kernel_groups;
+  struct acc_kernel_group_t_ {
+    size_t num_kernels;
+    struct acc_kernel_with_deps_t_ {
+      acc_kernel_desc_t kernel;
+      size_t num_dependencies;
+      size_t * dependencies;
+    } * kernels;
+  } * kernel_groups;
 
   size_t num_devices;
   struct {
