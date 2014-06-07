@@ -4,7 +4,7 @@
 
 #include "OpenACC/openacc.h"
 
-#include "OpenACC/utils/sqlite.h"
+#include "OpenACC/utils/sqlite/sqlite.h"
 
 #ifdef __cplusplus
 extern "C" {

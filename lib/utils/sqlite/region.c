@@ -7,7 +7,7 @@ enum acc_sqlite_type_e region_entry_field_types[6] = {e_sqlite_int, e_sqlite_int
 size_t region_entry_field_sizes[6] = {sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(size_t), sizeof(char[50])};
 size_t region_entry_field_offsets[6] = {
   offsetof(struct acc_sqlite_region_entry_t, region_id),
-  offsetof(struct acc_sqlite_region_entry_t, num_kernels),
+  offsetof(struct acc_sqlite_region_entry_t, num_loops),
   offsetof(struct acc_sqlite_region_entry_t, num_params),
   offsetof(struct acc_sqlite_region_entry_t, num_scalars),
   offsetof(struct acc_sqlite_region_entry_t, num_datas),

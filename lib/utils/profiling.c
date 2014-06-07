@@ -4,7 +4,7 @@
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/private/debug.h"
 
-#include "OpenACC/utils/sqlite.h"
+#include "OpenACC/utils/sqlite/sqlite.h"
 
 #include <time.h>
 #include <stdlib.h>

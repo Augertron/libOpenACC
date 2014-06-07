@@ -4,7 +4,7 @@
 #include "OpenACC/internal/loop.h"
 #include "OpenACC/internal/compiler.h"
 
-#include "OpenACC/utils/sqlite.h"
+#include "OpenACC/utils/sqlite/sqlite.h"
 #include "OpenACC/utils/tuning.h"
 
 #include "OpenACC/utils/containers/map.h"
@@ -364,6 +364,7 @@ size_t acc_sqlite_read_table(
 }
 
 void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler_data_filter_t_ * filter) {
+/*
   size_t i;
 
 #if DBG_SQLITE_CONNECTION
@@ -563,6 +564,7 @@ void acc_sqlite_load_compiler_data(sqlite3 * db, struct acc_sqlite_load_compiler
 #if DBG_SQLITE_CONNECTION
   printf("[debug]  Leave acc_sqlite_load_compiler_data\n");
 #endif
+*/
 }
 
 int acc_sqlite_read_run_table(

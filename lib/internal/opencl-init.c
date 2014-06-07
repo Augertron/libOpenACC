@@ -7,7 +7,7 @@
 #include "OpenACC/private/debug.h"
 
 #include "OpenACC/utils/io.h"
-#include "OpenACC/utils/sqlite.h"
+#include "OpenACC/utils/sqlite/sqlite.h"
 
 #include <stdio.h>
 #include <string.h>

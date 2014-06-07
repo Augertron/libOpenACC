@@ -3,9 +3,8 @@
 #define __LIBOPENACC_SQLITE_H__
 
 #include "OpenACC/openacc.h"
-
-#include "sqlite3.h"
 #include "OpenACC/utils/containers/map.h"
+#include "sqlite3.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,13 +2,13 @@
 #ifndef __LIBOPENACC_SQLITE_KERNEL_DEPS_H__
 #define __LIBOPENACC_SQLITE_KERNEL_DEPS_H__
 
-#include "sqlite3.h"
+#include "OpenACC/utils/sqlite/sqlite.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct acc_sqlite_kernel_deps_t {
+struct acc_sqlite_kernel_deps_entry_t {
   size_t region_id;
   size_t kernel_group_id;
   size_t kernel_id;

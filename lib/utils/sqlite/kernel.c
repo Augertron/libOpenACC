@@ -13,7 +13,7 @@ size_t kernel_entry_field_offsets[9] = {
   offsetof(struct acc_sqlite_kernel_entry_t, num_loops),
   offsetof(struct acc_sqlite_kernel_entry_t, num_params),
   offsetof(struct acc_sqlite_kernel_entry_t, num_scalars),
-  offsetof(struct acc_sqlite_kernel_entry_t, num_data),
+  offsetof(struct acc_sqlite_kernel_entry_t, num_datas),
   offsetof(struct acc_sqlite_kernel_entry_t, name)
 };
 

@@ -15,7 +15,7 @@
 
 #include "OpenACC/utils/tuning.h"
 #include "OpenACC/utils/profiling.h"
-#include "OpenACC/utils/sqlite.h"
+#include "OpenACC/utils/sqlite/sqlite.h"
 
 #include <stdio.h>
 #include <stdarg.h>

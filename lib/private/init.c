@@ -9,7 +9,7 @@
 #include "OpenACC/private/runtime.h"
 
 #include "OpenACC/utils/profiling.h"
-#include "OpenACC/utils/sqlite.h"
+#include "OpenACC/utils/sqlite/sqlite.h"
 
 #include <assert.h>
 

@@ -2,7 +2,7 @@
 #ifndef __LIBOPENACC_SQLITE_REGION_SCALAR_H__
 #define __LIBOPENACC_SQLITE_REGION_SCALAR_H__
 
-#include "sqlite3.h"
+#include "OpenACC/utils/sqlite/sqlite.h"
 
 #ifdef __cplusplus
 extern "C" {

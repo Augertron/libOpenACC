@@ -49,9 +49,21 @@ OPENACC_UTILS_LIB = \
   utils/containers/map.c \
   utils/containers/bimap.c \
   utils/profiling.c \
-  utils/sqlite/sqlite.c
-  utils/sqlite/region_desc.c
-  utils/sqlite/profile_desc.c
+  utils/sqlite/sqlite.c \
+  utils/sqlite/region.c \
+  utils/sqlite/region-parameter.c \
+  utils/sqlite/region-scalar.c \
+  utils/sqlite/region-data.c \
+  utils/sqlite/kernel-group.c \
+  utils/sqlite/kernel.c \
+  utils/sqlite/kernel-deps.c \
+  utils/sqlite/kernel-parameter.c \
+  utils/sqlite/kernel-scalar.c \
+  utils/sqlite/kernel-data.c \
+  utils/sqlite/version.c \
+  utils/sqlite/loop.c \
+  utils/sqlite/tile.c \
+  utils/sqlite/event.c 
 
 lib_LTLIBRARIES=libopenacc.la
 
