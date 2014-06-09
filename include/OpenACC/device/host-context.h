@@ -12,7 +12,7 @@
 #ifndef LIBOPENACC_INTERNAL_H2D
 #define LIBOPENACC_INTERNAL_H2D 20131031
 
-#include "OpenACC/internal/loop.h"
+#include "OpenACC/private/loop.h"
 
 #ifdef __cplusplus
 extern "C" {
