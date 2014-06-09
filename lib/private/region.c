@@ -16,6 +16,8 @@
 typedef struct acc_region_desc_t_ * acc_region_desc_t;
 typedef struct acc_region_t_ * acc_region_t;
 
+typedef struct acc_kernel_t_ * acc_kernel_t;
+
 struct acc_region_t_ * acc_build_region(size_t region_id) {
   acc_init_once();
 
@@ -39,7 +41,7 @@ struct acc_region_t_ * acc_build_region(size_t region_id) {
 
   region->loops = malloc(region_desc->num_loops * sizeof(struct acc_loop_t_));
 
-  region->distributed_data = (h_void **)malloc(region_desc->num_distributed_data * (sizeof(h_void *) + sizeof(size_t)));
+  region->distributed_data = (h_void **)malloc(region_desc->num_distributed_data * sizeof(struct acc_region_distributed_data_t_));
 
   region->num_devices = num_devices;
 
@@ -80,8 +82,49 @@ void acc_region_execute(acc_region_t region) {
   printf("[debug]  acc_region_execute #%zd\n", region->desc->id);
 #endif
 
-  assert(region->desc->num_kernel_groups);
+  assert(region->desc->num_kernel_groups == 1); // Only one version of the region is supported (need a criterium to select an implementation...)
+  assert(region->desc->kernel_groups != NULL);
 
+  assert(region->desc->kernel_groups[0].num_kernels == 1); // Only one kernel: if multiple dependencies could exist
+  assert(region->desc->kernel_groups[0].kernels != NULL);
+  assert(region->desc->kernel_groups[0].kernels[0].num_dependencies == 0); // No deps
+
+  assert(region->desc->kernel_groups[0].kernels[0].kernel != NULL);
+
+  size_t i;
+
+  /// \todo Data mvt attached to the region
+
+  acc_region_start(region);
+
+  acc_kernel_t kernel = acc_build_kernel(region->desc->kernel_groups[0].kernels[0].kernel);
+
+  
+  // Set parameter arguments
+  for (i = 0; i < kernel->desc->num_params; i++)
+    kernel->param_ptrs[i] = region->param_ptrs[kernel->desc->param_ids[i]];
+
+  // Set scalar arguments
+  for (i = 0; i < kernel->desc->num_scalars; i++)
+    kernel->scalar_ptrs[i] = region->scalar_ptrs[kernel->desc->scalar_ids[i]];
+
+  // Set data arguments
+  for (i = 0; i < kernel->desc->num_datas; i++)
+    kernel->data_ptrs[i] = region->data_ptrs[kernel->desc->data_ids[i]];
+
+  // Configure the loop
+  for (i = 0; i < kernel->desc->num_loops; i++) {
+    size_t loop_id = kernel->desc->loop_ids[i];
+    kernel->loops[i].lower  = region->loops[loop_id].lower;
+    kernel->loops[i].upper  = region->loops[loop_id].upper;
+    kernel->loops[i].stride = region->loops[loop_id].stride;
+  }
+
+  acc_enqueue_kernel(region, kernel);
+
+  acc_region_stop(region);
+
+  /// \todo Data mvt attached to the region
 }
 
 void acc_region_start(acc_region_t region) {

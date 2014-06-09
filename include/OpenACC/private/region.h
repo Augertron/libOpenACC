@@ -38,7 +38,7 @@ struct acc_region_t_ {
   /// Loop bounds and stride: provided by transformed application
   struct acc_loop_t_ * loops;
 
-  struct {
+  struct acc_region_distributed_data_t_ {
     h_void * ptr;
     size_t size;
   } * distributed_data;

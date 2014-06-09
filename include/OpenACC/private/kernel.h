@@ -47,7 +47,7 @@ struct acc_kernel_t_ {
  *  \param kernel_id
  *  \return an OpenACC kernel descriptor, argument arrays are allocated but not initialized (need to be done before enqueuing the kernel)
  */
-struct acc_kernel_t_ * acc_build_kernel(size_t region_id, size_t kernel_id);
+struct acc_kernel_t_ * acc_build_kernel(struct acc_kernel_desc_t_ * kernel_desc);
 
 /*! \func acc_enqueue_kernel
  *
