@@ -36,7 +36,6 @@ struct acc_tile_desc_t_ {
     size_t nbr_it; // valid iff kind = e_static_tile or e_unrolled_tile
     size_t lvl;    // valid iff kind = e_gang_tile or e_worker_tile,
   } param;
-  size_t loop_id;
 };
 
 struct acc_loop_desc_t_ {

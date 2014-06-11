@@ -197,9 +197,15 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
 
   struct acc_kernel_version_t_ * version = &(kernel->desc->versions[best_matching_version]);
 
-  *context = malloc(sizeof(struct acc_context_t_) + version->num_tiles * sizeof(struct acc_tile_t_));
+  *context = malloc(sizeof(struct acc_context_t_) + 2 * (kernel->desc->num_loops + version->num_tiles) * sizeof(long));
+  (*context)->num_loops = kernel->desc->num_loops;
   (*context)->num_tiles = version->num_tiles;
-  memcpy((*context)->tiles, best_matching_tiles, version->num_tiles * sizeof(struct acc_tile_t_));
+  size_t loop_id;
+  for (loop_id = 0; loop_id < kernel->desc->num_loops; loop_id++) {
+    (*context)->data[2 * loop_id]     = kernel->loops[loop_id].lower;
+    (*context)->data[2 * loop_id + 1] = kernel->loops[loop_id].upper;
+  }
+  memcpy((*context)->data + 2 * kernel->desc->num_loops, best_matching_tiles, version->num_tiles * sizeof(struct acc_tile_t_));
 
 #if DBG_HOST_CTX || 1
   acc_debug_dump_context(region, kernel, *context, device_idx);

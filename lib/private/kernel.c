@@ -184,7 +184,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     // Allocate/copy context in constant memory \todo alloc only copy before launch with event wait
     cl_mem ocl_context = clCreateBuffer( acc_runtime.opencl_data->devices_data[device_idx]->context,
                                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                         sizeof(struct acc_context_t_) + context->num_tiles * sizeof(struct acc_tile_t_),
+                                         sizeof(struct acc_context_t_) + 2 * (context->num_loops + context->num_tiles) * sizeof(long),
                                          context, &status );
     if (status != CL_SUCCESS) {
       const char * status_str = acc_ocl_status_to_char(status);

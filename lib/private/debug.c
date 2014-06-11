@@ -13,10 +13,15 @@ void acc_debug_dump_context(struct acc_region_t_ * region, struct acc_kernel_t_ 
   size_t i, j;
   printf("Context for region[%d].kernel[%d] on device #%d:\n", region->desc->id, kernel->desc->id, device_idx);
 
+  for (i = 0; i < context->num_loops; i++) {
+    printf("  Loop[%d]:\n", i);
+    printf("    context->loops[%d].upper   = %d\n", i, context->data[2 * i]);
+    printf("    context->loops[%d].lower   = %d\n", i, context->data[2 * i + 1]);
+  }
   for (i = 0; i < context->num_tiles; i++) {
     printf("  Tile[%d]:\n", i);
-    printf("    context->tiles[%d].length  = %d\n", i, context->tiles[i].length);
-    printf("    context->tiles[%d].stride  = %d\n", i, context->tiles[i].stride);
+    printf("    context->tiles[%d].length  = %d\n", i, context->data[2 * context->num_loops + 2 * i]);
+    printf("    context->tiles[%d].stride  = %d\n", i, context->data[2 * context->num_loops + 2 * i + 1]);
   }
 
 }

@@ -18,14 +18,20 @@
 
 #include "OpenACC/device/host-context.h"
 
-long acc_gang_iteration(__constant struct acc_context_t_ * ctx, size_t tile_id, long it_tile, short lvl);
-long acc_worker_iteration(__constant struct acc_context_t_ * ctx, size_t tile_id, long it_tile, short lvl);
-
 size_t acc_gang_id(__constant struct acc_context_t_ * ctx, short lvl);
 size_t acc_worker_id(__constant struct acc_context_t_ * ctx, short lvl);
 
 size_t acc_gang_size(__constant struct acc_context_t_ * ctx, short lvl);
 size_t acc_worker_size(__constant struct acc_context_t_ * ctx, short lvl);
+
+long acc_gang_iteration(__constant struct acc_context_t_ * ctx, size_t tile_id, long it_tile, short lvl);
+long acc_worker_iteration(__constant struct acc_context_t_ * ctx, size_t tile_id, long it_tile, short lvl);
+
+long acc_get_loop_lower(__constant struct acc_context_t_ * ctx, size_t loop_id);
+long acc_get_loop_upper(__constant struct acc_context_t_ * ctx, size_t loop_id);
+
+long acc_get_tile_length(__constant struct acc_context_t_ * ctx, size_t tile_id);
+long acc_get_tile_stride(__constant struct acc_context_t_ * ctx, size_t tile_id);
 
 #endif /* __LIB_OPENACC_DEVICE_H__ */ /** }@ */
 
