@@ -210,6 +210,12 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     assert(acc_runtime.opencl_data->devices_data[device_idx]->command_queue != NULL);
 
     // Launch the kernel
+    size_t work_dim = 0;
+    if      (region->devices[dev_idx].num_gang[2] > 1 || region->devices[dev_idx].num_worker[2] > 1) work_dim = 3;
+    else if (region->devices[dev_idx].num_gang[1] > 1 || region->devices[dev_idx].num_worker[1] > 1) work_dim = 2;
+    else if (region->devices[dev_idx].num_gang[0] > 1 || region->devices[dev_idx].num_worker[0] > 1) work_dim = 1;
+    assert(work_dim > 0);
+
     size_t global_work_size[3] = {
                                    region->devices[dev_idx].num_gang[0] * region->devices[dev_idx].num_worker[0],
                                    region->devices[dev_idx].num_gang[1] * region->devices[dev_idx].num_worker[1],
@@ -226,7 +232,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
     status = clEnqueueNDRangeKernel(
       acc_runtime.opencl_data->devices_data[device_idx]->command_queue,
       ocl_kernel,
-      /* cl_uint work_dim                  = */ 1,
+      /* cl_uint work_dim                  = */ work_dim,
       /* const size_t * global_work_offset = */ NULL,
       /* const size_t * global_work_size   = */ global_work_size,
       /* const size_t * local_work_size    = */ local_work_size,

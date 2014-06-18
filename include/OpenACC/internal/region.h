@@ -66,7 +66,7 @@ struct acc_region_desc_t_ {
   } * kernel_groups;
 
   size_t num_devices;
-  struct {
+  struct acc_device_id_pair_t {
     acc_device_t kind;
     size_t num;
   } * devices;

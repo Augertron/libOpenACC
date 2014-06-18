@@ -27,6 +27,7 @@ OPENACC_PRIVATE_LIB = \
   private/init.c \
   private/kernel.c \
   private/region.c \
+  private/runtime.c \
   private/memory.c \
   private/debug.c
 

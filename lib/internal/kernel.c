@@ -56,6 +56,8 @@ void acc_eval_kernel_version(
   size_t loop_idx, tile_pos;
   for (loop_idx = 0; loop_idx < kernel->desc->num_loops; loop_idx++) {
     struct acc_loop_desc_t_ * loop_desc = &(version->loops[loop_idx]);
+    if (loop_desc->num_tiles == 0) continue;
+
     struct acc_loop_t_ * loop = &(kernel->loops[loop_idx]);
     size_t loop_length = loop->upper - loop->lower + 1;
 

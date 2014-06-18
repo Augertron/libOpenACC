@@ -94,6 +94,8 @@ typedef struct acc_runtime_t_ {
 /// Forward declaration of the unique instance of the singleton acc_runtime_t
 extern acc_runtime_t acc_runtime;
 
+size_t acc_get_device_idx(acc_device_t dev, int num);
+
 #ifdef __cplusplus
 }
 #endif
