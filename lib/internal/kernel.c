@@ -209,7 +209,7 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   }
   memcpy((*context)->data + 2 * kernel->desc->num_loops, best_matching_tiles, version->num_tiles * sizeof(struct acc_tile_t_));
 
-#if DBG_HOST_CTX || 1
+#if DBG_HOST_CTX
   acc_debug_dump_context(region, kernel, *context, device_idx);
 #endif
 
