@@ -5,6 +5,8 @@
 #include "OpenACC/private/debug.h"
 
 #include "OpenACC/internal/compiler.h"
+#include "OpenACC/internal/region.h"
+
 #include "OpenACC/utils/profiling.h"
 
 #include <stdio.h>
@@ -100,7 +102,7 @@ void acc_init_(acc_device_t dev, int num) {
 
 void acc_init_region_(struct acc_region_t_ * region) {
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++)
+  for (idx = 0; idx < region->desc->num_devices; idx++)
     acc_init__(region->devices[idx].device_idx);
 }
 

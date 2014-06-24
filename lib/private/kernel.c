@@ -56,7 +56,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
 #endif
 
   size_t i, j, k, l, dev_idx;
-  for (dev_idx = 0; dev_idx < region->num_devices; dev_idx++) {
+  for (dev_idx = 0; dev_idx < region->desc->num_devices; dev_idx++) {
     assert(region->devices[dev_idx].num_gang[0] > 0);
     assert(region->devices[dev_idx].num_gang[1] > 0);
     assert(region->devices[dev_idx].num_gang[2] > 0);
@@ -137,25 +137,25 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       for (j = 0; j < region->desc->num_distributed_data; j++)
         if (kernel->desc->data_ids[i] == region->desc->distributed_data[j].id)
           break;
-      if (j < region->desc->num_distributed_data && region->desc->distributed_data[j].mode != e_all) {
+      if (j < region->desc->num_distributed_data) {
 #if DBG_KERNEL
         printf("[debug]   region[%zd].kernel[%zd] on device #%zd  data #%zd is distributed.\n",
                     region->desc->id, kernel->desc->id, device_idx, i
                 );
 #endif
         assert( region->desc->distributed_data[j].mode == e_contiguous &&
-                region->desc->distributed_data[j].nbr_dev == region->num_devices &&
+                region->desc->distributed_data[j].nbr_dev == region->desc->num_devices &&
                 region->desc->distributed_data[j].portions != NULL
               );
 
-        for (k = 0; k < region->num_devices; k++)
+        for (k = 0; k < region->desc->num_devices; k++)
           if (region->devices[k].device_idx == device_idx)
             break;
-        assert(k < region->num_devices);
+        assert(k < region->desc->num_devices);
 
         unsigned sum_portions = 0;
         unsigned prev_portion = 0;
-        for (l = 0; l < region->num_devices; l++) {
+        for (l = 0; l < region->desc->num_devices; l++) {
           sum_portions += region->desc->distributed_data[j].portions[l];
           if (l < k)
             prev_portion += region->desc->distributed_data[j].portions[l];

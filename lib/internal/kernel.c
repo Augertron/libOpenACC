@@ -186,10 +186,10 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   struct acc_tile_t_ * best_matching_tiles = NULL;
 
   size_t region_dev_idx;
-  for (region_dev_idx = 0; region_dev_idx < region->num_devices; region_dev_idx++)
+  for (region_dev_idx = 0; region_dev_idx < region->desc->num_devices; region_dev_idx++)
     if (region->devices[region_dev_idx].device_idx == device_idx)
       break;
-  assert(region_dev_idx < region->num_devices);
+  assert(region_dev_idx < region->desc->num_devices);
 
   struct acc_region_per_device_t_ * region_per_device = &(region->devices[region_dev_idx]);
 

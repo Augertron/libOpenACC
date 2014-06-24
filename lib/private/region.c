@@ -40,7 +40,7 @@ struct acc_region_t_ * acc_build_region(size_t region_id) {
 
   region->loops = malloc(region_desc->num_loops * sizeof(struct acc_loop_t_));
 
-  region->num_devices = num_devices;
+  region->devices = malloc(region_desc->num_devices * sizeof(struct acc_region_per_device_t_));
 
   if (region_desc->devices == NULL) {
     assert(num_devices == 1);
@@ -132,7 +132,7 @@ void acc_region_start(acc_region_t region) {
   acc_get_region_defaults(region);
 
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++) {
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
     assert(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue != NULL);
     clFinish(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue);
   }
@@ -143,7 +143,7 @@ void acc_region_stop(acc_region_t region) {
   printf("[debug]  acc_region_stop #%zd\n", region->desc->id);
 #endif
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++) {
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
     assert(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue != NULL);
     clFinish(acc_runtime.opencl_data->devices_data[region->devices[idx].device_idx]->command_queue);
   }

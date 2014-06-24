@@ -14,6 +14,7 @@
 #include "OpenACC/public/arch.h"
 #include "OpenACC/private/region.h"
 #include "OpenACC/internal/kernel.h"
+#include "OpenACC/internal/loop.h"
 
 #include <stddef.h>
 
@@ -65,7 +66,6 @@ struct acc_region_desc_t_ {
   size_t num_distributed_data;
   struct acc_data_distribution_t_ {
     size_t id;
-
     acc_splitting_mode_e mode;
 
     size_t nbr_dev;
@@ -73,6 +73,18 @@ struct acc_region_desc_t_ {
 
     size_t chunk;
   } * distributed_data;
+
+  size_t num_splitted_loops;
+  struct acc_loop_splitter_t_ {
+    size_t id;
+
+    acc_splitting_mode_e mode;
+
+    size_t nbr_dev;
+    size_t * portions;
+
+    size_t chunk;
+  } * splitted_loops;
 };
 
 struct acc_region_desc_t_ * acc_region_desc_by_ID(size_t region_id);

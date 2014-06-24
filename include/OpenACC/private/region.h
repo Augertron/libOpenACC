@@ -43,15 +43,12 @@ struct acc_region_t_ {
   /// Loop bounds and stride: provided by transformed application
   struct acc_loop_t_ * loops;
 
-  unsigned num_devices;
-
   struct acc_region_per_device_t_ {
     size_t device_idx;
     size_t num_gang[3];
     size_t num_worker[3];
     size_t vector_length;
-  } devices [];
-
+  } * devices;
 };
 
 struct acc_region_t_ * acc_build_region(size_t region_id);

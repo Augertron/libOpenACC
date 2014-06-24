@@ -20,6 +20,11 @@
 extern "C" {
 #endif
 
+typedef enum acc_splitting_mode_e_ {
+  e_contiguous,
+  e_chunk
+} acc_splitting_mode_e;
+
 enum acc_tile_kind_e {
   e_gang_tile = 0,
   e_worker_tile = 1,

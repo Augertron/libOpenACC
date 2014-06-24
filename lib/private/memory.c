@@ -43,24 +43,16 @@ void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx_, h_v
   if (data_idx == region->desc->num_distributed_data) return; // No entry found: NOP (data goes entirely to all devices)
 
   // Check that found "distributed data" entry is valid
-  assert( region->desc->distributed_data[data_idx].nbr_dev == region->num_devices &&
+  assert( region->desc->distributed_data[data_idx].nbr_dev == region->desc->num_devices &&
           region->desc->distributed_data[data_idx].portions != NULL
         );
 
   // Search corresponding "device" entry in region descriptor 
   size_t device_idx;
-  for (device_idx = 0; device_idx < region->num_devices; device_idx++)
+  for (device_idx = 0; device_idx < region->desc->num_devices; device_idx++)
     if (region->devices[device_idx].device_idx == device_idx_)
       break;
-  assert(device_idx < region->num_devices);
-
-  // If distributed data is "e_all" it means it is fully transfered to all device
-  if (region->desc->distributed_data[data_idx].mode == e_all) {
-    // Unless the portion associated to the current device is empty (avoid sending data to unused device)
-    if (region->desc->distributed_data[data_idx].portions[device_idx] == 0)
-      *n = 0;
-    return;
-  }
+  assert(device_idx < region->desc->num_devices);
 
   // Only support contiguous distribution mode at this point (chunk mode to be implemented)
   assert(region->desc->distributed_data[data_idx].mode == e_contiguous);
@@ -69,7 +61,7 @@ void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx_, h_v
   unsigned sum_portions = 0;
   unsigned prev_portion = 0;
   size_t k;
-  for (k = 0; k < region->num_devices; k++) {
+  for (k = 0; k < region->desc->num_devices; k++) {
     sum_portions += region->desc->distributed_data[data_idx].portions[k];
     if (k < device_idx)
       prev_portion += region->desc->distributed_data[data_idx].portions[k];
@@ -154,7 +146,7 @@ void acc_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_
 #endif
   acc_init_region_(region);
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++) {
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
@@ -176,7 +168,7 @@ void acc_present_or_copyin_regions_(struct acc_region_t_ * region, h_void * host
 #endif
   acc_init_region_(region);
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++) {
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
@@ -208,7 +200,7 @@ void acc_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_
 #endif
   acc_init_region_(region);
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++) {
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
@@ -230,7 +222,7 @@ void acc_present_or_create_regions_(struct acc_region_t_ * region, h_void * host
 #endif
   acc_init_region_(region);
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++) {
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
@@ -262,7 +254,7 @@ void acc_copyout_regions_(struct acc_region_t_ * region, h_void * host_ptr, size
 
   acc_init_region_(region);
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++) {
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
@@ -285,7 +277,7 @@ void acc_present_or_copyout_regions_(struct acc_region_t_ * region, h_void * hos
 
   acc_init_region_(region);
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx++) {
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
     h_void * host_ptr_ = host_ptr;
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);

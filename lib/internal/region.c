@@ -30,7 +30,7 @@ struct acc_region_desc_t_ * acc_region_desc_by_ID(size_t region_id) {
 
 void acc_get_region_defaults(struct acc_region_t_ * region) {
   unsigned i;
-  for (i = 0; i < region->num_devices; i++) {
+  for (i = 0; i < region->desc->num_devices; i++) {
     if (region->devices[i].num_gang[0] == 0)
       region->devices[i].num_gang[0] = acc_device_defaults[region->desc->devices[i].kind].num_gang[0];
     if (region->devices[i].num_gang[1] == 0)
@@ -84,7 +84,7 @@ void acc_region_init(struct acc_region_t_ * region) {
   cl_int status;
 
   unsigned idx;
-  for (idx = 0; idx < region->num_devices; idx ++) {
+  for (idx = 0; idx < region->desc->num_devices; idx ++) {
     size_t device_idx = region->devices[idx].device_idx;
 
     assert(acc_runtime.opencl_data->devices_data[device_idx] != NULL);
