@@ -36,12 +36,9 @@ struct acc_region_t_ * acc_build_region(size_t region_id) {
 
   region->scalar_ptrs = malloc(region_desc->num_scalars * sizeof(void *));
 
-  region->data_ptrs = malloc(region_desc->num_datas * sizeof(d_void *));
-  region->data_size = malloc(region_desc->num_datas * sizeof(size_t));
+  region->data = malloc(region_desc->num_datas * sizeof(struct acc_data_t_));
 
   region->loops = malloc(region_desc->num_loops * sizeof(struct acc_loop_t_));
-
-  region->distributed_data = (h_void **)malloc(region_desc->num_distributed_data * sizeof(struct acc_region_distributed_data_t_));
 
   region->num_devices = num_devices;
 
@@ -93,8 +90,6 @@ void acc_region_execute(acc_region_t region) {
 
   size_t i;
 
-  /// \todo Data mvt attached to the region
-
   acc_region_start(region);
 
   acc_kernel_t kernel = acc_build_kernel(region->desc->kernel_groups[0].kernels[0].kernel);
@@ -109,8 +104,10 @@ void acc_region_execute(acc_region_t region) {
     kernel->scalar_ptrs[i] = region->scalar_ptrs[kernel->desc->scalar_ids[i]];
 
   // Set data arguments
-  for (i = 0; i < kernel->desc->num_datas; i++)
-    kernel->data_ptrs[i] = region->data_ptrs[kernel->desc->data_ids[i]];
+  for (i = 0; i < kernel->desc->num_datas; i++) {
+    kernel->data_ptrs[i] = region->data[kernel->desc->data_ids[i]].ptr;
+    kernel->data_size[i] = region->data[kernel->desc->data_ids[i]].nbr_elements * region->data[kernel->desc->data_ids[i]].element_size;
+  }
 
   // Configure the loop
   for (i = 0; i < kernel->desc->num_loops; i++) {
@@ -123,8 +120,6 @@ void acc_region_execute(acc_region_t region) {
   acc_enqueue_kernel(region, kernel);
 
   acc_region_stop(region);
-
-  /// \todo Data mvt attached to the region
 }
 
 void acc_region_start(acc_region_t region) {

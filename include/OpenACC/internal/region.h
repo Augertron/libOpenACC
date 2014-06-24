@@ -23,15 +23,6 @@ extern "C" {
 
 typedef struct acc_kernel_desc_t_ * acc_kernel_desc_t;
 
-struct acc_data_distribution_t_ {
-  acc_splitting_mode_e mode;
-
-  unsigned nbr_dev;
-  unsigned * portions;
-
-  unsigned chunk;
-};
-
 struct acc_region_desc_t_ {
   size_t id;
 
@@ -72,7 +63,16 @@ struct acc_region_desc_t_ {
   } * devices;
 
   size_t num_distributed_data;
-  struct acc_data_distribution_t_ * distributed_data;
+  struct acc_data_distribution_t_ {
+    size_t id;
+
+    acc_splitting_mode_e mode;
+
+    size_t nbr_dev;
+    size_t * portions;
+
+    size_t chunk;
+  } * distributed_data;
 };
 
 struct acc_region_desc_t_ * acc_region_desc_by_ID(size_t region_id);

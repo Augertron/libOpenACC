@@ -32,16 +32,16 @@ struct acc_region_t_ {
   void ** scalar_ptrs;
 
   /// data arguments, pointers to device memory
-  d_void ** data_ptrs;
-  size_t  * data_size;
+  struct acc_data_t_ {
+    h_void * ptr;
+    size_t nbr_elements;
+    size_t element_size;
+    size_t dominant_dimension; /// currently always 0 (1st dimension), used to distribute data between multiple accelerators.
+    size_t nbr_elements_dominant_dimension;
+  } * data;
 
   /// Loop bounds and stride: provided by transformed application
   struct acc_loop_t_ * loops;
-
-  struct acc_region_distributed_data_t_ {
-    h_void * ptr;
-    size_t size;
-  } * distributed_data;
 
   unsigned num_devices;
 
@@ -51,6 +51,7 @@ struct acc_region_t_ {
     size_t num_worker[3];
     size_t vector_length;
   } devices [];
+
 };
 
 struct acc_region_t_ * acc_build_region(size_t region_id);

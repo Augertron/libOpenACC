@@ -135,7 +135,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
 
       // if data is distributed need to provide the offset
       for (j = 0; j < region->desc->num_distributed_data; j++)
-        if (kernel->data_ptrs[i] == region->distributed_data[j].ptr)
+        if (kernel->desc->data_ids[i] == region->desc->distributed_data[j].id)
           break;
       if (j < region->desc->num_distributed_data && region->desc->distributed_data[j].mode != e_all) {
 #if DBG_KERNEL
@@ -161,7 +161,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
             prev_portion += region->desc->distributed_data[j].portions[l];
         };
 
-        int offset = (region->distributed_data[j].size * prev_portion) / sum_portions;
+        int offset = (region->data[j].nbr_elements_dominant_dimension * prev_portion) / sum_portions;
 
 #if DBG_KERNEL
         printf("[debug]       sum_portions = %d\n", sum_portions);
