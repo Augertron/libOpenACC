@@ -1,5 +1,5 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS=include lib
+SUBDIRS=include lib src
 

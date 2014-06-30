@@ -161,11 +161,20 @@ void acc_collect_ocl_devices() {
 void acc_load_ocl_sources() {
   unsigned i;
 
-  char ocl_rt_file[512];
-  strcpy(ocl_rt_file, compiler_data.acc_runtime_dir);
-  strcat(ocl_rt_file, "/");
-  strcat(ocl_rt_file, compiler_data.acc_runtime_ocl);
-  acc_runtime.opencl_data->runtime_sources = readSource(ocl_rt_file);
+  if (compiler_data.acc_runtime_dir != NULL && compiler_data.acc_runtime_ocl != NULL) {
+    char ocl_rt_file[512];
+    strcpy(ocl_rt_file, compiler_data.acc_runtime_dir);
+    strcat(ocl_rt_file, "/");
+    strcat(ocl_rt_file, compiler_data.acc_runtime_ocl);
+    acc_runtime.opencl_data->runtime_sources = readSource(ocl_rt_file);
+  }
+  else {
+    printf("[alert]   OpenACC device runtime was not provided.\n");
+
+    set_flag(f_ocl_sources);
+
+    return;
+  }
 
   if (compiler_data.regions == NULL) {
     char * env_versions_db = getenv("ACC_VERSIONS_DB");
@@ -177,7 +186,7 @@ void acc_load_ocl_sources() {
   }
 
   if (compiler_data.num_regions <= 0) {
-    printf("[error]   There is not any OpenCL region (parallel/kernel constructs) listed! Check that acc_init_kernel_first is called (and correct).\n");
+    printf("[alert]   There is not any OpenCL region (parallel/kernel constructs) listed! Check that acc_init_kernel_first is called (and correct).\n");
 
     set_flag(f_ocl_sources);
 
