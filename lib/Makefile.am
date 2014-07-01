@@ -1,6 +1,8 @@
 
 AUTOMAKE_OPTIONS = foreign subdir-objects
 
+ACLOCAL_AMFLAGS=-I ../m4
+
 ACC_VERBOSE ?= 0
 ACC_DBG_RUNTIME ?= 0
 ACC_DBG_REGION ?= 0
@@ -74,12 +76,11 @@ libopenacc_la_SOURCES= \
   $(OPENACC_INTERNAL_LIB) \
   $(OPENACC_UTILS_LIB)
 
-CFLAGS=
-
 libopenacc_la_CFLAGS= \
   -g -O0 \
   -I$(top_srcdir)/include \
-  -I@sqlite_inc_path@
+  -I@sqlite_inc_path@ \
+  -I@opencl_inc_path@
 
 install-exec-local:
 	mkdir -p $(prefix)/lib/opencl/

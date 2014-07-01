@@ -5,9 +5,11 @@ AC_PREREQ([2.68])
 
 AC_INIT([libOpenACC], [0.1], [vanderbruggentristan@gmail.com])
 
-AM_INIT_AUTOMAKE([libOpenACC], [0.1])
+AC_CONFIG_MACRO_DIR([m4])
 
-LT_INIT()
+LT_INIT
+
+AM_INIT_AUTOMAKE([libOpenACC], [0.1])
 
 AC_CONFIG_SRCDIR([include/OpenACC/openacc.h])
 
@@ -15,7 +17,6 @@ AC_CONFIG_SRCDIR([include/OpenACC/openacc.h])
 
 # Checks for programs.
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_MAKE_SET
 
 # Checks for header files.
@@ -25,7 +26,6 @@ AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h string.h unistd.h])
 AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_SIZE_T
-AC_TYPE_UINT32_T
 AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
