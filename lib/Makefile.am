@@ -79,7 +79,7 @@ CFLAGS=
 libopenacc_la_CFLAGS= \
   -g -O0 \
   -I$(top_srcdir)/include \
-  -I@sqlite_path@/include
+  -I@sqlite_inc_path@
 
 install-exec-local:
 	mkdir -p $(prefix)/lib/opencl/

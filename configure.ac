@@ -18,40 +18,6 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_MAKE_SET
 
-# Checks for libraries.
-
-AC_ARG_WITH(opencl,        [  --with-opencl            OpenCL path])
-if test ! -z "$with_opencl"
-then
-  AC_MSG_NOTICE([OpenCL path provided])
-  AC_SUBST(opencl_path, "$with_opencl")
-  AC_SUBST(opencl_lib_path, "$with_opencl/lib")
-else
-  AC_MSG_ERROR([Missing OpenCL headers and/or libraries paths.])
-fi
-if test ! -z "$with_opencl_libdir"
-then
-  AC_MSG_NOTICE([OpenCL libraries path provided])
-  AC_SUBST(opencl_lib_path, $with_opencl_libdir)
-fi
-# TODO test OpenCL
-
-AC_ARG_WITH(sqlite,        [  --with-sqlite            SQLite path])
-if test ! -z "$with_sqlite"
-then
-  AC_MSG_NOTICE([SQLite path provided])
-  AC_SUBST(sqlite_path, "$with_sqlite")
-  AC_SUBST(sqlite_lib_path, "$with_sqlite/lib")
-else
-  AC_MSG_ERROR([Missing SQLite headers and/or libraries paths.])
-fi
-if test ! -z "$with_sqlite_libdir"
-then
-  AC_MSG_NOTICE([SQLite libraries path provided])
-  AC_SUBST(sqlite_lib_path, $with_sqlite_libdir)
-fi
-# TODO test SQLite
-
 # Checks for header files.
 AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h string.h unistd.h])
 
@@ -67,6 +33,52 @@ AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime gethostname memmove strstr])
+
+#####
+# OpenCL
+#####
+
+AC_ARG_WITH(opencl-include, [  --with-opencl-include    OpenCL include path])
+AC_ARG_WITH(opencl-libdir,  [  --with-opencl-libdir     OpenCL library path])
+
+if test ! -z "$with_opencl_include"
+then
+	AC_MSG_NOTICE([OpenCL include path provided])
+        AC_SUBST(opencl_inc_path, $with_opencl_include)
+else
+  AC_MSG_ERROR([Missing OpenCL include path.])
+fi
+if test ! -z "$with_opencl_libdir"
+then
+	AC_MSG_NOTICE([OpenCL library path provided])
+        AC_SUBST(opencl_lib_path, $with_opencl_libdir)
+else
+  AC_MSG_ERROR([Missing OpenCL library path.])
+fi
+# TODO test OpenCL
+
+#####
+# SQLite
+#####
+
+AC_ARG_WITH(sqlite-include, [  --with-sqlite-include    SQLite include path])
+AC_ARG_WITH(sqlite-libdir,  [  --with-sqlite-libdir     SQLite library path])
+
+if test ! -z "$with_sqlite_include"
+then
+	AC_MSG_NOTICE([SQLite include path provided])
+        AC_SUBST(sqlite_inc_path, $with_sqlite_include)
+else
+  AC_MSG_ERROR([Missing SQLite include path.])
+fi
+if test ! -z "$with_sqlite_libdir"
+then
+	AC_MSG_NOTICE([SQLite library path provided])
+        AC_SUBST(sqlite_lib_path, $with_sqlite_libdir)
+else
+  AC_MSG_ERROR([Missing SQLite library path.])
+fi
+# TODO test SQLite
 
 AC_CONFIG_FILES([Makefile
                  include/Makefile

@@ -1,7 +1,7 @@
 
 bin_PROGRAMS=openacc
 
-AM_CXXFLAGS=-g -O0
+AM_CFLAGS=-g -O0
 
 openacc_SOURCES= \
   openacc.c

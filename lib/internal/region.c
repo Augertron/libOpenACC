@@ -69,8 +69,8 @@ void acc_region_init(struct acc_region_t_ * region) {
   char build_options[1024];
   build_options[0] = '\0';
   strcpy(build_options, "-I");
-  strcat(build_options, compiler_data.acc_runtime_dir);
-  strcat(build_options, "/include/ ");
+  strcat(build_options, compiler_data.acc_inc_path);
+  strcat(build_options, " ");
 
   assert(compiler_data.regions[region_id]->num_options == 0 || compiler_data.regions[region_id]->options != NULL);
 
@@ -127,8 +127,8 @@ void acc_region_init(struct acc_region_t_ * region) {
           acc_dbg_ocl_build_log(device_idx, *program);
           exit(-1);
         case CL_BUILD_SUCCESS:
-          printf("[info]    clGetProgramBuildInfo: build status: CL_BUILD_SUCCESS.\n");
 #if BUILD_LOG
+          printf("[info]    clGetProgramBuildInfo: build status: CL_BUILD_SUCCESS.\n");
           acc_dbg_ocl_build_log(device_idx, *program);
 #endif
           break;

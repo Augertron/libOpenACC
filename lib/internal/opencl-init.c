@@ -161,15 +161,16 @@ void acc_collect_ocl_devices() {
 void acc_load_ocl_sources() {
   unsigned i;
 
-  if (compiler_data.acc_runtime_dir != NULL && compiler_data.acc_runtime_ocl != NULL) {
+  if (compiler_data.acc_lib_path != NULL) {
     char ocl_rt_file[512];
-    strcpy(ocl_rt_file, compiler_data.acc_runtime_dir);
-    strcat(ocl_rt_file, "/");
-    strcat(ocl_rt_file, compiler_data.acc_runtime_ocl);
+    strcpy(ocl_rt_file, compiler_data.acc_lib_path);
+    strcat(ocl_rt_file, "/opencl/libopenacc.cl");
     acc_runtime.opencl_data->runtime_sources = readSource(ocl_rt_file);
   }
   else {
-    printf("[alert]   OpenACC device runtime was not provided.\n");
+#if VERBOSE
+    printf("[warn]    OpenACC device runtime was not provided.\n");
+#endif
 
     set_flag(f_ocl_sources);
 
@@ -186,7 +187,9 @@ void acc_load_ocl_sources() {
   }
 
   if (compiler_data.num_regions <= 0) {
-    printf("[alert]   There is not any OpenCL region (parallel/kernel constructs) listed! Check that acc_init_kernel_first is called (and correct).\n");
+#if VERBOSE
+    printf("[warn]    There is not any OpenCL region (parallel/kernel constructs) listed! Check that acc_init_kernel_first is called (and correct).\n");
+#endif
 
     set_flag(f_ocl_sources);
 
@@ -202,7 +205,7 @@ void acc_load_ocl_sources() {
   char ocl_kernel_file[512];
   for (i = 0; i < compiler_data.num_regions; i++) {
     ocl_kernel_file[0] = '\0';
-    strcpy(ocl_kernel_file, compiler_data.acc_kernels_dir);
+    strcpy(ocl_kernel_file, compiler_data.acc_kernels_path);
     strcat(ocl_kernel_file, "/");
     strcat(ocl_kernel_file, compiler_data.regions[i]->file);
     acc_runtime.opencl_data->region_sources[i] = readSource(ocl_kernel_file);

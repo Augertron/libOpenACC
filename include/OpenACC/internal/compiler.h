@@ -20,9 +20,9 @@ typedef struct acc_region_desc_t_ * acc_region_desc_t;
 
 /// Data-structure the compiler use to communicate information to the runtime
 struct acc_compiler_data_t_ {
-  const char * acc_runtime_dir;
-  const char * acc_runtime_ocl;
-  const char * acc_kernels_dir;
+  const char * acc_inc_path;
+  const char * acc_lib_path;
+  const char * acc_kernels_path;
   unsigned long num_regions;
   acc_region_desc_t * regions;
 };
