@@ -32,8 +32,8 @@ extern "C" {
  *  data[2 * num_loops + 2 * j + 1] for j < num_tiles is tile #j stride
  */
 struct acc_context_t_ {
-   size_t num_loops;
-   size_t num_tiles; // (unused) struct cannot be empty when flexible size array is used
+   unsigned num_loops;
+   unsigned num_tiles; // (unused) struct cannot be empty when flexible size array is used
    long data[];
 };
 
