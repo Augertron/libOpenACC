@@ -252,10 +252,11 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
       total   = 1;
     }
 
-    assert((portion * loop_length) % total == 0);
+    assert((before * loop_length) % total == 0);
+    assert(((before + portion) * loop_length) % total == 0);
 
-    (*context)->data[2 * loop_id]     = kernel->loops[loop_id].lower + before * loop_length;
-    (*context)->data[2 * loop_id + 1] = kernel->loops[loop_id].lower + (before + portion) * loop_length;
+    (*context)->data[2 * loop_id]     = kernel->loops[loop_id].lower + (before * loop_length) / total;
+    (*context)->data[2 * loop_id + 1] = kernel->loops[loop_id].lower + ( (before + portion) * loop_length) / total;
   }
   memcpy((*context)->data + 2 * kernel->desc->num_loops, best_matching_tiles, version->num_tiles * sizeof(struct acc_tile_t_));
 
