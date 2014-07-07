@@ -42,25 +42,13 @@ struct acc_region_t_ * acc_build_region(size_t region_id) {
 
   region->devices = malloc(region_desc->num_devices * sizeof(struct acc_region_per_device_t_));
 
-  if (region_desc->devices == NULL) {
-    assert(num_devices == 1);
-
-    acc_device_t dev_type = acc_get_device_type();
-    int dev_num = acc_get_device_num(dev_type);
-
-    region->devices[0].device_idx = acc_get_device_idx(dev_type, dev_num);
-    region->devices[0].num_gang[0] = 0;
-    region->devices[0].num_gang[1] = 0;
-    region->devices[0].num_gang[2] = 0;
-    region->devices[0].num_worker[0] = 0;
-    region->devices[0].num_worker[1] = 0;
-    region->devices[0].num_worker[2] = 0;
-    region->devices[0].vector_length = 0;
+  if (region_desc->num_devices == 0) {
+    assert(0); /// \todo all devices
   }
   else {
-    unsigned i;
+    size_t i;
     for (i = 0; i < num_devices; i++) {
-      region->devices[i].device_idx = acc_get_device_idx(region_desc->devices[i].kind, region_desc->devices[i].num);
+      region->devices[i].device_idx = 0;
       region->devices[i].num_gang[0] = 0;
       region->devices[i].num_gang[1] = 0;
       region->devices[i].num_gang[2] = 0;
