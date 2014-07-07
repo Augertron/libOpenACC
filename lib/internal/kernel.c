@@ -38,8 +38,21 @@ static int version_match(struct acc_region_per_device_t_ * region_per_device, ac
       && ( version->vector_length    == 0 || version->vector_length == region_per_device->vector_length       );
 }
 
+struct acc_loop_splitter_t_ * get_loop_splitter(
+  acc_region_t region,
+  size_t region_dev_idx,
+  size_t loop_id
+) {
+  size_t i;
+  for (i = 0; i < region->desc->num_splitted_loops; i++)
+    if (region->desc->splitted_loops[i].id == loop_id)
+      return &(region->desc->splitted_loops[i]);
+  return NULL;
+}
+
 void acc_eval_kernel_version(
-  struct acc_region_per_device_t_ * region_per_device,
+  acc_region_t region,
+  size_t region_dev_idx,
   acc_kernel_t kernel,
   size_t device_idx,
   size_t version_idx,
@@ -47,19 +60,31 @@ void acc_eval_kernel_version(
   float  * best_matching_score,
   struct acc_tile_t_ ** best_matching_tiles
 ) {
+  struct acc_region_per_device_t_ * region_per_device = &(region->devices[region_dev_idx]);
   struct acc_kernel_version_t_ * version = &(kernel->desc->versions[version_idx]);
 
   if (!version_match(region_per_device, version, device_idx)) return;
 
   struct acc_tile_t_ * tiles = malloc(version->num_tiles * sizeof(struct acc_tile_t_));
 
-  size_t loop_idx, tile_pos;
+  size_t loop_idx, tile_pos, i;
   for (loop_idx = 0; loop_idx < kernel->desc->num_loops; loop_idx++) {
     struct acc_loop_desc_t_ * loop_desc = &(version->loops[loop_idx]);
     if (loop_desc->num_tiles == 0) continue;
 
     struct acc_loop_t_ * loop = &(kernel->loops[loop_idx]);
     size_t loop_length = loop->upper - loop->lower + 1;
+    struct acc_loop_splitter_t_ * loop_splitter = get_loop_splitter(region, region_dev_idx, loop_desc->id);
+    if (loop_splitter != NULL) {
+      assert(loop_splitter->mode == e_contiguous);
+      assert(loop_splitter->nbr_dev == region->desc->num_devices);
+      size_t portion = loop_splitter->portions[region_dev_idx];
+      size_t total = 0;
+      for (i = 0; i < loop_splitter->nbr_dev; i++)
+        total += loop_splitter->portions[i];
+      assert((portion * loop_length) % total == 0);
+      loop_length = (portion * loop_length) / total;
+    }
 
     // In this loop tiles[tile_idx].length stores the number of iterations of each tile
     size_t dynamic_tile_pos = loop_desc->num_tiles;
@@ -137,7 +162,7 @@ void acc_eval_kernel_version(
 }
 
 void acc_select_kernel_version(
-  struct acc_region_per_device_t_ * region_per_device,
+  acc_region_t region,
   size_t region_dev_idx,
   acc_kernel_t kernel,
   size_t device_idx,
@@ -160,7 +185,7 @@ void acc_select_kernel_version(
     assert(version_idx != -1);
 
     acc_eval_kernel_version(
-      region_per_device, kernel,
+      region, region_dev_idx, kernel,
       device_idx, version_idx,
       best_matching_version,
       &best_matching_score,
@@ -172,7 +197,7 @@ void acc_select_kernel_version(
     size_t version_idx;
     for (version_idx = 0; version_idx < kernel->desc->num_versions; version_idx++)
       acc_eval_kernel_version(
-        region_per_device, kernel, 
+        region, region_dev_idx, kernel, 
         device_idx, version_idx,
         best_matching_version,
         &best_matching_score,
@@ -191,9 +216,7 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
       break;
   assert(region_dev_idx < region->desc->num_devices);
 
-  struct acc_region_per_device_t_ * region_per_device = &(region->devices[region_dev_idx]);
-
-  acc_select_kernel_version(region_per_device, region_dev_idx, kernel, device_idx, &best_matching_version, &best_matching_tiles);
+  acc_select_kernel_version(region, region_dev_idx, kernel, device_idx, &best_matching_version, &best_matching_tiles);
   assert(best_matching_version != kernel->desc->num_versions);
   assert(best_matching_tiles != NULL);
 
@@ -202,10 +225,37 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   *context = malloc(sizeof(struct acc_context_t_) + 2 * (kernel->desc->num_loops + version->num_tiles) * sizeof(long));
   (*context)->num_loops = kernel->desc->num_loops;
   (*context)->num_tiles = version->num_tiles;
-  size_t loop_id;
+  size_t loop_id, i;
   for (loop_id = 0; loop_id < kernel->desc->num_loops; loop_id++) {
-    (*context)->data[2 * loop_id]     = kernel->loops[loop_id].lower;
-    (*context)->data[2 * loop_id + 1] = kernel->loops[loop_id].upper;
+    size_t loop_length = kernel->loops[loop_id].upper - kernel->loops[loop_id].lower + 1;
+
+    size_t before  = 0;
+    size_t portion = 0;
+    size_t total   = 0;
+    struct acc_loop_splitter_t_ * loop_splitter = get_loop_splitter(region, region_dev_idx, kernel->desc->loop_ids[loop_id]);
+    if (loop_splitter != NULL) {
+      assert(loop_splitter->mode == e_contiguous);
+      assert(loop_splitter->nbr_dev == region->desc->num_devices);
+      portion = loop_splitter->portions[region_dev_idx];
+      total = 0;
+      for (i = 0; i < region_dev_idx; i++) {
+        total  += loop_splitter->portions[i];
+        before += loop_splitter->portions[i];
+      }
+      for (; i < loop_splitter->nbr_dev; i++)
+        total += loop_splitter->portions[i];
+      assert((portion * loop_length) % total == 0);
+    }
+    else {
+      before  = 0;
+      portion = 1;
+      total   = 1;
+    }
+
+    assert((portion * loop_length) % total == 0);
+
+    (*context)->data[2 * loop_id]     = kernel->loops[loop_id].lower + before * loop_length;
+    (*context)->data[2 * loop_id + 1] = kernel->loops[loop_id].lower + (before + portion) * loop_length;
   }
   memcpy((*context)->data + 2 * kernel->desc->num_loops, best_matching_tiles, version->num_tiles * sizeof(struct acc_tile_t_));
 
