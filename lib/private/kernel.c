@@ -161,7 +161,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
             prev_portion += region->desc->distributed_data[j].portions[l];
         };
 
-        int offset = (region->data[j].nbr_elements_dominant_dimension * prev_portion) / sum_portions;
+        int offset = (region->data[kernel->desc->data_ids[i]].nbr_elements_dominant_dimension * prev_portion) / sum_portions;
 
 #if DBG_KERNEL
         printf("[debug]       sum_portions = %d\n", sum_portions);
