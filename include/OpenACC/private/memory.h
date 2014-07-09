@@ -42,6 +42,9 @@ d_void * acc_pcopyin_(size_t device_idx, h_void *, size_t);
 d_void * acc_create_(size_t device_idx, h_void *, size_t);
 void acc_create_regions_(struct acc_region_t_ * region, h_void *, size_t);
 
+d_void * acc_present_(size_t device_idx, h_void *, size_t);
+void acc_present_regions_(struct acc_region_t_ * region, h_void *, size_t);
+
 d_void * acc_present_or_create_(size_t device_idx, h_void *, size_t);
 void acc_present_or_create_regions_(struct acc_region_t_ * region, h_void *, size_t);
 

@@ -245,7 +245,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
       printf("[fatal]   clEnqueueNDRangeKernel return %s for region[%zd].kernel[%zd].\n",
                 status_str, region->desc->id, kernel->desc->id
             );
-      exit(-1); /// \todo error code
+      assert(0); /// \todo error code
     }
 
     acc_profiling_register_kernel_launch(event, device_idx, region->desc->id, kernel->desc->id);

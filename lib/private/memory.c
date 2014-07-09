@@ -103,6 +103,8 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
     exit(-1); /// \todo error code
   }
 
+  clFinish(acc_runtime.opencl_data->devices_data[device_idx]->command_queue);
+
 #if DBG_DATA
   printf("[debug]     return %x\n", buffer);
 #endif
@@ -151,7 +153,7 @@ void acc_copyin_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_
     size_t n_ = n;
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
     if (n_ > 0)
-      acc_copyin_(region->devices[idx].device_idx, host_ptr, n);
+      acc_copyin_(region->devices[idx].device_idx, host_ptr_, n_);
   }
 }
 
@@ -206,6 +208,28 @@ void acc_create_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_
     acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
     if (n_ > 0)
       acc_create_(region->devices[idx].device_idx, host_ptr_, n_);
+  }
+}
+
+d_void * acc_present_(size_t device_idx, h_void * host_ptr, size_t n) {
+#if DBG_DATA
+  printf("[debug] acc_present_(device_idx = %zd, host_ptr = %x, n = %zd)\n", device_idx, host_ptr, n);
+#endif
+  assert(!acc_is_present_(device_idx, host_ptr, n));
+}
+
+void acc_present_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
+#if DBG_DATA
+  printf("[debug] acc_present_regions_(region = #%u, h_void * host_ptr = %x, size_t n = %d)\n", region->desc->id, host_ptr, n);
+#endif
+  acc_init_region_(region);
+  unsigned idx;
+  for (idx = 0; idx < region->desc->num_devices; idx++) {
+    h_void * host_ptr_ = host_ptr;
+    size_t n_ = n;
+    acc_distributed_data(region, region->devices[idx].device_idx, &host_ptr_, &n_);
+    if (n_ > 0)
+      acc_present_(region->devices[idx].device_idx, host_ptr_, n_);
   }
 }
 
