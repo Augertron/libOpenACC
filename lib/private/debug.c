@@ -4,6 +4,7 @@
 #include "OpenACC/private/runtime.h"
 #include "OpenACC/internal/kernel.h"
 #include "OpenACC/internal/region.h"
+#include "OpenACC/internal/data-env.h"
 
 #include <stdio.h>
 
@@ -25,6 +26,34 @@ void acc_debug_dump_context(struct acc_region_t_ * region, struct acc_kernel_t_ 
     printf("    context->tiles[%d].stride  = %d\n", i, context->data[2 * context->num_loops + 2 * i + 1]);
   }
 
+}
+
+
+void acc_dbg_dump_data_env_rec(struct acc_data_environment_t_ * data_env, size_t lvl) {
+  printf("[debug]   Level %zd\n", lvl);
+
+  size_t num_devices = acc_runtime.opencl_data->num_devices[acc_runtime.opencl_data->num_platforms];
+  size_t i, j;
+  for (i = 0; i < num_devices; i++) {
+    if (data_env->data_allocs[i]->count == 0) continue;
+    printf("[debug]     On device #%zd:\n", i);
+    for (j = 0; j < data_env->data_allocs[i]->count; j++) {
+      h_void * host_ptr = *(void **)(data_env->data_allocs[i]->datas + j * data_env->data_allocs[i]->storage_size);
+      d_void * dev_ptr = acc_get_deviceptr(i, host_ptr);
+      printf("[debug]       %zd : {%x, %x}\n", j, host_ptr, dev_ptr);
+    }
+  }
+
+  if (data_env->child != NULL)
+    acc_dbg_dump_data_env_rec(data_env->child, lvl + 1);
+}
+
+void acc_dbg_dump_data_env(char * callee) {
+  printf("[debug] Dump Data-Environment Stack, called %s\n", callee);
+  assert(data_environment != NULL);
+  struct acc_data_environment_t_ * data_env = data_environment;
+  while (data_env->parent != NULL) data_env = data_env->parent;
+  acc_dbg_dump_data_env_rec(data_env, 0);
 }
 
 void acc_dbg_dump_runtime() {

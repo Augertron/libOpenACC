@@ -8,6 +8,9 @@
 #include <assert.h>
 
 void acc_push_data_environment() {
+
+//acc_dbg_dump_data_env("before acc_push_data_environment");
+
   acc_init_(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
   assert(data_environment != NULL);
@@ -17,9 +20,14 @@ void acc_push_data_environment() {
   data_environment->child->parent = data_environment;
 
   data_environment = data_environment->child;
+
+//acc_dbg_dump_data_env("after  acc_push_data_environment");
 }
 
 void acc_pop_data_environment() {
+
+//acc_dbg_dump_data_env("before acc_pop_data_environment");
+
   size_t device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
 
   assert(acc_runtime.opencl_data->devices_data[device_idx]->command_queue != NULL);
@@ -41,5 +49,7 @@ void acc_pop_data_environment() {
     free(data_environment->child);
     data_environment->child = NULL;
   }
+
+//acc_dbg_dump_data_env("after  acc_pop_data_environment");
 }
 

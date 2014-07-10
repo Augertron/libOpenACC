@@ -18,7 +18,7 @@ typedef struct acc_region_t_ * acc_region_t;
 
 typedef struct acc_kernel_t_ * acc_kernel_t;
 
-struct acc_region_t_ * acc_build_region(size_t region_id) {
+struct acc_region_t_ * acc_region_build(size_t region_id) {
   acc_init_once();
 
   acc_region_desc_t region_desc = acc_region_desc_by_ID(region_id);
@@ -60,6 +60,15 @@ struct acc_region_t_ * acc_build_region(size_t region_id) {
   }
 
   return region;
+}
+
+void acc_region_free(acc_region_t region) {
+  free(region->param_ptrs);
+  free(region->scalar_ptrs);
+  free(region->data);
+  free(region->loops);
+  free(region->devices);
+  free(region);
 }
 
 void acc_region_execute(acc_region_t region) {
@@ -108,6 +117,13 @@ void acc_region_execute(acc_region_t region) {
   acc_enqueue_kernel(region, kernel);
 
   acc_region_stop(region);
+
+  free(kernel->param_ptrs);
+  free(kernel->scalar_ptrs);
+  free(kernel->data_ptrs);
+  free(kernel->data_size);
+  free(kernel->loops);
+  free(kernel);
 }
 
 void acc_region_start(acc_region_t region) {

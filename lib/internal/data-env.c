@@ -27,6 +27,9 @@ struct acc_data_environment_t_ * acc_build_data_environment(struct acc_data_envi
 }
 
 void acc_clear_data_environment(struct acc_data_environment_t_ * data_env) {
+
+//acc_dbg_dump_data_env("before acc_clear_data_environment");
+
   size_t num_devices = acc_runtime.opencl_data->num_devices[acc_runtime.opencl_data->num_platforms];
   size_t i, j;
   for (i = 0; i < num_devices; i++) {
@@ -38,6 +41,8 @@ void acc_clear_data_environment(struct acc_data_environment_t_ * data_env) {
     }
     data_env->data_allocs[i]->count = 0;
   }
+
+//acc_dbg_dump_data_env("after  acc_clear_data_environment");
 }
 
 void acc_map_data_(unsigned device_idx, h_void * host_ptr, d_void * dev_ptr, size_t n) {

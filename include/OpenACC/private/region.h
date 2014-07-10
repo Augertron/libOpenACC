@@ -51,12 +51,14 @@ struct acc_region_t_ {
   } * devices;
 };
 
-struct acc_region_t_ * acc_build_region(size_t region_id);
+struct acc_region_t_ * acc_region_build(size_t region_id);
 
 void acc_region_execute(struct acc_region_t_ * region);
 
 void acc_region_start(struct acc_region_t_ * region);
 void acc_region_stop (struct acc_region_t_ * region);
+
+void acc_region_free(struct acc_region_t_ * region);
 
 #ifdef __cplusplus
 }
