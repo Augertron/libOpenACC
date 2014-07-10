@@ -44,10 +44,17 @@ void register_data_allocation(
   unsigned device_idx,
    const struct acc_data_allocation_t_ * data_alloc
 ) {
+#if DBG_DATA
+  printf("[debug] register_data_allocation(device_idx = %u, data_alloc->host_ptr = %x, data_alloc->dev_ptr = %x, data_alloc->size = %u)\n", device_idx, data_alloc->host_ptr, data_alloc->dev_ptr, data_alloc->size);
+#endif
   bimap_insert(data_ptrs_bimap[device_idx], &(data_alloc->host_ptr), &(data_alloc->dev_ptr), data_alloc);
 }
 
 void remove_data_allocation(unsigned device_idx, const h_void * host_ptr) {
+#if DBG_DATA
+  printf("[debug] remove_data_allocation(device_idx = %u, host_ptr = %x)\n", device_idx, host_ptr);
+#endif
+
   bimap_remove_by_key_1(data_ptrs_bimap[device_idx], &host_ptr);
 }
 

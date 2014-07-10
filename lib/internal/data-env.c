@@ -33,7 +33,7 @@ void acc_clear_data_environment(struct acc_data_environment_t_ * data_env) {
     for (j = 0; j < data_env->data_allocs[i]->count; j++) {
       h_void * host_ptr = *(void **)(data_env->data_allocs[i]->datas + j * data_env->data_allocs[i]->storage_size);
       d_void * dev_ptr = acc_get_deviceptr(i, host_ptr);
-      acc_free(dev_ptr);
+      acc_free_(i, dev_ptr);
       remove_data_allocation(i, host_ptr);
     }
     data_env->data_allocs[i]->count = 0;
@@ -41,7 +41,9 @@ void acc_clear_data_environment(struct acc_data_environment_t_ * data_env) {
 }
 
 void acc_map_data_(unsigned device_idx, h_void * host_ptr, d_void * dev_ptr, size_t n) {
-//printf("acc_map_data_(device_idx = %u, host_ptr = %x, dev_ptr = %x, n = %u)\n", device_idx, host_ptr, dev_ptr, n);
+#if DBG_DATA
+  printf("[debug] acc_map_data_(device_idx = %u, host_ptr = %x, dev_ptr = %x, n = %u)\n", device_idx, host_ptr, dev_ptr, n);
+#endif
 
   struct acc_data_allocation_t_ alloc = { host_ptr, dev_ptr, n };
 

@@ -57,6 +57,14 @@ d_void * acc_create(h_void * host_ptr, size_t n) {
   return acc_create_(device_idx, host_ptr, n);
 }
 
+d_void * acc_present(h_void * host_ptr, size_t n) {
+  acc_init_once();
+
+  unsigned device_idx = acc_get_device_idx(acc_runtime.curr_device_type, acc_runtime.curr_device_num);
+
+  return acc_present_(device_idx, host_ptr, n);
+}
+
 d_void * acc_present_or_create(h_void * host_ptr, size_t n) {
   acc_init_once();
 

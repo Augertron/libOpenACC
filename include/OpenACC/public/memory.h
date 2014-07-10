@@ -11,6 +11,8 @@
 #ifndef OPENACC_PUBLIC_MEMORY
 #define OPENACC_PUBLIC_MEMORY 20131031
 
+#include "OpenACC/openacc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,6 +30,8 @@ d_void * acc_present_or_copyin(h_void *, size_t);
 d_void * acc_pcopyin(h_void *, size_t);
 
 d_void * acc_create(h_void *, size_t);
+
+d_void * acc_present(h_void *, size_t);
 
 d_void * acc_present_or_create(h_void *, size_t);
 

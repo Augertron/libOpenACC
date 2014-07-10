@@ -215,7 +215,7 @@ d_void * acc_present_(size_t device_idx, h_void * host_ptr, size_t n) {
 #if DBG_DATA
   printf("[debug] acc_present_(device_idx = %zd, host_ptr = %x, n = %zd)\n", device_idx, host_ptr, n);
 #endif
-  assert(!acc_is_present_(device_idx, host_ptr, n));
+  assert(acc_is_present_(device_idx, host_ptr, n));
 }
 
 void acc_present_regions_(struct acc_region_t_ * region, h_void * host_ptr, size_t n) {
