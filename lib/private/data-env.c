@@ -2,6 +2,7 @@
 #include "OpenACC/internal/data-env.h"
 #include "OpenACC/internal/runtime.h"
 #include "OpenACC/private/debug.h"
+#include "OpenACC/utils/profiling.h"
 
 #include <stddef.h>
 
@@ -51,5 +52,7 @@ void acc_pop_data_environment() {
   }
 
 //acc_dbg_dump_data_env("after  acc_pop_data_environment");
+
+//acc_profiling_release_all_events();
 }
 

@@ -227,6 +227,20 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
                                    region->devices[dev_idx].num_worker[2]
                                  };
 
+#if DBG_KERNEL
+    printf("[debug]              work_dim = %zd\n", work_dim);
+    printf("[debug]   global_work_size[3] = {%zd,%zd,%zd} (= %zd)\n", global_work_size[0], global_work_size[1], global_work_size[2], global_work_size[0] * global_work_size[1] * global_work_size[2]);
+    printf("[debug]    local_work_size[3] = {%zd,%zd,%zd} (= %zd)\n", local_work_size[0], local_work_size[1], local_work_size[2], local_work_size[0] * local_work_size[1] * local_work_size[2]);
+
+    cl_ulong kernel_local_mem_size = 0;
+    status = clGetKernelWorkGroupInfo(ocl_kernel, acc_runtime.opencl_data->devices[0][device_idx], CL_KERNEL_LOCAL_MEM_SIZE, sizeof(cl_ulong), &kernel_local_mem_size, NULL);
+    printf("[debug]   kernel_local_mem_size = %lu\n", kernel_local_mem_size);
+
+    size_t kernel_work_group_size = 0;
+    status = clGetKernelWorkGroupInfo(ocl_kernel, acc_runtime.opencl_data->devices[0][device_idx], CL_KERNEL_WORK_GROUP_SIZE, sizeof(size_t), &kernel_work_group_size, NULL);
+    printf("[debug]   kernel_work_group_size = %lu\n", kernel_work_group_size);
+#endif
+
     cl_event event;
 
     status = clEnqueueNDRangeKernel(

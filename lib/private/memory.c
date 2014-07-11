@@ -84,7 +84,7 @@ void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx_, h_v
 }
 
 d_void * acc_malloc_(size_t device_idx, size_t n) {
-#if DBG_DATA || 1
+#if DBG_DATA
   printf("[debug] acc_malloc_(size_t device_idx = %u, size_t n = %d)\n", device_idx, n);
 #endif
 
@@ -105,7 +105,7 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
 
   clFinish(acc_runtime.opencl_data->devices_data[device_idx]->command_queue);
 
-#if DBG_DATA || 1
+#if DBG_DATA
   printf("[debug]     return %x\n", buffer);
 #endif
 
@@ -113,7 +113,7 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
 }
 
 void acc_free_(size_t device_idx, d_void * dev_ptr) {
-#if DBG_DATA || 1
+#if DBG_DATA
   printf("[debug] acc_free_(device_idx = %zd, dev_ptr = %x)\n", device_idx, dev_ptr);
 #endif
 
