@@ -26,6 +26,11 @@
 # define DBG_DATA 0
 #endif
 
+#if DBG_DATA
+# include "OpenACC/utils/containers/set.h"
+# include "OpenACC/utils/utils.h"
+#endif
+
 #ifndef DBG_DIST_DATA
 # define DBG_DIST_DATA 0
 #endif
@@ -83,9 +88,16 @@ void acc_distributed_data(struct acc_region_t_ * region, size_t device_idx_, h_v
 #endif
 }
 
+#if DBG_DATA
+set_t device_allocs = NULL;
+#endif
+
 d_void * acc_malloc_(size_t device_idx, size_t n) {
 #if DBG_DATA
   printf("[debug] acc_malloc_(size_t device_idx = %u, size_t n = %d)\n", device_idx, n);
+  if (device_allocs == NULL)
+    device_allocs = set_alloc(42, sizeof(d_void *), (key_cmp_f)&void_ptr_cmp);
+  assert(device_allocs != NULL);
 #endif
 
   cl_int status;
@@ -103,10 +115,11 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
     exit(-1); /// \todo error code
   }
 
-  clFinish(acc_runtime.opencl_data->devices_data[device_idx]->command_queue);
+//clFinish(acc_runtime.opencl_data->devices_data[device_idx]->command_queue);
 
 #if DBG_DATA
   printf("[debug]     return %x\n", buffer);
+  set_insert(device_allocs, &buffer);
 #endif
 
   return (d_void *)buffer;
@@ -115,6 +128,9 @@ d_void * acc_malloc_(size_t device_idx, size_t n) {
 void acc_free_(size_t device_idx, d_void * dev_ptr) {
 #if DBG_DATA
   printf("[debug] acc_free_(device_idx = %zd, dev_ptr = %x)\n", device_idx, dev_ptr);
+  if (device_allocs == NULL)
+    device_allocs = set_alloc(42, sizeof(d_void *), (key_cmp_f)&void_ptr_cmp);
+  assert(device_allocs != NULL);
 #endif
 
   cl_int status;
@@ -125,6 +141,11 @@ void acc_free_(size_t device_idx, d_void * dev_ptr) {
     printf("[fatal]   clReleaseMemObject return %s for device ptr = %lx.\n", status_str, (unsigned long)dev_ptr);
     exit(-1); /// \todo error code
   }
+
+#if DBG_DATA
+  set_remove(device_allocs, &dev_ptr);
+  printf("[debug]     %zd allocations left.\n", device_allocs->count);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
