@@ -10,6 +10,9 @@
 
 #define LIST_MODE 2
 #define NUMBER_DEVICES_MODE 4
+#define INC_PATHS_MODE 8
+#define LIB_PATHS_MODE 16
+#define LIBS_MODE 32
 
 acc_compiler_data_t compiler_data = {NULL, NULL, NULL, 0, NULL};
 
@@ -18,6 +21,12 @@ void usage(int argc, char ** argv) {
   printf("           Display the list of the devices available.\n");
   printf("       %s --number-devices|-n\n", argv[0]);
   printf("           Display the number of the devices available.\n");
+  printf("       %s --incpath\n", argv[0]);
+  printf("           List of -I\"path\" options to include libOpenACC headers (include libOpenACC, OpenCL, and SQLite).\n");
+  printf("       %s --libpath\n", argv[0]);
+  printf("           List of -L\"path\" options to link with libOpenACC (include libOpenACC, OpenCL, and SQLite).\n");
+  printf("       %s --libs|-n\n", argv[0]);
+  printf("           List of -l options to link with libOpenACC (include libOpenACC, OpenCL, and SQLite).\n");
 }
 
 unsigned short read_args(int argc, char ** argv) {
@@ -29,6 +38,12 @@ unsigned short read_args(int argc, char ** argv) {
       mode |= LIST_MODE;
     else if (strcmp(argv[cnt], "--number-devices") == 0 || strcmp(argv[cnt], "-n") == 0)
       mode |= NUMBER_DEVICES_MODE;
+    else if (strcmp(argv[cnt], "--incpath") == 0)
+      mode |= INC_PATHS_MODE;
+    else if (strcmp(argv[cnt], "--libpath") == 0)
+      mode |= LIB_PATHS_MODE;
+    else if (strcmp(argv[cnt], "--libs") == 0)
+      mode |= LIBS_MODE;
     else
       usage(argc, argv);
 
@@ -40,7 +55,12 @@ unsigned short read_args(int argc, char ** argv) {
     exit(0);
   }
 
-  if (mode & ~(NUMBER_DEVICES_MODE) != 0 || mode & ~(LIST_MODE) != 0) {
+  if ( mode != NUMBER_DEVICES_MODE &&
+       mode != LIST_MODE           &&
+       mode != INC_PATHS_MODE      &&
+       mode != LIB_PATHS_MODE      &&
+       mode != LIBS_MODE
+     ) {
     usage(argc, argv);
     exit(-1);
   }
@@ -73,6 +93,15 @@ int main(int argc, char ** argv) {
 
   if ((mode & NUMBER_DEVICES_MODE) == NUMBER_DEVICES_MODE)
     printf("%zd\n", num_devices);
+
+  if ((mode & INC_PATHS_MODE) == INC_PATHS_MODE)
+    printf("-I%s/include/ -I%s -I%s\n", LIBOPENACC_PATH, OPENCL_INC_PATH, SQLITE_INC_PATH);
+
+  if ((mode & LIB_PATHS_MODE) == LIB_PATHS_MODE)
+    printf("-L%s/lib/ -L%s -L%s\n", LIBOPENACC_PATH, OPENCL_LIB_PATH, SQLITE_LIB_PATH);
+
+  if ((mode & LIBS_MODE) == LIBS_MODE)
+    printf("-lopenacc -lopencl -lsqlite3\n");
 
   return 0;
 }
