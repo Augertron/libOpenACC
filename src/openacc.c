@@ -101,7 +101,7 @@ int main(int argc, char ** argv) {
     printf("-L%s/lib/ -L%s -L%s\n", LIBOPENACC_PATH, OPENCL_LIB_PATH, SQLITE_LIB_PATH);
 
   if ((mode & LIBS_MODE) == LIBS_MODE)
-    printf("-lopenacc -lopencl -lsqlite3\n");
+    printf("-lopenacc -lOpenCL -lsqlite3 -lrt\n");
 
   return 0;
 }
