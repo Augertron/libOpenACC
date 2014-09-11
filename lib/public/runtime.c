@@ -74,7 +74,7 @@ void acc_init__(unsigned device_idx) {
     for (i = 0; i < compiler_data.num_regions; i++)
       device_data->programs[i] = NULL;
 
-    device_data->command_queue = clCreateCommandQueue(device_data->context, *device, CL_QUEUE_PROFILING_ENABLE, &status);
+    device_data->command_queue = clCreateCommandQueue(device_data->context, *device, CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE , &status);
     if (status != CL_SUCCESS || device_data->command_queue == NULL) {
       char * status_str;
       switch (status) {

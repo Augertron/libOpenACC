@@ -169,7 +169,7 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
         printf("[debug]       offset       = %d\n", offset);
 #endif
 
-        status = clSetKernelArg(ocl_kernel, idx, sizeof(long), &offset);
+        status = clSetKernelArg(ocl_kernel, idx, sizeof(int), &offset);
         if (status != CL_SUCCESS) {
           const char * status_str = acc_ocl_status_to_char(status);
           printf("[fatal]   clSetKernelArg return %s for region[%zd].kernel[%zd] argument %u: offset for distributed data %zd.\n",

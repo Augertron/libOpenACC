@@ -420,7 +420,9 @@ void acc_memcpy_to_device_(size_t device_idx, d_void * dest, h_void * src, size_
     exit(-1); /// \todo error code
   }
 
+#if NO_MEM_PROFILING==0
   acc_profiling_register_memcpy_to_device(event, device_idx, dest, src, bytes);
+#endif /* ACC_NO_PROFILING */
 }
 
 void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, size_t bytes) {
@@ -447,7 +449,9 @@ void acc_memcpy_from_device_(size_t device_idx, h_void * dest, d_void * src, siz
     exit(-1); /// \todo error code
   }
 
+#if NO_MEM_PROFILING==0
   acc_profiling_register_memcpy_from_device(event, device_idx, dest, src, bytes);
+#endif /* ACC_NO_PROFILING */
 }
 
 #ifdef __cplusplus

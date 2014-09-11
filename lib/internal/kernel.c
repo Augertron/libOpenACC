@@ -85,6 +85,7 @@ void acc_eval_kernel_version(
       assert((portion * loop_length) % total == 0);
       loop_length = (portion * loop_length) / total;
     }
+    if (loop_length == 0) continue; 
 
     // In this loop tiles[tile_idx].length stores the number of iterations of each tile
     size_t dynamic_tile_pos = loop_desc->num_tiles;

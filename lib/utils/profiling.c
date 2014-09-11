@@ -177,8 +177,8 @@ void acc_profiling_get_profile_from_event(cl_event event, cl_ulong * queued, cl_
   if (status != CL_SUCCESS)
     {
       const char *status_str = acc_ocl_status_to_char (status);
-      printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
-      exit (-1);		/// \todo error code
+      printf ("[error]   clGetEventProfilingInfo return %s.\n", status_str);
+      *queued=0;
     }
 
   status =
@@ -187,8 +187,8 @@ void acc_profiling_get_profile_from_event(cl_event event, cl_ulong * queued, cl_
   if (status != CL_SUCCESS)
     {
       const char *status_str = acc_ocl_status_to_char (status);
-      printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
-      exit (-1);		/// \todo error code
+      printf ("[error]   clGetEventProfilingInfo return %s.\n", status_str);
+      *submit=0;
     }
 
   status =
@@ -197,8 +197,8 @@ void acc_profiling_get_profile_from_event(cl_event event, cl_ulong * queued, cl_
   if (status != CL_SUCCESS)
     {
       const char *status_str = acc_ocl_status_to_char (status);
-      printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
-      exit (-1);		/// \todo error code
+      printf ("[error]   clGetEventProfilingInfo return %s.\n", status_str);
+      *start=0;
     }
 
   status =
@@ -207,8 +207,8 @@ void acc_profiling_get_profile_from_event(cl_event event, cl_ulong * queued, cl_
   if (status != CL_SUCCESS)
     {
       const char *status_str = acc_ocl_status_to_char (status);
-      printf ("[fatal]   clGetEventProfilingInfo return %s.\n", status_str);
-      exit (-1);		/// \todo error code
+      printf ("[error]   clGetEventProfilingInfo return %s.\n", status_str);
+      *end=0;
     }
 }
 
