@@ -18,16 +18,21 @@
 extern "C" {
 #endif
 
+#define ACC_NUM_PLATFORMS 4
+#define ACC_NUM_DEVICES   15
+
 /* Represent a type of accelerator (the API says "a value to tell [..] what type of device" API 2.0 at 3.2.3)
  * \note Added a target language on another "dimension". It is just an idea (not used for now)
  */
 typedef enum acc_device_e {
   acc_device_any = 0,           ///< All devices
   acc_device_nvidia,
+      acc_device_C870,
       acc_device_M2070,
       acc_device_K20Xm,
       acc_device_1000M,
       acc_device_4000,
+      acc_device_8800GT,
       acc_device_GTX_460,
   acc_device_amd,               ///< AMD devices \todo more type ?
   acc_device_intel,             ///< Intel devices
@@ -35,6 +40,7 @@ typedef enum acc_device_e {
       acc_device_i7_2720QM,
       acc_device_i7_3610QM,     ///<     Intel(R) Core(TM) i7-3610QM CPU
       acc_device_i7_950,        ///<     Intel(R) Core(TM) i7 950 CPU
+      acc_device_xeon_E5335,
       acc_device_e5_2620,
       acc_device_e5_2670,
       acc_device_xeonphi,       ///<   Intel Xeon Processor \todo list models
@@ -43,10 +49,10 @@ typedef enum acc_device_e {
 } acc_device_t;
 
 /// List of environment names for the different supported devices
-extern const char * acc_device_env_name [acc_device_last];
+extern const char * acc_device_env_name [acc_device_last+1];
 
 /// Listing name for the different devices (for printing)
-extern const char * acc_device_name [acc_device_last];
+extern const char * acc_device_name [acc_device_last+1];
 
 /// Default number of Gang, Worker, and Vector
 struct acc_device_defaults_t_ {
@@ -58,7 +64,7 @@ struct acc_device_defaults_t_ {
 typedef const struct acc_device_defaults_t_ acc_device_defaults_t;
 
 /// List of default number of Gang, Worker, and Vector for each supported device.
-extern acc_device_defaults_t acc_device_defaults [acc_device_last];
+extern acc_device_defaults_t acc_device_defaults [acc_device_last+1];
 
 /// Descriptor for a specific device 
 struct device_desc_t_ {
@@ -79,13 +85,11 @@ struct platform_desc_t_ {
 };
 typedef const struct platform_desc_t_ platform_desc_t;
 
-#define NUM_OPENCL_PLATFORMS 4
-
 /// List of supported platforms
-extern platform_desc_t platforms_desc[NUM_OPENCL_PLATFORMS];
+extern platform_desc_t platforms_desc[ACC_NUM_PLATFORMS];
 
 /// List of supported devices
-extern device_desc_t devices_desc[12];
+extern device_desc_t devices_desc[ACC_NUM_DEVICES];
 
 #ifdef __cplusplus
 }
