@@ -11,6 +11,8 @@
 
 #include "OpenACC/device/opencl.h"
 
+//volatile __global long acc_terminated_gangs = 0;
+
 size_t acc_gang_id(__constant struct acc_context_t_ * ctx, short lvl) {
   return get_group_id(lvl);
 }
@@ -50,4 +52,36 @@ long acc_get_tile_length(__constant struct acc_context_t_ * ctx, size_t tile_id)
 long acc_get_tile_stride(__constant struct acc_context_t_ * ctx, size_t tile_id) {
   return ctx->data[2 * ctx->num_loops + 2 * tile_id + 1];
 }
+
+int acc_is_master_gang_lvl(__constant struct acc_context_t_ * ctx, short lvl) {
+  return acc_gang_id(ctx, lvl) == 0;
+}
+
+int acc_is_master_gang(__constant struct acc_context_t_ * ctx) {
+  return acc_is_master_gang_lvl(ctx, 0)
+      && acc_is_master_gang_lvl(ctx, 1)
+      && acc_is_master_gang_lvl(ctx, 2);
+}
+
+int acc_terminate_gangs(__constant struct acc_context_t_ * ctx) {
+  return 0;
+  //return (atomic_inc(&acc_terminated_gangs)) == ctx->num_gangs[0] * ctx->num_gangs[1] * ctx->num_gangs[2]);
+}
+
+int acc_is_master_worker_lvl(__constant struct acc_context_t_ * ctx, short lvl) {
+  return acc_worker_id(ctx, lvl) == 0;
+}
+
+int acc_is_master_worker(__constant struct acc_context_t_ * ctx) {
+  return acc_is_master_worker_lvl(ctx, 0)
+      && acc_is_master_worker_lvl(ctx, 1)
+      && acc_is_master_worker_lvl(ctx, 2);
+}
+
+int acc_barrier_workers(__constant struct acc_context_t_ * ctx) {
+  barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
+  return acc_is_master_worker(ctx);
+}
+
+
 

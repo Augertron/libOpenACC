@@ -226,6 +226,12 @@ struct cl_kernel_ * acc_build_ocl_kernel(acc_region_t region, acc_kernel_t kerne
   *context = malloc(sizeof(struct acc_context_t_) + 2 * (kernel->desc->num_loops + version->num_tiles) * sizeof(long));
   (*context)->num_loops = kernel->desc->num_loops;
   (*context)->num_tiles = version->num_tiles;
+  (*context)->num_gangs[0] = version->num_gang[0];
+  (*context)->num_gangs[1] = version->num_gang[1];
+  (*context)->num_gangs[2] = version->num_gang[2];
+  (*context)->num_workers[0] = version->num_worker[0];
+  (*context)->num_workers[1] = version->num_worker[1];
+  (*context)->num_workers[2] = version->num_worker[2];
   size_t loop_id, i;
   for (loop_id = 0; loop_id < kernel->desc->num_loops; loop_id++) {
     size_t loop_length = kernel->loops[loop_id].upper - kernel->loops[loop_id].lower + 1;

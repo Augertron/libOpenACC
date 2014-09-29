@@ -34,6 +34,8 @@ extern "C" {
 struct acc_context_t_ {
    unsigned num_loops;
    unsigned num_tiles; // (unused) struct cannot be empty when flexible size array is used
+   long num_gangs[3];
+   long num_workers[3];
    long data[];
 };
 

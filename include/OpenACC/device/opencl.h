@@ -33,5 +33,13 @@ long acc_get_loop_upper(__constant struct acc_context_t_ * ctx, size_t loop_id);
 long acc_get_tile_length(__constant struct acc_context_t_ * ctx, size_t tile_id);
 long acc_get_tile_stride(__constant struct acc_context_t_ * ctx, size_t tile_id);
 
+int acc_is_master_gang_lvl(__constant struct acc_context_t_ * ctx, short lvl);
+int acc_is_master_gang(__constant struct acc_context_t_ * ctx);
+int acc_terminate_gangs(__constant struct acc_context_t_ * ctx);
+
+int acc_is_master_worker_lvl(__constant struct acc_context_t_ * ctx, short lvl);
+int acc_is_master_worker(__constant struct acc_context_t_ * ctx);
+int acc_barrier_workers(__constant struct acc_context_t_ * ctx);
+
 #endif /* __LIB_OPENACC_DEVICE_H__ */ /** }@ */
 
