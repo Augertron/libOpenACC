@@ -84,6 +84,7 @@ libopenacc_la_SOURCES= \
   $(OPENACC_UTILS_LIB)
 
 libopenacc_la_CFLAGS= \
+  -DLIBOPENACC=000001001 \
   -g -O0 $(OPTS) \
   -I$(top_srcdir)/include \
   -I@sqlite_inc_path@ \

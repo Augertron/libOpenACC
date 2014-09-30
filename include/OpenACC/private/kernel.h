@@ -35,6 +35,10 @@ struct acc_kernel_t_ {
   d_void ** data_ptrs;
   size_t  * data_size;
 
+  /// data arguments, pointers to device memory
+  d_void ** private_ptrs;
+  size_t  * private_size;
+
   /// Loop bounds and stride: provided by transformed application
   struct acc_loop_t_ * loops;
 };

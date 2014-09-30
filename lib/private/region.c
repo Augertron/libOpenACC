@@ -38,6 +38,8 @@ struct acc_region_t_ * acc_region_build(size_t region_id) {
 
   region->data = malloc(region_desc->num_datas * sizeof(struct acc_data_t_));
 
+  region->privates = malloc(region_desc->num_privates * sizeof(struct acc_private_t_));
+
   region->loops = malloc(region_desc->num_loops * sizeof(struct acc_loop_t_));
 
   region->devices = malloc(region_desc->num_devices * sizeof(struct acc_region_per_device_t_));
@@ -66,6 +68,7 @@ void acc_region_free(acc_region_t region) {
   free(region->param_ptrs);
   free(region->scalar_ptrs);
   free(region->data);
+  free(region->privates);
   free(region->loops);
   free(region->devices);
   free(region);
@@ -106,6 +109,12 @@ void acc_region_execute(acc_region_t region) {
     kernel->data_size[i] = region->data[kernel->desc->data_ids[i]].nbr_elements * region->data[kernel->desc->data_ids[i]].element_size;
   }
 
+  // Set private data arguments
+  for (i = 0; i < kernel->desc->num_privates; i++) {
+    kernel->private_ptrs[i] = region->privates[kernel->desc->private_ids[i]].ptr;
+    kernel->private_size[i] = region->privates[kernel->desc->private_ids[i]].nbr_elements * region->privates[kernel->desc->private_ids[i]].element_size;
+  }
+
   // Configure the loop
   for (i = 0; i < kernel->desc->num_loops; i++) {
     size_t loop_id = kernel->desc->loop_ids[i];
@@ -122,6 +131,8 @@ void acc_region_execute(acc_region_t region) {
   free(kernel->scalar_ptrs);
   free(kernel->data_ptrs);
   free(kernel->data_size);
+  free(kernel->private_ptrs);
+  free(kernel->private_size);
   free(kernel->loops);
   free(kernel);
 }

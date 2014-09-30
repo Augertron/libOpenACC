@@ -45,6 +45,9 @@ struct acc_region_desc_t_ {
   /// number of data arguments
   size_t num_datas;
 
+  /// number of private date arguments
+  size_t num_privates;
+
   size_t num_loops;
 
   size_t num_kernel_groups;

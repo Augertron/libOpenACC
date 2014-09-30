@@ -34,10 +34,12 @@ acc_kernel_t acc_build_kernel(struct acc_kernel_desc_t_ * kernel) {
 
   result->desc = kernel;
 
-  result->param_ptrs  = (  void **)malloc(kernel->num_params  * sizeof(  void *));
-  result->scalar_ptrs = (  void **)malloc(kernel->num_scalars * sizeof(  void *));
-  result->data_ptrs   = (d_void **)malloc(kernel->num_datas   * sizeof(d_void *));
-  result->data_size   = ( size_t *)malloc(kernel->num_datas   * sizeof(  size_t));
+  result->param_ptrs   = (  void **)malloc(kernel->num_params  * sizeof(  void *));
+  result->scalar_ptrs  = (  void **)malloc(kernel->num_scalars * sizeof(  void *));
+  result->data_ptrs    = (d_void **)malloc(kernel->num_datas   * sizeof(d_void *));
+  result->data_size    = ( size_t *)malloc(kernel->num_datas   * sizeof(  size_t));
+  result->private_ptrs = (d_void **)malloc(kernel->num_datas   * sizeof(d_void *));
+  result->private_size = ( size_t *)malloc(kernel->num_datas   * sizeof(  size_t));
 
   result->loops = malloc(kernel->num_loops * sizeof(struct acc_loop_t_));
   unsigned i;
@@ -179,6 +181,19 @@ void acc_enqueue_kernel(acc_region_t region, acc_kernel_t kernel) {
         }
         idx++;
       }
+    }
+
+    // Set private data kernel argument
+    for (i = 0; i < kernel->desc->num_privates; i++) {
+      status = clSetKernelArg(ocl_kernel, idx, kernel->private_size[i], NULL);
+      if (status != CL_SUCCESS) {
+        const char * status_str = acc_ocl_status_to_char(status);
+        printf("[fatal]   clSetKernelArg return %s for region[%zd].kernel[%zd] argument %u (privatedata #%zd).\n",
+                  status_str, region->desc->id, kernel->desc->id, idx, i
+              );
+        exit(-1); /// \todo error code
+      }
+      idx++;
     }
 
     // Allocate/copy context in constant memory \todo alloc only copy before launch with event wait

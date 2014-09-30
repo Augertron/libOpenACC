@@ -31,7 +31,7 @@ struct acc_region_t_ {
   /// scalar pointer
   void ** scalar_ptrs;
 
-  /// data arguments, pointers to device memory
+  /// data arguments
   struct acc_data_t_ {
     h_void * ptr;
     size_t nbr_elements;
@@ -39,6 +39,13 @@ struct acc_region_t_ {
     size_t dominant_dimension; /// currently always 0 (1st dimension), used to distribute data between multiple accelerators.
     size_t nbr_elements_dominant_dimension;
   } * data;
+
+  /// private data arguments
+  struct acc_private_t_ {
+    h_void * ptr;
+    size_t nbr_elements;
+    size_t element_size;
+  } * privates;
 
   /// Loop bounds and stride: provided by transformed application
   struct acc_loop_t_ * loops;

@@ -70,6 +70,10 @@ struct acc_kernel_desc_t_ {
   size_t num_datas;
   size_t * data_ids;
 
+  /// Private data arguments
+  size_t num_privates;
+  size_t * private_ids;
+
   // Loops
   size_t num_loops;
   size_t * loop_ids;
