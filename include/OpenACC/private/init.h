@@ -20,6 +20,8 @@ extern "C" {
  */
 void acc_init_once();
 
+void acc_exit() __attribute__ ((destructor));
+
 #ifdef __cplusplus
 }
 #endif

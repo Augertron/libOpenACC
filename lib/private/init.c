@@ -56,3 +56,11 @@ void acc_init_once() {
   }
 }
 
+void acc_exit() {
+
+  if (check_flag(f_acc_profiling)) {
+    acc_profiling_exit();
+  }
+
+}
+
