@@ -9,7 +9,7 @@
  *
  */
 
-#include "OpenACC/device/opencl.h"
+#include "OpenACC/device/openacc.cl"
 
 //volatile __global long acc_terminated_gangs = 0;
 

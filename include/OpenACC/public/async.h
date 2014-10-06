@@ -11,6 +11,8 @@
 #ifndef OPENACC_PUBLIC_ASYNC
 #define OPENACC_PUBLIC_ASYNC 20131031
 
+#include "OpenACC/openacc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

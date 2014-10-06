@@ -11,6 +11,9 @@
 #ifndef OPENACC_PUBLIC_DEVICE
 #define OPENACC_PUBLIC_DEVICE 20131031
 
+#include "OpenACC/public/def.h"
+#include "OpenACC/public/arch.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

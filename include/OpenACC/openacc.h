@@ -23,12 +23,6 @@
 
 #include "OpenACC/public/memory.h"
 
-#if !defined(LIBOPENACC)
-
-size_t acc_worker_id(short);
-
-#endif
-
 #endif /* OPENACC_PUBLIC */
 
 /** @} */

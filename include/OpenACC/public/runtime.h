@@ -11,6 +11,8 @@
 #ifndef OPENACC_PUBLIC_RUNTIME
 #define OPENACC_PUBLIC_RUNTIME 20131031
 
+#include "OpenACC/openacc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

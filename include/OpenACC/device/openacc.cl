@@ -16,6 +16,10 @@
 #define _OPENACC_LIB_DEVICE_NAME    "OpenACC Device Runtime in OpenCL C for ROSE Compiler"
 #define _OPENACC_LIB_DEVICE_VERSION 201310
 
+#ifdef ROSE_LANGUAGE_MODE
+#define __constant
+#endif
+
 #include "OpenACC/device/host-context.h"
 
 size_t acc_gang_id(__constant struct acc_context_t_ * ctx, short lvl);
