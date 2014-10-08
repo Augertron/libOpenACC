@@ -20,6 +20,7 @@ const char * acc_device_env_name [acc_device_last+1] = {
   "QUADRO-4000",
   "8800GT",
   "GTX-460",
+  "GTX-760",
   "AMD",
   "INTEL",
   "I5-670",
@@ -44,6 +45,7 @@ const char * acc_device_name [acc_device_last+1] = {
       "Quadro 4000",
       "GeForce 8800 GT",
       "GeForce GTX 460",
+      "GeForce GTX 760",
     "AMD",
     "Intel(R)",
       "Intel(R) Core(TM) i5 CPU 670",
@@ -66,6 +68,7 @@ device_desc_t devices_desc [ACC_NUM_DEVICES] = {
   { "Quadro 4000"                                     , acc_device_4000      },
   { "GeForce 8800 GT"                                 , acc_device_8800GT    },
   { "GeForce GTX 460"                                 , acc_device_GTX_460   },
+  { "GeForce GTX 760"                                 , acc_device_GTX_760   },
   { "Intel(R) Core(TM) i5 CPU         670"            , acc_device_i5_670    },
   { "Intel(R) Core(TM) i7-2720QM CPU"                 , acc_device_i7_2720QM },
   { "Intel(R) Core(TM) i7-3610QM CPU"                 , acc_device_i7_3610QM },
@@ -77,13 +80,14 @@ device_desc_t devices_desc [ACC_NUM_DEVICES] = {
 };
 
 platform_desc_t platforms_desc[ACC_NUM_PLATFORMS] = {
-  { "NVIDIA CUDA",     acc_device_nvidia, 7, &(devices_desc[0]) },
+  { "NVIDIA CUDA",     acc_device_nvidia, 8, &(devices_desc[0]) },
   { "AMD",             acc_device_amd,    0, NULL               }, /// \todo find actual platform name for AMD
-  { "Intel(R) OpenCL", acc_device_intel,  8, &(devices_desc[7]) },
+  { "Intel(R) OpenCL", acc_device_intel,  8, &(devices_desc[8]) },
   { "Altera",          acc_device_altera, 0, NULL               }  /// \todo find actual platform name for Altera
 };
 
 acc_device_defaults_t acc_device_defaults [acc_device_last+1] = {
+  { 1, {1, 1, 1}, {1, 1, 1}, 1 },
   { 1, {1, 1, 1}, {1, 1, 1}, 1 },
   { 1, {1, 1, 1}, {1, 1, 1}, 1 },
   { 1, {1, 1, 1}, {1, 1, 1}, 1 },

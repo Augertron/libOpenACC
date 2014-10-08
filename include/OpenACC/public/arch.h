@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #define ACC_NUM_PLATFORMS 4
-#define ACC_NUM_DEVICES   15
+#define ACC_NUM_DEVICES   16
 
 /* Represent a type of accelerator (the API says "a value to tell [..] what type of device" API 2.0 at 3.2.3)
  * \note Added a target language on another "dimension". It is just an idea (not used for now)
@@ -34,6 +34,7 @@ typedef enum acc_device_e {
       acc_device_4000,
       acc_device_8800GT,
       acc_device_GTX_460,
+      acc_device_GTX_760,
   acc_device_amd,               ///< AMD devices \todo more type ?
   acc_device_intel,             ///< Intel devices
       acc_device_i5_670,        ///      Intel(R) Core(TM) i5 670 CPU \bug with valgrind this is returned instead of my i73610QM !
